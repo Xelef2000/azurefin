@@ -1,349 +1,173 @@
 # azurefin
 
-A template for building custom bootc operating system images based on the lessons from [Universal Blue](https://universal-blue.org/) and [Bluefin](https://projectbluefin.io). It is designed to be used manually, but is optimized to be bootstraped by GitHub Copilot. After set up you'll have your own custom Linux. 
+A custom [bootc](https://containers.github.io/bootc/) / [rpm-ostree](https://coreos.github.io/rpm-ostree/) image for the **Microsoft Surface Laptop 7 (ARM, Snapdragon X Elite / X1E80100)**, built on top of [Bluefin](https://projectbluefin.io) from [Universal Blue](https://universal-blue.org/).
 
-This template uses the **multi-stage build architecture** from , combining resources from multiple OCI containers for modularity and maintainability. See the [Architecture](#architecture) section below for details.
+The image bakes everything the hardware needs directly into the container — kernel, firmware, touchscreen driver, and power management — so the resulting system is fully immutable and self-updating via `bootc`.
 
-**Unlike previous templates, you are not modifying Bluefin and making changes.**: You are assembling your own Bluefin in the same exact way that Bluefin, Aurora, and Bluefin LTS are built. This is way more flexible and better for everyone since the image-agnostic and desktop things we love about Bluefin lives in @projectbluefin/common. 
+---
 
- Instead, you create your own OS repository based on this template, allowing full customization while leveraging Bluefin's robust build system and shared components.
+## Why no pre-built ISO?
 
-> Be the one who moves, not the one who is moved.
+Two reasons pre-built images are not published right now:
 
-## Guided Copilot Mode
+1. **Firmware redistribution.** The image bakes in firmware extracted from Microsoft's official Surface Windows update package at build time. Redistributing that firmware as part of a downloadable image would violate Microsoft's terms. You need to build the image yourself, which downloads the firmware directly from Microsoft during the build.
 
-Here are the steps to guide copilot to make your own repo, or just use it like a regular image template.
+2. **Cross-architecture ISO limitation.** [bootc-image-builder](https://github.com/osbuild/bootc-image-builder) cannot yet produce installer ISOs for a target architecture different from the build host. Building an `aarch64` ISO currently requires either a native ARM64 machine or a full `qemu-system-aarch64` environment. QCOW2 and RAW disk images have the same constraint for full builds.
 
-1. Click the green "Use this as a template" button and create a new repository
-2. Select your owner, pick a repo name for your OS, and a description
-3. In the "Jumpstart your project with Copilot (optional)" add this, modify to your liking:
+If you have access to native ARM64 hardware (another device, a cloud instance), you can build and install from there. See [Installation](#installation) below.
 
-```
-Use @projectbluefin/finpilot as a template, name the OS the repository name. Ensure the entire operating system is bootstrapped. Ensure all github actions are enabled and running.  Ensure the README has the github setup instructions for cosign and the other steps required to finish the task.
-```
+---
 
-## What's Included
+## What's included
 
-### Build System
-- Automated builds via GitHub Actions on every commit
-- Awesome self hosted Renovate setup that keeps all your images and actions up to date.
-- Automatic cleanup of old images (90+ days) to keep it tidy
-- Pull request workflow - test changes before merging to main
-  - PRs build and validate before merge
-  - `main` branch builds `:stable` images
-- Validates your files on pull requests so you never break a build:
-  - Brewfile, Justfile, ShellCheck, Renovate config, and it'll even check to make sure the flatpak you add exists on FlatHub
-- Production Grade Features
-  - Container signing and SBOM Generation
-  - See checklist below to enable these as they take some manual configuration
+| Component | What it does |
+|---|---|
+| [ELLX Kernel](https://github.com/ProgrammerIn-wonderland/ELLX-Kernel) (`7.0-sl7` branch) | Upstream Linux with Surface Laptop 7 patches merged, built for `aarch64` |
+| Microsoft Surface firmware | DSP, GPU, battery manager, and modem blobs extracted at build time from the official Windows update MSI |
+| [ath12k board-2.bin fix](https://git.codelinaro.org/clo/ath-firmware/ath12k-firmware) | Patched WiFi board data file adding the SL7 subsystem device ID so the WCN7850 adapter is recognised |
+| [iptsd](https://github.com/alex-lentz/iptsd) | Touchscreen / stylus daemon (alex-lentz fork with SL7 support) |
+| [cpu-parking module](https://github.com/scuggo/x1e-nixos) | Kernel module that parks the efficiency cores on the Snapdragon X Elite, reducing idle heat |
+| Display resume fix | Sleep hook that force-switches VTs on resume to wake the display |
+| Trackpad resume fix | Sleep hook that restarts `iptsd` after suspend/resume |
+| EC reboot utility | `ec-reboot` command — resets the embedded controller to unfreeze a stuck keyboard or trackpad |
 
-### Homebrew Integration
-- Pre-configured Brewfiles for easy package installation and customization
-- Includes curated collections: development tools, fonts, CLI utilities. Go nuts.
-- Users install packages at runtime with `brew bundle`, aliased to premade `ujust commands`
-- See [custom/brew/README.md](custom/brew/README.md) for details
+---
 
-### Flatpak Support
-- Ship your favorite flatpaks
-- Automatically installed on first boot after user setup
-- See [custom/flatpaks/README.md](custom/flatpaks/README.md) for details
+## Building
 
-### ujust Commands
-- User-friendly command shortcuts via `ujust`
-- Pre-configured examples for app installation and system maintenance for you to customize
-- See [custom/ujust/README.md](custom/ujust/README.md) for details
+### Prerequisites
 
-### Build Scripts
-- Modular numbered scripts (10-, 20-, 30-) run in order
-- Example scripts included for third-party repositories and desktop replacement
-- Helper functions for safe COPR usage
-- See [build/README.md](build/README.md) for details
+Install on your build host (Fedora recommended):
 
-## Quick Start
-
-### 1. Create Your Repository
-
-Click "Use this template" to create a new repository from this template.
-
-### 2. Rename the Project
-
-Important: Change `finpilot` to your repository name in these 6 files:
-
-1. `Containerfile` (line 4): `# Name: your-repo-name`
-2. `Justfile` (line 1): `export image_name := env("IMAGE_NAME", "your-repo-name")`
-3. `README.md` (line 1): `# your-repo-name`
-4. `artifacthub-repo.yml` (line 5): `repositoryID: your-repo-name`
-5. `custom/ujust/README.md` (~line 175): `localhost/your-repo-name:stable`
-6. `.github/workflows/clean.yml` (line 23): `packages: your-repo-name`
-
-### 3. Enable GitHub Actions
-
-- Go to the "Actions" tab in your repository
-- Click "I understand my workflows, go ahead and enable them"
-
-Your first build will start automatically! 
-
-Note: Image signing is disabled by default. Your images will build successfully without any signing keys. Once you're ready for production, see "Optional: Enable Image Signing" below.
-
-### 4. Customize Your Image
-
-Choose your base image in `Containerfile` (line 23):
-```dockerfile
-FROM ghcr.io/ublue-os/bluefin:stable
-```
-
-Add your packages in `build/10-build.sh`:
 ```bash
-dnf5 install -y package-name
+sudo dnf5 install podman just
 ```
 
-Customize your apps:
-- Add Brewfiles in `custom/brew/` ([guide](custom/brew/README.md))
-- Add Flatpaks in `custom/flatpaks/` ([guide](custom/flatpaks/README.md))
-- Add ujust commands in `custom/ujust/` ([guide](custom/ujust/README.md))
+For building the image from an x86_64 host (cross-compilation is handled automatically inside the build):
 
-### 5. Development Workflow
-
-All changes should be made via pull requests:
-
-1. Open a pull request on GitHub with the change you want.
-3. The PR will automatically trigger:
-   - Build validation
-   - Brewfile, Flatpak, Justfile, and shellcheck validation
-   - Test image build
-4. Once checks pass, merge the PR
-5. Merging triggers publishes a `:stable` image
-
-### 6. Deploy Your Image
-
-Switch to your image:
 ```bash
-sudo bootc switch ghcr.io/your-username/your-repo-name:stable
+# The kernel build script detects the host arch and installs the cross-compiler
+# automatically — no manual setup needed.
+just build
+```
+
+This produces a `linux/arm64` OCI container image tagged `localhost/azurefin:stable`.
+
+The build takes roughly **20–40 minutes** on a modern x86_64 machine, most of which is kernel compilation via the `aarch64-linux-gnu-` cross-toolchain.
+
+### Build a disk image (QCOW2 or RAW)
+
+Requires a native `aarch64` host, or an `aarch64` QEMU VM (see below):
+
+```bash
+just build-qcow2   # QCOW2 for QEMU/testing
+just build-raw     # RAW disk image for dd-to-disk installs
+```
+
+### Build an ISO installer
+
+Requires a native `aarch64` host:
+
+```bash
+just build-iso
+```
+
+> **Why not on x86\_64?** `bootc-image-builder` explicitly refuses to build ISOs for a different architecture than the host. See [Why no pre-built ISO?](#why-no-pre-built-iso) above.
+
+---
+
+## Installation
+
+### Option A — `bootc install` from a live environment (recommended)
+
+Boot the Surface Laptop 7 with any ARM64 Fedora live image, then run:
+
+```bash
+# Install directly from the container image
+sudo bootc install to-disk --target-imgref <registry>/azurefin:stable /dev/nvme0n1
+```
+
+Replace `<registry>/azurefin:stable` with wherever you've pushed your built image (e.g. `ghcr.io/yourname/azurefin:stable`), or with `localhost/azurefin:stable` if the live environment has the image available locally.
+
+### Option B — Switch from an existing Fedora Atomic install
+
+If you already have Fedora Silverblue or Bluefin running on the device:
+
+```bash
+sudo bootc switch <registry>/azurefin:stable
 sudo systemctl reboot
 ```
 
-## Optional: Enable Image Signing
+### Option C — Build on a native aarch64 host
 
-Image signing is disabled by default to let you start building immediately. However, signing is strongly recommended for production use.
-
-### Why Sign Images?
-
-- Verify image authenticity and integrity
-- Prevent tampering and supply chain attacks
-- Required for some enterprise/security-focused deployments
-- Industry best practice for production images
-
-### Setup Instructions
-
-1. Generate signing keys:
-```bash
-cosign generate-key-pair
-```
-
-This creates two files:
-- `cosign.key` (private key) - Keep this secret
-- `cosign.pub` (public key) - Commit this to your repository
-
-2. Add the private key to GitHub Secrets:
-   - Copy the entire contents of `cosign.key`
-   - Go to your repository on GitHub
-   - Navigate to Settings → Secrets and variables → Actions ([GitHub docs](https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository))
-   - Click "New repository secret"
-   - Name: `SIGNING_SECRET`
-   - Value: Paste the entire contents of `cosign.key`
-   - Click "Add secret"
-
-3. Replace the contents of `cosign.pub` with your public key:
-   - Open `cosign.pub` in your repository
-   - Replace the placeholder with your actual public key
-   - Commit and push the change
-
-4. Enable signing in the workflow:
-   - Edit `.github/workflows/build.yml`
-   - Find the "OPTIONAL: Image Signing with Cosign" section.
-   - Uncomment the steps to install Cosign and sign the image (remove the `#` from the beginning of each line in that section).
-   - Commit and push the change
-
-5. Your next build will produce signed images!
-
-Important: Never commit `cosign.key` to the repository. It's already in `.gitignore`.
-
-## Love Your Image? Let's Go to Production
-
-Ready to take your custom OS to production? Enable these features for enhanced security, reliability, and performance:
-
-### Production Checklist
-
-- [ ] **Enable Image Signing** (Recommended)
-  - Provides cryptographic verification of your images
-  - Prevents tampering and ensures authenticity
-  - See "Optional: Enable Image Signing" section above for setup instructions
-  - Status: **Disabled by default** to allow immediate testing
-
-- [ ] **Enable SBOM Attestation** (Recommended)
-  - Generates Software Bill of Materials for supply chain security
-  - Provides transparency about what's in your image
-  - Requires image signing to be enabled first
-  - To enable:
-    1. First complete image signing setup above
-    2. Edit `.github/workflows/build.yml`
-    3. Find the "OPTIONAL: SBOM Attestation" section around line 232
-    4. Uncomment the "Add SBOM Attestation" step
-    5. Commit and push
-  - Status: **Disabled by default** (requires signing first)
-
-- [ ] **Enable Image Rechunking** (Recommended)
-  - Optimizes bootc image layers for better update performance
-  - Reduces update sizes by 5-10x
-  - Improves download resumability with evenly sized layers
-  - To enable:
-    1. Edit `.github/workflows/build.yml`
-    2. Find the "Build Image" step
-    3. Add a rechunk step after the build (see example below)
-  - Status: **Not enabled by default** (optional optimization)
-
-#### Adding Image Rechunking
-
-After building your bootc image, add a rechunk step before pushing to the registry. Here's an example based on the workflow used by [zirconium-dev/zirconium](https://github.com/zirconium-dev/zirconium):
-
-```yaml
-- name: Build image
-  id: build
-  run: sudo podman build -t "${IMAGE_NAME}:${DEFAULT_TAG}" -f ./Containerfile .
-
-- name: Rechunk Image
-  run: |
-    sudo podman run --rm --privileged \
-      -v /var/lib/containers:/var/lib/containers \
-      --entrypoint /usr/libexec/bootc-base-imagectl \
-      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
-      rechunk --max-layers 96 \
-      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
-      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}"
-
-- name: Push to Registry
-  run: sudo podman push "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}"
-```
-
-Alternative approach using a temporary tag for clarity:
-
-```yaml
-- name: Rechunk Image
-  run: |
-    sudo podman run --rm --privileged \
-      -v /var/lib/containers:/var/lib/containers \
-      --entrypoint /usr/libexec/bootc-base-imagectl \
-      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
-      rechunk --max-layers 67 \
-      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
-      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}-rechunked"
-    
-    # Tag the rechunked image with the original tag
-    sudo podman tag "localhost/${IMAGE_NAME}:${DEFAULT_TAG}-rechunked" "localhost/${IMAGE_NAME}:${DEFAULT_TAG}"
-    sudo podman rmi "localhost/${IMAGE_NAME}:${DEFAULT_TAG}-rechunked"
-```
-
-**Parameters:**
-- `--max-layers`: Maximum number of layers for the rechunked image (typically 67 for optimal balance)
-- The first image reference is the source (input)
-- The second image reference is the destination (output)
-  - When using the same reference for both, the image is rechunked in-place
-  - You can also use different tags (e.g., `-rechunked` suffix) and then retag if preferred
-
-**References:**
-- [CoreOS rpm-ostree build-chunked-oci documentation](https://coreos.github.io/rpm-ostree/build-chunked-oci/)
-- [bootc documentation](https://containers.github.io/bootc/)
-
-### After Enabling Production Features
-
-Your workflow will:
-- Sign all images with your key
-- Generate and attach SBOMs
-- Provide full supply chain transparency
-
-Users can verify your images with:
-```bash
-cosign verify --key cosign.pub ghcr.io/your-username/your-repo-name:stable
-```
-
-## Detailed Guides
-
-- [Homebrew/Brewfiles](custom/brew/README.md) - Runtime package management
-- [Flatpak Preinstall](custom/flatpaks/README.md) - GUI application setup
-- [ujust Commands](custom/ujust/README.md) - User convenience commands
-- [Build Scripts](build/README.md) - Build-time customization
-
-## Architecture
-
-This template follows the **multi-stage build architecture** from @projectbluefin/distroless, as documented in the [Bluefin Contributing Guide](https://docs.projectbluefin.io/contributing/).
-
-### Multi-Stage Build Pattern
-
-**Stage 1: Context (ctx)** - Combines resources from multiple sources:
-- Local build scripts (`/build`)
-- Local custom files (`/custom`)
-- **@projectbluefin/common** - Desktop configuration shared with Aurora
-- **@projectbluefin/branding** - Branding assets
-- **@ublue-os/artwork** - Artwork shared with Aurora and Bazzite
-- **@ublue-os/brew** - Homebrew integration
-
-**Stage 2: Base Image** - Default options:
-- `ghcr.io/ublue-os/silverblue-main:latest` (Fedora-based, default)
-- `quay.io/centos-bootc/centos-bootc:stream10` (CentOS-based alternative)
-
-### Benefits of This Architecture
-
-- **Modularity**: Compose your image from reusable OCI containers
-- **Maintainability**: Update shared components independently
-- **Reproducibility**: Renovate automatically updates OCI tags to SHA digests
-- **Consistency**: Share components across Bluefin, Aurora, and custom images
-
-### OCI Container Resources
-
-The template imports files from these OCI containers at build time:
-
-```dockerfile
-COPY --from=ghcr.io/ublue-os/base-main:latest /system_files /oci/base
-COPY --from=ghcr.io/projectbluefin/common:latest /system_files /oci/common
-COPY --from=ghcr.io/ublue-os/brew:latest /system_files /oci/brew
-```
-
-Your build scripts can access these files at:
-- `/ctx/oci/base/` - Base system configuration
-- `/ctx/oci/common/` - Shared desktop configuration
-- `/ctx/oci/branding/` - Branding assets
-- `/ctx/oci/artwork/` - Artwork files
-- `/ctx/oci/brew/` - Homebrew integration files
-
-**Note**: Renovate automatically updates `:latest` tags to SHA digests for reproducible builds.
-
-## Local Testing
-
-Test your changes before pushing:
+Clone this repo on any ARM64 Linux machine (another SL7, a Raspberry Pi 5, an AWS Graviton instance, etc.) and run:
 
 ```bash
-just build              # Build container image
-just build-qcow2        # Build VM disk image
-just run-vm-qcow2       # Test in browser-based VM
+just build-iso    # produces output/bootiso/install.iso
 ```
+
+Then write the ISO to a USB drive and boot the Surface from it.
+
+---
+
+## ujust commands
+
+After installation, these commands are available in a terminal:
+
+| Command | Description |
+|---|---|
+| `ujust rebuild-initramfs` | Regenerate the initramfs (rarely needed) |
+| `ujust ec-reboot` | Reset the embedded controller — fixes a stuck keyboard or trackpad |
+
+---
+
+## Project structure
+
+```
+build/
+  10-build.sh        — copies custom files, installs base packages
+  12-firmware.sh     — downloads and installs Surface firmware at build time
+  15-kernel.sh       — builds and installs the ELLX kernel + cpu-parking module
+  18-cpu-parking.sh  — no-op (module is built inside 15-kernel.sh)
+  20-iptsd.sh        — builds iptsd from source
+
+custom/
+  etc/               — /etc overrides (GRUB config, module autoload)
+  lib/               — systemd sleep hooks (display and trackpad resume fixes)
+  usr/
+    libexec/ec_reboot.py   — EC reset implementation
+    local/bin/ec-reboot    — wrapper script
+    src/cpu-parking/       — cpu_parking kernel module source
+  ujust/             — ujust command definitions
+  flatpaks/          — Flatpaks installed on first boot
+  brew/              — Homebrew Brewfiles
+
+iso/
+  iso.toml           — bootc-image-builder ISO configuration
+  disk.toml          — bootc-image-builder disk image configuration
+```
+
+---
+
+## Credits
+
+This project stands on the work of many upstream projects:
+
+- **[Universal Blue](https://universal-blue.org/)** and **[Bluefin](https://projectbluefin.io/)** — base image, build system architecture, and the finpilot template this repo started from
+- **[ProgrammerIn-wonderland / ELLX-Kernel](https://github.com/ProgrammerIn-wonderland/ELLX-Kernel)** — the `7.0-sl7` kernel branch with Surface Laptop 7 patches
+- **[Microsoft](https://www.microsoft.com/en-us/surface)** — Surface Laptop 7 firmware, downloaded directly from the official Windows update package at build time
+- **[Qualcomm / ath12k-firmware](https://git.codelinaro.org/clo/ath-firmware/ath12k-firmware)** — upstream WCN7850 `board-2.bin` used as the base for the WiFi board data fix
+- **[qca-swiss-army-knife](https://github.com/qca/qca-swiss-army-knife)** — `ath12k-bdencoder` tool used to patch `board-2.bin`
+- **[alex-lentz / iptsd](https://github.com/alex-lentz/iptsd)** — touchscreen daemon fork with SL7 support (itself based on [linux-surface/iptsd](https://github.com/linux-surface/iptsd))
+- **[linux-surface](https://github.com/linux-surface)** — Surface Linux project, source of many hardware workarounds and fixes
+- **[scuggo / x1e-nixos](https://github.com/scuggo/x1e-nixos)** — source of the `cpu_parking` kernel module for Snapdragon X Elite
+- **[bootc](https://github.com/containers/bootc)** — the image-based update system the whole thing is built on
+- **[bootc-image-builder](https://github.com/osbuild/bootc-image-builder)** — converts the OCI container image into installable disk images and ISOs
+
+---
 
 ## Community
 
 - [Universal Blue Discord](https://discord.gg/WEu6BdFEtp)
-- [bootc Discussion](https://github.com/bootc-dev/bootc/discussions)
-
-## Learn More
-
-- [Universal Blue Documentation](https://universal-blue.org/)
-- [bootc Documentation](https://containers.github.io/bootc/)
-- [Video Tutorial by TesterTech](https://www.youtube.com/watch?v=IxBl11Zmq5wE)
-
-## Security
-
-This template provides security features for production use:
-- Optional SBOM generation (Software Bill of Materials) for supply chain transparency
-- Optional image signing with cosign for cryptographic verification
-- Automated security updates via Renovate
-- Build provenance tracking
-
-These security features are disabled by default to allow immediate testing. When you're ready for production, see the "Love Your Image? Let's Go to Production" section above to enable them.
+- [linux-surface Matrix / GitHub](https://github.com/linux-surface/linux-surface)
+- [bootc discussions](https://github.com/containers/bootc/discussions)
