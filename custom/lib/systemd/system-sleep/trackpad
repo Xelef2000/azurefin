@@ -1,0 +1,8 @@
+#!/bin/sh
+# Reset trackpad after resume to prevent stuck state
+case $1 in
+  post)
+    sleep 1
+    systemctl restart iptsd.service 2>/dev/null || true
+    ;;
+esac

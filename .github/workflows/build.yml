@@ -4,8 +4,10 @@ on:
   pull_request:
     branches:
       - main
-  schedule:
-    - cron: '05 10 * * *'  # 10:05am UTC everyday
+  # schedule disabled: build bakes in ~2GB firmware download + kernel compile,
+  # which exceeds Actions runner time limits and minutes budget.
+  # schedule:
+  #   - cron: '05 10 * * *'  # 10:05am UTC everyday
   push:
     branches:
       - main
@@ -151,29 +153,33 @@ jobs:
       #     $SYFT_CMD ${IMAGE}:${DEFAULT_TAG} -o spdx-json=${OUTPUT_PATH}
       #     echo "OUTPUT_PATH=${OUTPUT_PATH}" >> $GITHUB_OUTPUT
 
-      # These `if` statements are so that pull requests for your custom images do not make it publish any packages under your name without you knowing
-      # They also check if the runner is on the default branch so that things like the merge queue (if you enable it), are going to work
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Push To GHCR
-        uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-        id: push
-        env:
-          REGISTRY_USER: ${{ github.actor }}
-          REGISTRY_PASSWORD: ${{ github.token }}
-        with:
-          registry: ${{ env.IMAGE_REGISTRY }}
-          image: ${{ env.IMAGE_NAME }}
-          tags: ${{ steps.metadata.outputs.tags }}
-          username: ${{ env.REGISTRY_USER }}
-          password: ${{ env.REGISTRY_PASSWORD }}
+      # DISABLED: Publishing is blocked because this image bakes in proprietary Microsoft
+      # Surface firmware at build time. Distributing the container image or an ISO derived
+      # from it would redistribute that firmware, which its license does not permit.
+      # Build locally with: just build
+      # Build ISO locally with: just build-iso
+      #
+      # - name: Login to GitHub Container Registry
+      #   uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3
+      #   if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+      #   with:
+      #     registry: ghcr.io
+      #     username: ${{ github.actor }}
+      #     password: ${{ secrets.GITHUB_TOKEN }}
+      #
+      # - name: Push To GHCR
+      #   uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
+      #   if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+      #   id: push
+      #   env:
+      #     REGISTRY_USER: ${{ github.actor }}
+      #     REGISTRY_PASSWORD: ${{ github.token }}
+      #   with:
+      #     registry: ${{ env.IMAGE_REGISTRY }}
+      #     image: ${{ env.IMAGE_NAME }}
+      #     tags: ${{ steps.metadata.outputs.tags }}
+      #     username: ${{ env.REGISTRY_USER }}
+      #     password: ${{ env.REGISTRY_PASSWORD }}
 
       # OPTIONAL: Image Signing with Cosign
       # Signing is disabled by default. To enable, see README.md "Optional: Enable Image Signing" section.

@@ -1,4 +1,4 @@
-export image_name := env("IMAGE_NAME", "finpilot")
+export image_name := env("IMAGE_NAME", "azurefin")
 export default_tag := env("DEFAULT_TAG", "stable")
 export bib_image := env("BIB_IMAGE", "quay.io/centos-bootc/bootc-image-builder:latest@sha256:903c01d110b8533f8891f07c69c0ba2377f8d4bc7e963311082b7028c04d529d")
 
@@ -96,6 +96,7 @@ build $target_image=image_name $tag=default_tag:
 
     podman build \
         "${BUILD_ARGS[@]}" \
+        --platform linux/arm64 \
         --pull=newer \
         --tag "${target_image}:${tag}" \
         .
@@ -163,6 +164,7 @@ _build-bib $target_image $tag $type $config: (_rootful_load_image target_image t
     set -euo pipefail
 
     args="--type ${type} "
+    args+="--target-arch aarch64 "
     args+="--use-librepo=True "
     args+="--rootfs=btrfs"
 

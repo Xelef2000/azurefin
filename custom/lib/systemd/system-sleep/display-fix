@@ -1,0 +1,9 @@
+#!/bin/sh
+# VT switch workaround to restore display after suspend/resume
+case $1 in
+  post)
+    CURRENTVT=$(fgconsole)
+    chvt 20
+    chvt "$CURRENTVT"
+    ;;
+esac
