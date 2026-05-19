@@ -194,12 +194,13 @@ _build-bib $target_image $tag $type $config: (_rootful_load_image target_image t
     # Surface Laptop 7: live/installer env needs terminal_output gfxterm in GRUB.
     #
     # UEFI reads grub.cfg from the embedded FAT image (images/efiboot.img), not
-    # from the ISO9660 tree. We patch that FAT image in-place using dd so the
-    # hybrid MBR/GPT/El Torito boot structure is never touched:
-    #   1. xorriso extracts images/efiboot.img from the ISO
-    #   2. mtools patches grub.cfg inside the FAT image (no root/mount needed)
-    #   3. xorriso report_lba gives us the exact byte offset of efiboot.img
-    #   4. dd writes the modified FAT image back at that offset (conv=notrunc)
+    # from the ISO9660 tree. Patch that FAT image with mtools, then rebuild the
+    # ISO via xorriso.
+    #
+    # -return_with SORRY 0: the BIOS El Torito boot image is not a regular file
+    # so xorriso can't replay it (-boot_image any replay) and emits SORRY exit 32.
+    # That's harmless — the Surface Laptop 7 is UEFI-only (ARM64). The EFI boot
+    # image (images/efiboot.img, a regular ISO9660 file) is replayed successfully.
     if [[ "${type}" == "iso" ]]; then
         ISO="output/bootiso/install.iso"
         if [[ ! -f "$ISO" ]]; then
@@ -219,11 +220,12 @@ _build-bib $target_image $tag $type $config: (_rootful_load_image target_image t
                         else
                             { printf 'terminal_output gfxterm\n'; cat /tmp/_grub_orig.cfg; } > /tmp/_grub_patched.cfg
                             mcopy -o -i /tmp/_efiboot.img /tmp/_grub_patched.cfg "::/$GRUB_PATH"
-                            # Byte offset of efiboot.img inside the ISO (field 2 of report_lba output)
-                            BYTE_OFF=$(xorriso -indev "$ISO" -find images/efiboot.img -exec report_lba -- 2>&1 \
-                                | awk -F', ' '/^[0-9]+,/{print $2; exit}')
-                            dd if=/tmp/_efiboot.img of="$ISO" bs=2048 seek=$((BYTE_OFF/2048)) conv=notrunc 2>/dev/null
-                            echo "  Patched efiboot.img in-place at byte offset ${BYTE_OFF}: /$GRUB_PATH"
+                            xorriso -indev "$ISO" -outdev "/tmp/_install_patched.iso" \
+                                -return_with SORRY 0 \
+                                -map /tmp/_efiboot.img images/efiboot.img \
+                                -boot_image any replay 2>&1
+                            mv "/tmp/_install_patched.iso" "$ISO"
+                            echo "  Patched efiboot.img: /$GRUB_PATH"
                             PATCHED=1
                         fi
                         break
