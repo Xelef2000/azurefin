@@ -3,7 +3,7 @@ set -euo pipefail
 
 echo "=== Building iptsd from source (alex-lentz fork) ==="
 
-dnf5 install -y \
+dnf install -y \
     git \
     gcc \
     gcc-c++ \
@@ -34,8 +34,8 @@ systemctl enable iptsd.service 2>/dev/null || true
 
 cd /
 rm -rf "$TMPDIR"
-dnf5 remove -y meson ninja-build cmake cli11-devel spdlog-devel \
+dnf remove -y meson ninja-build cmake cli11-devel spdlog-devel \
     eigen3-devel fmt-devel 2>/dev/null || true
-dnf5 clean all
+dnf clean all
 
 echo "=== iptsd build complete ==="

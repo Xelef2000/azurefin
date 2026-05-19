@@ -64,7 +64,7 @@ echo "::endgroup::"
 
 echo "::group:: Install Packages"
 
-dnf5 install -y \
+dnf install -y \
     msitools \
     python3 \
     python3-pip \

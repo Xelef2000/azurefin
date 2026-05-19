@@ -4,7 +4,7 @@ set -euo pipefail
 echo "=== Downloading and installing Surface Laptop 7 firmware ==="
 
 # --- Dependencies ---
-dnf5 install -y msitools curl python3
+dnf install -y msitools curl python3
 
 # --- Configuration ---
 MSI_URL="https://download.microsoft.com/download/b7ca2c3f-d320-4795-be0f-529a0117abb4/SurfaceLaptop7_ARM_Win11_26100_26.011.9344.0.msi"
@@ -134,6 +134,6 @@ cp board-2.bin "$BOARD_DIR/board-2.bin"
 # --- Cleanup ---
 cd /
 rm -rf "$WORKDIR"
-dnf5 clean all
+dnf clean all
 
 echo "=== Firmware installation complete ==="

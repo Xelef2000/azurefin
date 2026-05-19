@@ -3,7 +3,7 @@ set -euo pipefail
 
 echo "=== Building ELLX kernel for Surface Laptop 7 ==="
 
-dnf5 install -y \
+dnf install -y \
     git \
     gcc \
     make \
@@ -33,7 +33,7 @@ HOST_ARCH=$(uname -m)
 CROSS_COMPILE_PREFIX=""
 if [ "$HOST_ARCH" != "aarch64" ]; then
     echo "Host is ${HOST_ARCH} — installing aarch64 cross-compiler..."
-    dnf5 install -y gcc-aarch64-linux-gnu
+    dnf install -y gcc-aarch64-linux-gnu
     CROSS_COMPILE_PREFIX="aarch64-linux-gnu-"
 fi
 
@@ -124,7 +124,7 @@ while IFS= read -r dts; do
 done < <(find arch/arm64/boot/dts/qcom -name "x1e80100*.dts" ! -name "*-el2.dts" | sort)
 
 # --- Direct installation (no RPM) ---
-# Installing kernel RPMs via dnf5 inside a container build triggers the
+# Installing kernel RPMs via dnf inside a container build triggers the
 # 05-rpmostree.install kernel-install hook, which calls systemctl — unavailable
 # in the container build environment. Install files directly instead.
 
@@ -174,9 +174,9 @@ echo "  cpu-parking module installed for ${KVER}."
 # --- Cleanup ---
 cd /
 rm -rf "$KERNEL_WORKDIR"
-dnf5 remove -y git gcc make flex bison bc openssl-devel dtc \
+dnf remove -y git gcc make flex bison bc openssl-devel dtc \
     elfutils-devel elfutils-libelf-devel dwarves ncurses-devel \
     gcc-aarch64-linux-gnu 2>/dev/null || true
-dnf5 clean all
+dnf clean all
 
 echo "=== Kernel build complete ==="
