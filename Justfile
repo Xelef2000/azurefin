@@ -193,50 +193,51 @@ _build-bib $target_image $tag $type $config: (_rootful_load_image target_image t
 
     # Surface Laptop 7: live/installer env needs terminal_output gfxterm in GRUB.
     #
-    # UEFI reads grub.cfg from the embedded FAT image (images/efiboot.img), not
-    # from the ISO9660 tree. Patch that FAT image with mtools, then rebuild the
-    # ISO via xorriso.
-    #
-    # -return_with SORRY 0: the BIOS El Torito boot image is not a regular file
-    # so xorriso can't replay it (-boot_image any replay) and emits SORRY exit 32.
-    # That's harmless — the Surface Laptop 7 is UEFI-only (ARM64). The EFI boot
-    # image (images/efiboot.img, a regular ISO9660 file) is replayed successfully.
+    # mtools supports "image@@byte_offset" to access a FAT filesystem embedded
+    # inside a larger file. We use xorriso report_lba to find the byte offset of
+    # images/efiboot.img within the ISO, then patch grub.cfg inside it directly —
+    # no extraction, no ISO rebuild, MBR/GPT/El Torito system area untouched.
+    # (Rebuilding the ISO with xorriso zeroed the system area, destroying the GPT
+    # and making UEFI skip the USB entirely — that approach is abandoned.)
     if [[ "${type}" == "iso" ]]; then
         ISO="output/bootiso/install.iso"
         if [[ ! -f "$ISO" ]]; then
             echo "WARNING: ISO not found at $ISO, skipping GRUB patch"
         else
-            command -v xorriso &>/dev/null || { echo "Installing xorriso..."; sudo dnf install -y xorriso 2>/dev/null || sudo apt-get install -y xorriso; }
-            command -v mtools  &>/dev/null || { echo "Installing mtools...";  sudo dnf install -y mtools  2>/dev/null || sudo apt-get install -y mtools;  }
+            command -v xorriso &>/dev/null || { sudo dnf install -y xorriso 2>/dev/null || sudo apt-get install -y xorriso; }
+            command -v mtools  &>/dev/null || { sudo dnf install -y mtools  2>/dev/null || sudo apt-get install -y mtools;  }
             echo "Patching ISO GRUB config for Surface Laptop 7 (terminal_output gfxterm)..."
-            PATCHED=0
 
-            if xorriso -osirrox on -indev "$ISO" -extract images/efiboot.img /tmp/_efiboot.img 2>/dev/null; then
-                for GRUB_PATH in "EFI/BOOT/grub.cfg" "EFI/fedora/grub.cfg"; do
-                    if mtype -i /tmp/_efiboot.img "::/$GRUB_PATH" > /tmp/_grub_orig.cfg 2>/dev/null && [[ -s /tmp/_grub_orig.cfg ]]; then
-                        if grep -q "terminal_output gfxterm" /tmp/_grub_orig.cfg; then
-                            echo "  Already patched: /$GRUB_PATH"
-                            PATCHED=1
-                        else
-                            { printf 'terminal_output gfxterm\n'; cat /tmp/_grub_orig.cfg; } > /tmp/_grub_patched.cfg
-                            mcopy -o -i /tmp/_efiboot.img /tmp/_grub_patched.cfg "::/$GRUB_PATH"
-                            rm -f /tmp/_install_patched.iso
-                            xorriso -indev "$ISO" -outdev "/tmp/_install_patched.iso" \
-                                -return_with SORRY 0 \
-                                -return_with FAILURE 32 \
-                                -map /tmp/_efiboot.img images/efiboot.img \
-                                -boot_image any replay 2>&1
-                            mv "/tmp/_install_patched.iso" "$ISO"
-                            echo "  Patched efiboot.img: /$GRUB_PATH"
-                            PATCHED=1
-                        fi
-                        break
-                    fi
-                done
+            # xorriso report_lba output: "block_size , byte_address , data_size , /path"
+            BYTE_OFF=$(xorriso -indev "$ISO" -find /images/efiboot.img -exec report_lba -- 2>&1 \
+                | awk 'NF>=3 { gsub(/ /,""); n=split($0,a,","); if(n>=2 && a[2]+0>0) { print a[2]; exit } }')
+
+            if [[ -z "$BYTE_OFF" || "$BYTE_OFF" -le 0 ]]; then
+                echo "ERROR: could not determine byte offset of images/efiboot.img"
+                echo "  xorriso report_lba output:"
+                xorriso -indev "$ISO" -find /images/efiboot.img -exec report_lba -- 2>&1 | sed 's/^/    /'
+                exit 1
             fi
+            echo "  images/efiboot.img at byte offset ${BYTE_OFF}"
+
+            PATCHED=0
+            for GRUB_PATH in "EFI/BOOT/grub.cfg" "EFI/fedora/grub.cfg"; do
+                if mtype -i "${ISO}@@${BYTE_OFF}" "::/$GRUB_PATH" > /tmp/_grub_orig.cfg 2>/dev/null && [[ -s /tmp/_grub_orig.cfg ]]; then
+                    if grep -q "terminal_output gfxterm" /tmp/_grub_orig.cfg; then
+                        echo "  Already patched: /$GRUB_PATH"
+                        PATCHED=1
+                    else
+                        { printf 'terminal_output gfxterm\n'; cat /tmp/_grub_orig.cfg; } > /tmp/_grub_patched.cfg
+                        mcopy -o -i "${ISO}@@${BYTE_OFF}" /tmp/_grub_patched.cfg "::/$GRUB_PATH"
+                        echo "  Patched in-place at offset ${BYTE_OFF}: /$GRUB_PATH"
+                        PATCHED=1
+                    fi
+                    break
+                fi
+            done
 
             if [[ $PATCHED -eq 0 ]]; then
-                echo "WARNING: Could not locate grub.cfg inside images/efiboot.img"
+                echo "WARNING: Could not find grub.cfg inside images/efiboot.img"
                 echo "         The Surface Laptop 7 may fail to boot from this ISO."
             fi
         fi
