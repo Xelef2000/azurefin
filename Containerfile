@@ -43,7 +43,7 @@ COPY custom /custom
 # Base Image - official Fedora Silverblue, multi-arch (amd64 + arm64)
 # Bluefin only provides arm64 on CentOS-based tags (lts-hwe) which lacks Fedora
 # packages like msitools needed by the Surface firmware build step.
-FROM quay.io/fedora/fedora-silverblue:42
+FROM quay.io/fedora/fedora-silverblue:45@sha256:2910b3d517e5d08b0303717abfec7983d2093ff99017eaf03c85149bebb773f0
 
 ## Alternative base images, no desktop included (uncomment to use):
 # FROM ghcr.io/ublue-os/base-main:latest    
