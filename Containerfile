@@ -47,7 +47,7 @@ COPY --from=ghcr.io/ublue-os/brew:latest@sha256:ca91068f51ce663d495ccfc829352d66
 # Base Image - GNOME included
 # bluefin:stable is amd64-only. lts-hwe is the multi-arch tag (amd64 + arm64)
 # with Hardware Enablement — better fit for newer hardware like the Surface Laptop 7.
-FROM ghcr.io/ublue-os/bluefin:lts-hwe
+FROM ghcr.io/ublue-os/bluefin:lts-hwe@sha256:7f35c5cc6f531167c64f8035c5abbe1f2aba600e7d96640a2378bacb69f8ff56
 
 ## Alternative base images, no desktop included (uncomment to use):
 # FROM ghcr.io/ublue-os/base-main:latest    
