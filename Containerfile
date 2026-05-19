@@ -39,15 +39,11 @@ FROM scratch AS ctx
 
 COPY build /build
 COPY custom /custom
-# Copy from OCI containers to distinct subdirectories to avoid conflicts
-# Note: Renovate can automatically update these :latest tags to SHA-256 digests for reproducibility
-COPY --from=ghcr.io/projectbluefin/common:latest@sha256:b8fe93b16674a547b4cf38493af19caa484d9575956fc3be04ca3d10faec23ff /system_files /oci/common
-COPY --from=ghcr.io/ublue-os/brew:latest@sha256:ca91068f51ce663d495ccfc829352d6621ec95f6c7db447ade55023b222f9762 /system_files /oci/brew
 
-# Base Image - GNOME included
-# bluefin:stable is amd64-only. lts-hwe is the multi-arch tag (amd64 + arm64)
-# with Hardware Enablement — better fit for newer hardware like the Surface Laptop 7.
-FROM ghcr.io/ublue-os/bluefin:lts-hwe
+# Base Image - official Fedora Silverblue, multi-arch (amd64 + arm64)
+# Bluefin only provides arm64 on CentOS-based tags (lts-hwe) which lacks Fedora
+# packages like msitools needed by the Surface firmware build step.
+FROM quay.io/fedora/fedora-silverblue:42
 
 ## Alternative base images, no desktop included (uncomment to use):
 # FROM ghcr.io/ublue-os/base-main:latest    

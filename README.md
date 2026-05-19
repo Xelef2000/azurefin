@@ -1,6 +1,6 @@
 # azurefin
 
-A custom [bootc](https://containers.github.io/bootc/) / [rpm-ostree](https://coreos.github.io/rpm-ostree/) image for the **Microsoft Surface Laptop 7 (ARM, Snapdragon X Elite / X1E80100)**, built on top of [Bluefin](https://projectbluefin.io) from [Universal Blue](https://universal-blue.org/).
+A custom [bootc](https://containers.github.io/bootc/) / [rpm-ostree](https://coreos.github.io/rpm-ostree/) image for the **Microsoft Surface Laptop 7 (ARM, Snapdragon X Elite / X1E80100)**, built on top of [Fedora Silverblue](https://fedoraproject.org/silverblue/).
 
 The image bakes everything the hardware needs directly into the container — kernel, firmware, touchscreen driver, and power management — so the resulting system is fully immutable and self-updating via `bootc`.
 
@@ -153,7 +153,8 @@ iso/
 
 This project stands on the work of many upstream projects:
 
-- **[Universal Blue](https://universal-blue.org/)** and **[Bluefin](https://projectbluefin.io/)** — base image, build system architecture, and the finpilot template this repo started from
+- **[Fedora Silverblue](https://fedoraproject.org/silverblue/)** — base image (multi-arch, arm64 + amd64)
+- **[Universal Blue](https://universal-blue.org/)** and **[Bluefin](https://projectbluefin.io/)** — build system architecture inspiration and the finpilot template this repo started from
 - **[ProgrammerIn-wonderland / ELLX-Kernel](https://github.com/ProgrammerIn-wonderland/ELLX-Kernel)** — the `7.0-sl7` kernel branch with Surface Laptop 7 patches
 - **[Microsoft](https://www.microsoft.com/en-us/surface)** — Surface Laptop 7 firmware, downloaded directly from the official Windows update package at build time
 - **[Qualcomm / ath12k-firmware](https://git.codelinaro.org/clo/ath-firmware/ath12k-firmware)** — upstream WCN7850 `board-2.bin` used as the base for the WiFi board data fix

@@ -2,38 +2,21 @@
 
 set -eoux pipefail
 
-###############################################################################
-# Main Build Script
-###############################################################################
-# This script follows the @ublue-os/bluefin pattern for build scripts.
-# It uses set -eoux pipefail for strict error handling and debugging.
-###############################################################################
-
-# Source helper functions
-# shellcheck source=/dev/null
-source /ctx/build/copr-helpers.sh
-
 # Enable nullglob for all glob operations to prevent failures on empty matches
 shopt -s nullglob
 
-echo "::group:: Copy Bluefin Config from Common"
+echo "::group:: Install ujust"
 
-# Copy just files from @projectbluefin/common (includes 00-entry.just which imports 60-custom.just)
+# Install just (ujust) for Surface-specific commands
+dnf install -y just
+
+# Install custom just files
 mkdir -p /usr/share/ublue-os/just/
-shopt -s nullglob
-cp -r /ctx/oci/common/bluefin/usr/share/ublue-os/just/* /usr/share/ublue-os/just/
-shopt -u nullglob
+find /ctx/custom/ujust -iname '*.just' -exec cat {} \; >> /usr/share/ublue-os/just/60-custom.just
 
 echo "::endgroup::"
 
 echo "::group:: Copy Custom Files"
-
-# Copy Brewfiles to standard location
-mkdir -p /usr/share/ublue-os/homebrew/
-cp /ctx/custom/brew/*.Brewfile /usr/share/ublue-os/homebrew/
-
-# Consolidate Just Files
-find /ctx/custom/ujust -iname '*.just' -exec printf "\n\n" \; -exec cat {} \; >> /usr/share/ublue-os/just/60-custom.just
 
 # Copy Flatpak preinstall files
 mkdir -p /etc/flatpak/preinstall.d/
@@ -71,9 +54,7 @@ dnf install -y \
     curl \
     wget \
     kbd \
-    fwupd \
-    dkms \
-    kernel-devel
+    fwupd
 
 echo "::endgroup::"
 
