@@ -45,8 +45,9 @@ COPY --from=ghcr.io/projectbluefin/common:latest@sha256:b8fe93b16674a547b4cf3849
 COPY --from=ghcr.io/ublue-os/brew:latest@sha256:ca91068f51ce663d495ccfc829352d6621ec95f6c7db447ade55023b222f9762 /system_files /oci/brew
 
 # Base Image - GNOME included
-# bluefin:stable is amd64-only; bluefin:lts is the multi-arch tag (amd64 + arm64)
-FROM ghcr.io/ublue-os/bluefin:lts
+# bluefin:stable is amd64-only. lts-hwe is the multi-arch tag (amd64 + arm64)
+# with Hardware Enablement — better fit for newer hardware like the Surface Laptop 7.
+FROM ghcr.io/ublue-os/bluefin:lts-hwe
 
 ## Alternative base images, no desktop included (uncomment to use):
 # FROM ghcr.io/ublue-os/base-main:latest    
