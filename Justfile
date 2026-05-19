@@ -223,7 +223,7 @@ _build-bib $target_image $tag $type $config: (_rootful_load_image target_image t
                             rm -f /tmp/_install_patched.iso
                             xorriso -indev "$ISO" -outdev "/tmp/_install_patched.iso" \
                                 -return_with SORRY 0 \
-                                -return_with FAILURE 1 \
+                                -return_with FAILURE 32 \
                                 -map /tmp/_efiboot.img images/efiboot.img \
                                 -boot_image any replay 2>&1
                             mv "/tmp/_install_patched.iso" "$ISO"
