@@ -191,14 +191,15 @@ _build-bib $target_image $tag $type $config: (_rootful_load_image target_image t
     sudo rmdir $BUILDTMP
     sudo chown -R $USER:$USER output/
 
-    # Surface Laptop 7: live/installer env needs terminal_output gfxterm in GRUB
-    # or the display won't initialise and the device won't boot from the ISO.
+    # Surface Laptop 7: live/installer env needs terminal_output gfxterm in GRUB.
     #
-    # UEFI reads grub.cfg from the embedded FAT image (images/efiboot.img),
-    # not from the ISO9660 filesystem. We extract that image, patch it with
-    # mtools (no mount/root needed), then re-inject it with xorriso.
-    # -boot_image any replay is required to preserve the hybrid MBR/GPT/El Torito
-    # boot structure; omitting it produces a non-bootable ISO.
+    # UEFI reads grub.cfg from the embedded FAT image (images/efiboot.img), not
+    # from the ISO9660 tree. We patch that FAT image in-place using dd so the
+    # hybrid MBR/GPT/El Torito boot structure is never touched:
+    #   1. xorriso extracts images/efiboot.img from the ISO
+    #   2. mtools patches grub.cfg inside the FAT image (no root/mount needed)
+    #   3. xorriso report_lba gives us the exact byte offset of efiboot.img
+    #   4. dd writes the modified FAT image back at that offset (conv=notrunc)
     if [[ "${type}" == "iso" ]]; then
         ISO="output/bootiso/install.iso"
         if [[ ! -f "$ISO" ]]; then
@@ -209,42 +210,20 @@ _build-bib $target_image $tag $type $config: (_rootful_load_image target_image t
             echo "Patching ISO GRUB config for Surface Laptop 7 (terminal_output gfxterm)..."
             PATCHED=0
 
-            # --- Strategy 1: patch inside images/efiboot.img (the embedded FAT ESP) ---
             if xorriso -osirrox on -indev "$ISO" -extract images/efiboot.img /tmp/_efiboot.img 2>/dev/null; then
                 for GRUB_PATH in "EFI/BOOT/grub.cfg" "EFI/fedora/grub.cfg"; do
                     if mtype -i /tmp/_efiboot.img "::/$GRUB_PATH" > /tmp/_grub_orig.cfg 2>/dev/null && [[ -s /tmp/_grub_orig.cfg ]]; then
                         if grep -q "terminal_output gfxterm" /tmp/_grub_orig.cfg; then
-                            echo "  Already patched in efiboot.img: /$GRUB_PATH"
+                            echo "  Already patched: /$GRUB_PATH"
                             PATCHED=1
                         else
                             { printf 'terminal_output gfxterm\n'; cat /tmp/_grub_orig.cfg; } > /tmp/_grub_patched.cfg
                             mcopy -o -i /tmp/_efiboot.img /tmp/_grub_patched.cfg "::/$GRUB_PATH"
-                            xorriso -indev "$ISO" -outdev "/tmp/_install_patched.iso" \
-                                -map /tmp/_efiboot.img images/efiboot.img \
-                                -boot_image any replay 2>&1
-                            mv "/tmp/_install_patched.iso" "$ISO"
-                            echo "  Patched efiboot.img: /$GRUB_PATH"
-                            PATCHED=1
-                        fi
-                        break
-                    fi
-                done
-            fi
-
-            # --- Strategy 2: fall back to patching the ISO9660 copy ---
-            if [[ $PATCHED -eq 0 ]]; then
-                for GRUB_PATH in "/EFI/BOOT/grub.cfg" "/EFI/fedora/grub.cfg"; do
-                    if xorriso -osirrox on -indev "$ISO" -extract "$GRUB_PATH" /tmp/_grub_orig.cfg 2>/dev/null && [[ -s /tmp/_grub_orig.cfg ]]; then
-                        if grep -q "terminal_output gfxterm" /tmp/_grub_orig.cfg; then
-                            echo "  Already patched (ISO9660): $GRUB_PATH"
-                            PATCHED=1
-                        else
-                            { printf 'terminal_output gfxterm\n'; cat /tmp/_grub_orig.cfg; } > /tmp/_grub_patched.cfg
-                            xorriso -indev "$ISO" -outdev "/tmp/_install_patched.iso" \
-                                -map /tmp/_grub_patched.cfg "$GRUB_PATH" \
-                                -boot_image any replay 2>&1
-                            mv "/tmp/_install_patched.iso" "$ISO"
-                            echo "  Patched ISO9660: $GRUB_PATH"
+                            # Byte offset of efiboot.img inside the ISO (field 2 of report_lba output)
+                            BYTE_OFF=$(xorriso -indev "$ISO" -find images/efiboot.img -exec report_lba -- 2>&1 \
+                                | awk -F', ' '/^[0-9]+,/{print $2; exit}')
+                            dd if=/tmp/_efiboot.img of="$ISO" bs=2048 seek=$((BYTE_OFF/2048)) conv=notrunc 2>/dev/null
+                            echo "  Patched efiboot.img in-place at byte offset ${BYTE_OFF}: /$GRUB_PATH"
                             PATCHED=1
                         fi
                         break
@@ -253,7 +232,7 @@ _build-bib $target_image $tag $type $config: (_rootful_load_image target_image t
             fi
 
             if [[ $PATCHED -eq 0 ]]; then
-                echo "WARNING: Could not locate grub.cfg in ISO (tried efiboot.img and ISO9660 tree)"
+                echo "WARNING: Could not locate grub.cfg inside images/efiboot.img"
                 echo "         The Surface Laptop 7 may fail to boot from this ISO."
             fi
         fi
