@@ -94,6 +94,10 @@ scripts/config --enable CONFIG_QCOM_AOSS_QMP
 scripts/config --enable CONFIG_ARM_QCOM_CPUFREQ_HW
 scripts/config --enable CONFIG_CPU_FREQ_GOV_SCHEDUTIL
 scripts/config --set-str CONFIG_LOCALVERSION "-surface-sl7"
+# EFI stub is required: GRUB checks the ARM64 image header for this flag.
+# Image.gz hides the header (gzip magic replaces it), causing the
+# "plain image kernel not supported" error. Build and install Image (uncompressed).
+scripts/config --enable CONFIG_EFI_STUB
 
 make "${KBUILD[@]}" olddefconfig
 
@@ -101,7 +105,7 @@ NPROCS=$(nproc)
 echo "Building kernel Image and modules with $NPROCS cores..."
 
 BUILD_LOG="/tmp/kernel-build.log"
-if ! make "${KBUILD[@]}" -j"$NPROCS" Image.gz modules 2>&1 | tee "$BUILD_LOG"; then
+if ! make "${KBUILD[@]}" -j"$NPROCS" Image modules 2>&1 | tee "$BUILD_LOG"; then
     echo ""
     echo "=== KERNEL BUILD FAILED — errors ==="
     grep -i "error:" "$BUILD_LOG" | grep -v "^In file\|note:" | tail -30 || tail -40 "$BUILD_LOG"
@@ -138,7 +142,7 @@ make "${KBUILD[@]}" modules_install
 
 # Kernel image, symbol map, config
 mkdir -p /boot
-install -m0755 arch/arm64/boot/Image.gz "/boot/vmlinuz-${KVER}"
+install -m0755 arch/arm64/boot/Image     "/boot/vmlinuz-${KVER}"
 install -m0644 System.map              "/boot/System.map-${KVER}"
 install -m0644 .config                 "/boot/config-${KVER}"
 
