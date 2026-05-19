@@ -1,0 +1,5 @@
+#!/bin/sh
+# Surface Laptop 7: GRUB must use the EFI framebuffer (gfxterm).
+# Without this, GRUB falls back to a serial/EFI console that doesn't
+# initialise correctly on this device and the system won't boot.
+echo "terminal_output gfxterm"

@@ -28,16 +28,17 @@ echo "::group:: Copy System Files"
 
 # Copy custom /etc, /lib, /usr files from the custom/ directory
 if [ -d /ctx/custom/etc ]; then
-    cp -r /ctx/custom/etc/. /etc/ 2>/dev/null || true
+    cp -a /ctx/custom/etc/. /etc/
 fi
 if [ -d /ctx/custom/lib ]; then
-    cp -r /ctx/custom/lib/. /lib/ 2>/dev/null || true
+    cp -a /ctx/custom/lib/. /lib/
 fi
 if [ -d /ctx/custom/usr ]; then
-    cp -r /ctx/custom/usr/. /usr/ 2>/dev/null || true
+    cp -a /ctx/custom/usr/. /usr/
 fi
 
-# Make sleep hooks and libexec scripts executable
+# Ensure executable bits are set (cp -a should preserve them, but be explicit)
+chmod +x /etc/grub.d/05_surface_terminal 2>/dev/null || true
 chmod +x /usr/libexec/ec_reboot.py 2>/dev/null || true
 chmod +x /usr/local/bin/ec-reboot 2>/dev/null || true
 chmod +x /lib/systemd/system-sleep/display-fix 2>/dev/null || true
