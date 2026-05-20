@@ -94,10 +94,12 @@ scripts/config --enable CONFIG_QCOM_AOSS_QMP
 scripts/config --enable CONFIG_ARM_QCOM_CPUFREQ_HW
 scripts/config --enable CONFIG_CPU_FREQ_GOV_SCHEDUTIL
 scripts/config --set-str CONFIG_LOCALVERSION "-surface-sl7"
-# EFI stub is required: GRUB checks the ARM64 image header for this flag.
-# Image.gz hides the header (gzip magic replaces it), causing the
-# "plain image kernel not supported" error. Build and install Image (uncompressed).
-scripts/config --enable CONFIG_EFI_STUB
+# CONFIG_EFI_STUB is a select-only config on ARM64 — it's automatically pulled
+# in by CONFIG_EFI=y.  Enabling EFI_STUB directly is a no-op; we must enable
+# CONFIG_EFI which then selects EFI_STUB and EFI_ARMSTUB.
+# Without this, GRUB's ARM64 image check sees bit 3 of the flags field = 0 and
+# refuses to load the kernel: "plain image kernel not supported".
+scripts/config --enable CONFIG_EFI
 
 make "${KBUILD[@]}" olddefconfig
 
