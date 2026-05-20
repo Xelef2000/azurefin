@@ -191,57 +191,6 @@ _build-bib $target_image $tag $type $config: (_rootful_load_image target_image t
     sudo rmdir $BUILDTMP
     sudo chown -R $USER:$USER output/
 
-    # Surface Laptop 7: live/installer env needs terminal_output gfxterm in GRUB.
-    #
-    # mtools supports "image@@byte_offset" to access a FAT filesystem embedded
-    # inside a larger file. We use xorriso report_lba to find the byte offset of
-    # images/efiboot.img within the ISO, then patch grub.cfg inside it directly —
-    # no extraction, no ISO rebuild, MBR/GPT/El Torito system area untouched.
-    # (Rebuilding the ISO with xorriso zeroed the system area, destroying the GPT
-    # and making UEFI skip the USB entirely — that approach is abandoned.)
-    if [[ "${type}" == "iso" ]]; then
-        ISO="output/bootiso/install.iso"
-        if [[ ! -f "$ISO" ]]; then
-            echo "WARNING: ISO not found at $ISO, skipping GRUB patch"
-        else
-            command -v xorriso &>/dev/null || { sudo dnf install -y xorriso 2>/dev/null || sudo apt-get install -y xorriso; }
-            command -v mtools  &>/dev/null || { sudo dnf install -y mtools  2>/dev/null || sudo apt-get install -y mtools;  }
-            echo "Patching ISO GRUB config for Surface Laptop 7 (terminal_output gfxterm)..."
-
-            # xorriso report_lba output: "block_size , byte_address , data_size , /path"
-            BYTE_OFF=$(xorriso -indev "$ISO" -find /images/efiboot.img -exec report_lba -- 2>&1 \
-                | awk 'NF>=3 { gsub(/ /,""); n=split($0,a,","); if(n>=2 && a[2]+0>0) { print a[2]; exit } }')
-
-            if [[ -z "$BYTE_OFF" || "$BYTE_OFF" -le 0 ]]; then
-                echo "ERROR: could not determine byte offset of images/efiboot.img"
-                echo "  xorriso report_lba output:"
-                xorriso -indev "$ISO" -find /images/efiboot.img -exec report_lba -- 2>&1 | sed 's/^/    /'
-                exit 1
-            fi
-            echo "  images/efiboot.img at byte offset ${BYTE_OFF}"
-
-            PATCHED=0
-            for GRUB_PATH in "EFI/BOOT/grub.cfg" "EFI/fedora/grub.cfg"; do
-                if mtype -i "${ISO}@@${BYTE_OFF}" "::/$GRUB_PATH" > /tmp/_grub_orig.cfg 2>/dev/null && [[ -s /tmp/_grub_orig.cfg ]]; then
-                    if grep -q "terminal_output gfxterm" /tmp/_grub_orig.cfg; then
-                        echo "  Already patched: /$GRUB_PATH"
-                        PATCHED=1
-                    else
-                        { printf 'terminal_output gfxterm\n'; cat /tmp/_grub_orig.cfg; } > /tmp/_grub_patched.cfg
-                        mcopy -o -i "${ISO}@@${BYTE_OFF}" /tmp/_grub_patched.cfg "::/$GRUB_PATH"
-                        echo "  Patched in-place at offset ${BYTE_OFF}: /$GRUB_PATH"
-                        PATCHED=1
-                    fi
-                    break
-                fi
-            done
-
-            if [[ $PATCHED -eq 0 ]]; then
-                echo "WARNING: Could not find grub.cfg inside images/efiboot.img"
-                echo "         The Surface Laptop 7 may fail to boot from this ISO."
-            fi
-        fi
-    fi
 
 # Podman builds the image from the Containerfile and creates a bootable image
 # Parameters:
