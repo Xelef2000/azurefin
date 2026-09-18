@@ -1,0 +1,14 @@
+# Experimental COPR-based assembly; not yet a validated installer.
+# Firmware remains a local build secret input, not a Git/COPR source.
+ARG BASE_IMAGE=quay.io/fedora/fedora-silverblue:44
+FROM scratch AS ctx
+COPY surface/build /build
+
+FROM ${BASE_IMAGE}
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    bash /ctx/build/10-packages.sh
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    --mount=type=secret,id=surface-msi,required=true \
+    --mount=type=tmpfs,target=/tmp \
+    bash /ctx/build/20-firmware-initramfs.sh
+RUN bootc container lint

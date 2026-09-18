@@ -1,5 +1,23 @@
 # azurefin
 
+## What Makes this Raptor Different?
+
+The experimental Surface Laptop 7 13-inch migration now has a separate
+[COPR-based build path](surface/PORTING.md) in Containerfile.romulus:
+
+- Versioned Romulus kernel and input packages instead of compiling moving
+  upstream branches inside the image.
+- Early-display/input dependencies for encrypted boot, and per-device Bluetooth
+  address provisioning without publishing a factory MAC.
+- Locally extracted, checksum-verified firmware; no Microsoft blobs in COPR.
+- Internal speaker audio is disabled pending Fedora routing/protection checks.
+- Legacy CPU-parking and restart-only input hooks are not included in this path.
+
+This staging path is **not yet boot-validated** and does not replace the legacy
+build documented below. See the migration checklist for outstanding work.
+
+*Last updated: 2026-09-18*
+
 A custom [bootc](https://containers.github.io/bootc/) / [rpm-ostree](https://coreos.github.io/rpm-ostree/) image for the **Microsoft Surface Laptop 7 (ARM, Snapdragon X Elite / X1E80100)**, built on top of [Fedora Silverblue](https://fedoraproject.org/silverblue/).
 
 The image bakes everything the hardware needs directly into the container — kernel, firmware, touchscreen driver, and power management — so the resulting system is fully immutable and self-updating via `bootc`.
