@@ -1,0 +1,11 @@
+# Use a released firmware-free base, preferably referenced by its digest.
+ARG RELEASE_BASE
+FROM scratch AS ctx
+COPY surface/build /build
+
+FROM ${RELEASE_BASE}
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    --mount=type=secret,id=surface-msi,required=true \
+    --mount=type=tmpfs,target=/tmp \
+    bash /ctx/build/20-firmware-initramfs.sh
+RUN bootc container lint

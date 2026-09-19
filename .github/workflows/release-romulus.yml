@@ -1,0 +1,73 @@
+name: Release Romulus image base
+on:
+  release:
+    types: [published]
+permissions:
+  contents: read
+concurrency:
+  group: romulus-release-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+jobs:
+  image:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      packages: write
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name }}
+      REGISTRY_OWNER: ${{ github.repository_owner }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          persist-credentials: false
+      - name: Prepare builder
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+            echo "Expected a tag such as v0.1.0" >&2; exit 1;
+          }
+          [[ "$(uname -m)" == aarch64 ]]
+          command -v podman >/dev/null || {
+            sudo apt-get update
+            sudo apt-get install -y podman
+          }
+          printf 'IMAGE=ghcr.io/%s/azurefin:%s-base\n' "${REGISTRY_OWNER,,}" "$RELEASE_TAG" >> "$GITHUB_ENV"
+      - name: Build firmware-free ARM64 base
+        shell: bash
+        run: |
+          set -euo pipefail
+          podman build --platform linux/arm64 --target packages \
+            --label "org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
+            --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+            --label "org.opencontainers.image.version=$RELEASE_TAG" \
+            --label "org.azurefin.firmware=requires-local-finalization" \
+            -f Containerfile.romulus -t "$IMAGE" .
+          # Never accidentally publish the local firmware-complete target.
+          podman run --rm --entrypoint /bin/bash "$IMAGE" -c \
+            'test ! -e /usr/lib/firmware/qcom/x1e80100/microsoft/Romulus/qcadsp8380.mbn'
+          mkdir -p release-metadata
+          podman run --rm --entrypoint rpm "$IMAGE" -qa | sort > release-metadata/packages.txt
+      - name: Publish versioned base to GHCR
+        shell: bash
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$GHCR_TOKEN" | podman login ghcr.io -u "$REGISTRY_OWNER" --password-stdin
+          unset GHCR_TOKEN
+          trap 'podman logout ghcr.io' EXIT
+          podman push --digestfile release-metadata/digest.txt "$IMAGE"
+          {
+            printf 'Image: %s\n\n' "$IMAGE"
+            printf 'Digest: %s\n\n' "$(cat release-metadata/digest.txt)"
+            printf 'Firmware-free base only: not directly installable. Finalize locally with Microsoft firmware.\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: image-metadata-${{ github.event.release.tag_name }}
+          path: release-metadata/
+          if-no-files-found: error
+          retention-days: 90

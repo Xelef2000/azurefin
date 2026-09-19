@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# shellcheck source=packages.env
+source /ctx/build/packages.env
 [[ $(rpm --eval '%{_arch}') == aarch64 ]] || {
     echo "This image requires aarch64 userspace." >&2
     exit 1
@@ -21,12 +23,12 @@ mapfile -t stock < <(rpm -qa --qf '%{NAME}\n' |
 if [[ ${#stock[@]} -gt 0 ]]; then
     dnf5 remove -y "${stock[@]}"
 fi
-copr_install_isolated xelef2000/azurefin-kernel kernel-azurefin
+copr_install_isolated xelef2000/azurefin-kernel "$KERNEL_PACKAGE"
 # Install IPTSD first so the integration package dependency resolves with its
 # repo disabled afterwards.
-copr_install_isolated xelef2000/azurefin-iptsd iptsd-surface-laptop-7
-copr_install_isolated xelef2000/azurefin-romulus azurefin-romulus
-copr_install_isolated xelef2000/azurefin-firmware-tools azurefin-firmware-tools
+copr_install_isolated xelef2000/azurefin-iptsd "$IPTSD_PACKAGE"
+copr_install_isolated xelef2000/azurefin-romulus "$ROMULUS_PACKAGE"
+copr_install_isolated xelef2000/azurefin-firmware-tools "$FIRMWARE_TOOLS_PACKAGE"
 dnf5 install -y linux-firmware dracut dracut-network cryptsetup plymouth bluez
 dnf5 clean all
 

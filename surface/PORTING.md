@@ -1,4 +1,4 @@
-# Romulus migration status — 2026-09-18
+# Romulus migration status — 2026-09-19
 
 Target: Surface Laptop 7 **13-inch, 16 GB**, Fedora 44 aarch64.
 This is a staging port; do not replace the working pmOS installation yet.
@@ -31,9 +31,14 @@ step; do not silently substitute CentOS packages for Fedora 44 RPMs.
 - [x] Provide local-only verified MSI extraction and board-data alias helper.
 - [x] Keep internal audio disabled during bring-up; retain UCM as reference files.
 - [x] Build integration and firmware-tools noarch RPMs locally.
-- [ ] Configure COPR API access locally (not in Git or chat).
-- [ ] Create the three custom-package COPRs; kernel COPR already exists.
-- [ ] Build kernel and IPTSD binaries in Fedora 44 aarch64; resolve build failures.
+- [x] Configure COPR API access locally and as Actions secrets in the two private
+  package repositories (not in Git or chat).
+- [x] Create the three custom-package COPRs; reuse the existing kernel COPR.
+- [x] Build IPTSD, integration and firmware-tools packages in Fedora 44 aarch64
+  (COPR 11001931, 11001932 and 11001933).
+- [ ] Finish kernel compilation. Initial COPR 11001930 failed because openssl-devel
+  does not provide the openssl command used to generate the module-signing key.
+  Added openssl and rustfmt to BuildRequires and submitted a corrected SRPM.
 - [x] User approved committing/pushing testing branches and creating the package repository.
 - [ ] Assemble the experimental image and run bootc container lint.
 - [ ] Verify every required driver and firmware file in the generated initramfs.

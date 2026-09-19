@@ -4,9 +4,13 @@ ARG BASE_IMAGE=quay.io/fedora/fedora-silverblue:44
 FROM scratch AS ctx
 COPY surface/build /build
 
-FROM ${BASE_IMAGE}
+FROM ${BASE_IMAGE} AS packages
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     bash /ctx/build/10-packages.sh
+
+# Release CI publishes only the firmware-free packages stage.
+# The default target remains the local, firmware-complete image.
+FROM packages AS local-image
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=secret,id=surface-msi,required=true \
     --mount=type=tmpfs,target=/tmp \

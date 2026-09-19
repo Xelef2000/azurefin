@@ -19,6 +19,9 @@ The experimental Surface Laptop 7 13-inch migration now has a separate
 - Legacy CPU-parking and restart-only input hooks are not included in this path.
 - ISO/installer builds are blocked for now; OCI and RAW/QCOW2 development paths
   remain available, with build-time firmware extraction unchanged.
+- Published numeric version releases can build a firmware-free ARM64 OCI base;
+  see [release automation](surface/RELEASING.md) for COPR ordering and local
+  firmware finalization. These bases are not directly installable.
 
 This staging path is **not yet boot-validated** and does not replace the legacy
 build documented below. See the migration checklist for outstanding work.
