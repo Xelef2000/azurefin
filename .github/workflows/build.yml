@@ -157,7 +157,7 @@ jobs:
       # Surface firmware at build time. Distributing the container image or an ISO derived
       # from it would redistribute that firmware, which its license does not permit.
       # Build locally with: just build
-      # Build ISO locally with: just build-iso
+      # ISO/installer builds are temporarily disabled, including local recipes.
       #
       # - name: Login to GitHub Container Registry
       #   uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3

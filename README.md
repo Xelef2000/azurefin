@@ -1,5 +1,10 @@
 # azurefin
 
+> **ISO builds are temporarily disabled**, including installer-image and generic
+> ISO recipes. The ISO instructions below are retained for future use, not
+> currently executable. Local system-image builds still extract Microsoft
+> firmware during the build; this does not grant permission to redistribute it.
+
 ## What Makes this Raptor Different?
 
 The experimental Surface Laptop 7 13-inch migration now has a separate
@@ -12,11 +17,13 @@ The experimental Surface Laptop 7 13-inch migration now has a separate
 - Locally extracted, checksum-verified firmware; no Microsoft blobs in COPR.
 - Internal speaker audio is disabled pending Fedora routing/protection checks.
 - Legacy CPU-parking and restart-only input hooks are not included in this path.
+- ISO/installer builds are blocked for now; OCI and RAW/QCOW2 development paths
+  remain available, with build-time firmware extraction unchanged.
 
 This staging path is **not yet boot-validated** and does not replace the legacy
 build documented below. See the migration checklist for outstanding work.
 
-*Last updated: 2026-09-18*
+*Last updated: 2026-09-19*
 
 A custom [bootc](https://containers.github.io/bootc/) / [rpm-ostree](https://coreos.github.io/rpm-ostree/) image for the **Microsoft Surface Laptop 7 (ARM, Snapdragon X Elite / X1E80100)**, built on top of [Fedora Silverblue](https://fedoraproject.org/silverblue/).
 
