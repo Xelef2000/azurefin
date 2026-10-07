@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
-azurefin-extract-firmware /run/secrets/surface-msi /
+case ${FIRMWARE_SOURCE:-msi} in
+    msi) azurefin-extract-firmware /run/secrets/surface-msi / ;;
+    download) azurefin-extract-firmware --download / ;;
+    *) echo 'FIRMWARE_SOURCE must be msi or download' >&2; exit 2 ;;
+esac
 mapfile -t kernels < <(find /usr/lib/modules -mindepth 1 -maxdepth 1 -type d)
 [[ ${#kernels[@]} -eq 1 ]] || {
     echo "bootc requires exactly one kernel; found ${#kernels[@]}" >&2
@@ -28,6 +32,8 @@ done
 printf 'install_items+=" %s "\n' "${firmware[*]}" \
     > /usr/lib/dracut/dracut.conf.d/51-romulus-firmware.conf
 depmod "$kver"
-DRACUT_NO_XATTR=1 dracut --force --no-hostonly \
+bash /usr/libexec/azurefin-check-initramfs preflight "$kver"
+DRACUT_NO_XATTR=1 dracut --force --no-hostonly --add ostree \
     "/usr/lib/modules/$kver/initramfs.img" "$kver"
 test -s "/usr/lib/modules/$kver/initramfs.img"
+bash /usr/libexec/azurefin-check-initramfs verify-ostree "$kver" "/usr/lib/modules/$kver/initramfs.img"

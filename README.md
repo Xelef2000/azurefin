@@ -1,202 +1,132 @@
-# azurefin
+# Azurefin
 
-> **ISO builds are temporarily disabled**, including installer-image and generic
-> ISO recipes. The ISO instructions below are retained for future use, not
-> currently executable. Local system-image builds still extract Microsoft
-> firmware during the build; this does not grant permission to redistribute it.
+Experimental Fedora Silverblue / bootc for the **Surface Laptop 7 13-inch
+(Romulus13, Snapdragon X Elite)**. This is not an official Fedora or Microsoft
+image. The 15-inch model is not validated.
 
 ## What Makes this Raptor Different?
 
-The experimental Surface Laptop 7 13-inch migration now has a separate
-[COPR-based build path](surface/PORTING.md) in Containerfile.romulus:
+- A versioned [Azurefin kernel](https://github.com/Xelef2000/azurefin-linux) and
+  [Surface packages](https://github.com/Xelef2000/azurefin-packages), built in COPR.
+- Surface touch input, encrypted-boot display/input support, conservative speaker
+  settings, camera support, and per-device Bluetooth configuration.
+- Fedora's redistributable firmware is included. **Microsoft-extracted Surface
+  firmware and personal data must not be included in public artifacts.**
+- The installer prepares a private firmware-complete system locally, using
+  either USB Ethernet or an offline Microsoft MSI. No Wi-Fi setup is required.
+- Homebrew integration with writable user tooling outside the immutable OS.
+- The legacy CPU-parking and restart-only input hooks are not used in the
+  current Romulus build path.
 
-- Versioned Romulus kernel and input packages instead of compiling moving
-  upstream branches inside the image.
-- Early-display/input dependencies for encrypted boot, and per-device Bluetooth
-  address provisioning without publishing a factory MAC.
-- Locally extracted, checksum-verified firmware; no Microsoft blobs in COPR.
-- Internal speaker audio is disabled pending Fedora routing/protection checks.
-- Legacy CPU-parking and restart-only input hooks are not included in this path.
-- ISO/installer builds are blocked for now; OCI and RAW/QCOW2 development paths
-  remain available, with build-time firmware extraction unchanged.
-- Published numeric version releases can build a firmware-free ARM64 OCI base;
-  see [release automation](surface/RELEASING.md) for COPR ordering and local
-  firmware finalization. These bases are not directly installable.
+*Last updated: 2026-10-07*
 
-This staging path is **not yet boot-validated** and does not replace the legacy
-build documented below. See the migration checklist for outstanding work.
+## Installation status
 
-*Last updated: 2026-09-19*
+The graphical installer, internal-SSD installation and full-disk encryption
+have been tested on the 13-inch device. Offline MSI and Ethernet-download
+provisioning succeeded; the live installer without Microsoft-extracted firmware
+also passed a hardware installation test.
 
-A custom [bootc](https://containers.github.io/bootc/) / [rpm-ostree](https://coreos.github.io/rpm-ostree/) image for the **Microsoft Surface Laptop 7 (ARM, Snapdragon X Elite / X1E80100)**, built on top of [Fedora Silverblue](https://fedoraproject.org/silverblue/).
+The tested media is currently a **locally prepared USB SSD**, not a generic
+download-and-flash release. Its workspace setup is still device-specific.
+Do not copy the entire test SSD for distribution: it contains private downloads
+and locally provisioned images.
 
-The image bakes everything the hardware needs directly into the container — kernel, firmware, touchscreen driver, and power management — so the resulting system is fully immutable and self-updating via `bootc`.
+See [release policy and audit](surface/RELEASE-AUDIT.md),
+[build/release details](surface/RELEASING.md), and
+[development history](surface/PORTING.md). Tagged-release workflow changes are
+being prepared; this README is not a claim that release artifacts are already
+available.
 
----
+## Installing with prepared USB media
 
-## Why no pre-built ISO?
+Back up the target computer first. Keep the charger connected.
 
-Two reasons pre-built images are not published right now:
+1. Use the prepared Azurefin USB SSD and select its Microsoft-firmware-free
+   installer entry in UEFI. Disable Secure Boot for this unsigned custom kernel.
+   If the internal OS starts instead, check UEFI boot order: installing another
+   OS can move USB storage below its entry.
+2. Have either:
+   - a working USB Ethernet connection for the Microsoft download, or
+   - the MSI named in the trusted firmware policy, on a USB drive's top level
+     or in a `firmware/` directory.
+   Do not rely on built-in Wi-Fi before firmware preparation.
+3. For offline installation using the same SSD, copy the MSI **after preparing
+   the media** to `firmware/` on its writable `AZUREFIN_WORK` partition.
+   This partition is ext4; copying directly from Windows is not supported.
+   Keep another copy of the original MSI. Do not place it in the EFI partition.
+4. In the preparation console, choose download or offline input. The installer
+   validates the MSI and extracted files against the reviewed policy. You may
+   enter the device's Windows **Bluetooth public MAC**, or leave it blank.
+   It is stored only in the installed system, not the published base.
+5. Wait for preparation to complete and graphical Anaconda to appear.
+   Preparation runs before partitioning and needs **at least 30 GiB free**
+   disk-backed workspace. Each attempt retains logs and build data; allow
+   substantial extra room when repeating tests.
+6. Select the internal NVMe as the installation target. Check model and size
+   carefully. Do not select the installer/workspace or MSI-source disk.
+   Reclaiming partitions erases their contents. Enable encryption if wanted
+   and retain the passphrase securely.
+7. Finish installation, shut down, remove the installer and boot the internal
+   SSD. Unlock encryption and complete account setup.
 
-1. **Firmware redistribution.** The image bakes in firmware extracted from Microsoft's official Surface Windows update package at build time. Redistributing that firmware as part of a downloadable image would violate Microsoft's terms. You need to build the image yourself, which downloads the firmware directly from Microsoft during the build.
+On preparation failure, do not proceed with an unfinalized payload. Diagnostics
+are in `/tmp/azurefin-preparation.log` and the workspace's `launcher.log` /
+per-run directories. Do not delete an active preparation or installation.
 
-2. **Cross-architecture ISO limitation.** [bootc-image-builder](https://github.com/osbuild/bootc-image-builder) cannot yet produce installer ISOs for a target architecture different from the build host. Building an `aarch64` ISO currently requires either a native ARM64 machine or a full `qemu-system-aarch64` environment. QCOW2 and RAW disk images have the same constraint for full builds.
+## Bluetooth after installation
 
-If you have access to native ARM64 hardware (another device, a cloud instance), you can build and install from there. See [Installation](#installation) below.
+If you skipped the optional address prompt:
 
----
-
-## What's included
-
-| Component | What it does |
-|---|---|
-| [ELLX Kernel](https://github.com/ProgrammerIn-wonderland/ELLX-Kernel) (`7.0-sl7` branch) | Upstream Linux with Surface Laptop 7 patches merged, built for `aarch64` |
-| Microsoft Surface firmware | DSP, GPU, battery manager, and modem blobs extracted at build time from the official Windows update MSI |
-| [ath12k board-2.bin fix](https://git.codelinaro.org/clo/ath-firmware/ath12k-firmware) | Patched WiFi board data file adding the SL7 subsystem device ID so the WCN7850 adapter is recognised |
-| [iptsd](https://github.com/alex-lentz/iptsd) | Touchscreen / stylus daemon (alex-lentz fork with SL7 support) |
-| [cpu-parking module](https://github.com/scuggo/x1e-nixos) | Kernel module that parks the efficiency cores on the Snapdragon X Elite, reducing idle heat |
-| Display resume fix | Sleep hook that force-switches VTs on resume to wake the display |
-| Trackpad resume fix | Sleep hook that restarts `iptsd` after suspend/resume |
-| EC reboot utility | `ec-reboot` command — resets the embedded controller to unfreeze a stuck keyboard or trackpad |
-
----
-
-## Building
-
-### Prerequisites
-
-Install on your build host (Fedora recommended):
-
-```bash
-sudo dnf5 install podman just
+```sh
+sudo azurefin-extract-firmware --bluetooth-address YOUR:FACTORY:ADDRESS
 ```
 
-For building the image from an x86_64 host (cross-compilation is handled automatically inside the build):
+Replace the placeholder with the actual six-byte colon-separated Bluetooth
+public address from Windows, not the Wi-Fi MAC. Configuration takes effect on
+the next boot; the command does not reboot or disconnect peripherals itself.
+Never add a personal address to the source tree or public image.
 
-```bash
-# The kernel build script detects the host arch and installs the cross-compiler
-# automatically — no manual setup needed.
-just build
-```
+## Updates and limitations
 
-This produces a `linux/arm64` OCI container image tagged `localhost/azurefin:stable`.
+The provisioned system contains locally extracted firmware. Automatic image
+updates are intentionally disabled in this prototype so an update cannot
+replace it with an unfinalized public base. **Do not run bootc switch to a
+`*-base` tag**, and do not install that base directly onto a disk.
 
-The build takes roughly **20–40 minutes** on a modern x86_64 machine, most of which is kernel compilation via the `aarch64-linux-gnu-` cross-toolchain.
+Secure Boot is not validated. Suspend/battery behavior, camera image quality
+and complete speaker protection still need work. Preserve the tested speaker
+gain limits; do not substitute unrestricted audio profiles.
 
-### Build a disk image (QCOW2 or RAW)
+## Building and releasing
 
-Requires a native `aarch64` host, or an `aarch64` QEMU VM (see below):
+The supported clean path is `Containerfile.romulus --target packages`, not the
+legacy top-level Containerfile. Build the live environment with
+`Containerfile.installer`, `INSTALLER_FIRMWARE=none`, and an immutable clean
+base image ID. Microsoft firmware finalization is a separate local step.
 
-```bash
-just build-qcow2   # QCOW2 for QEMU/testing
-just build-raw     # RAW disk image for dd-to-disk installs
-```
+Published numeric GitHub releases (`vMAJOR.MINOR.PATCH`) trigger the component
+workflows when those workflows are present in the tagged commit:
 
-### Build an ISO installer
+- `azurefin-linux`: source audit and kernel submission to COPR.
+- `azurefin-packages`: source audit and iptsd, Romulus configuration and
+  firmware-extractor submissions to COPR. The extractor RPM contains tools and
+  policy, not extracted firmware.
+- `azurefin`: audit-gated ARM64 base and live-installer OCI image builds.
 
-Requires a native `aarch64` host:
+Wait for successful COPR binary builds, then pin their exact versions in
+`surface/build/packages.env` before releasing the image. A green submission
+workflow is not proof that COPR finished successfully. Plain tag pushes and
+draft releases do not trigger these workflows.
 
-```bash
-just build-iso
-```
-
-> **Why not on x86\_64?** `bootc-image-builder` explicitly refuses to build ISOs for a different architecture than the host. See [Why no pre-built ISO?](#why-no-pre-built-iso) above.
-
----
-
-## Installation
-
-### Option A — `bootc install` from a live environment (recommended)
-
-Boot the Surface Laptop 7 with any ARM64 Fedora live image, then run:
-
-```bash
-# Install directly from the container image
-sudo bootc install to-disk --target-imgref <registry>/azurefin:stable /dev/nvme0n1
-```
-
-Replace `<registry>/azurefin:stable` with wherever you've pushed your built image (e.g. `ghcr.io/yourname/azurefin:stable`), or with `localhost/azurefin:stable` if the live environment has the image available locally.
-
-### Option B — Switch from an existing Fedora Atomic install
-
-If you already have Fedora Silverblue or Bluefin running on the device:
-
-```bash
-sudo bootc switch <registry>/azurefin:stable
-sudo systemctl reboot
-```
-
-### Option C — Build on a native aarch64 host
-
-Clone this repo on any ARM64 Linux machine (another SL7, a Raspberry Pi 5, an AWS Graviton instance, etc.) and run:
-
-```bash
-just build-iso    # produces output/bootiso/install.iso
-```
-
-Then write the ISO to a USB drive and boot the Surface from it.
-
----
-
-## ujust commands
-
-After installation, these commands are available in a terminal:
-
-| Command | Description |
-|---|---|
-| `ujust rebuild-initramfs` | Regenerate the initramfs (rarely needed) |
-| `ujust ec-reboot` | Reset the embedded controller — fixes a stuck keyboard or trackpad |
-
----
-
-## Project structure
-
-```
-build/
-  10-build.sh        — copies custom files, installs base packages
-  12-firmware.sh     — downloads and installs Surface firmware at build time
-  15-kernel.sh       — builds and installs the ELLX kernel + cpu-parking module
-  18-cpu-parking.sh  — no-op (module is built inside 15-kernel.sh)
-  20-iptsd.sh        — builds iptsd from source
-
-custom/
-  etc/               — /etc overrides (GRUB config, module autoload)
-  lib/               — systemd sleep hooks (display and trackpad resume fixes)
-  usr/
-    libexec/ec_reboot.py   — EC reset implementation
-    local/bin/ec-reboot    — wrapper script
-    src/cpu-parking/       — cpu_parking kernel module source
-  ujust/             — ujust command definitions
-  flatpaks/          — Flatpaks installed on first boot
-  brew/              — Homebrew Brewfiles
-
-iso/
-  iso.toml           — bootc-image-builder ISO configuration
-  disk.toml          — bootc-image-builder disk image configuration
-```
-
----
+Generic ISO publication remains blocked until the workspace setup and final
+ISO audit are integrated. No firmware-inclusive image may be published.
+Details and local finalization commands are in
+[RELEASING.md](surface/RELEASING.md).
 
 ## Credits
 
-This project stands on the work of many upstream projects:
-
-- **[Fedora Silverblue](https://fedoraproject.org/silverblue/)** — base image (multi-arch, arm64 + amd64)
-- **[Universal Blue](https://universal-blue.org/)** and **[Bluefin](https://projectbluefin.io/)** — build system architecture inspiration and the finpilot template this repo started from
-- **[ProgrammerIn-wonderland / ELLX-Kernel](https://github.com/ProgrammerIn-wonderland/ELLX-Kernel)** — the `7.0-sl7` kernel branch with Surface Laptop 7 patches
-- **[Microsoft](https://www.microsoft.com/en-us/surface)** — Surface Laptop 7 firmware, downloaded directly from the official Windows update package at build time
-- **[Qualcomm / ath12k-firmware](https://git.codelinaro.org/clo/ath-firmware/ath12k-firmware)** — upstream WCN7850 `board-2.bin` used as the base for the WiFi board data fix
-- **[qca-swiss-army-knife](https://github.com/qca/qca-swiss-army-knife)** — `ath12k-bdencoder` tool used to patch `board-2.bin`
-- **[alex-lentz / iptsd](https://github.com/alex-lentz/iptsd)** — touchscreen daemon fork with SL7 support (itself based on [linux-surface/iptsd](https://github.com/linux-surface/iptsd))
-- **[linux-surface](https://github.com/linux-surface)** — Surface Linux project, source of many hardware workarounds and fixes
-- **[scuggo / x1e-nixos](https://github.com/scuggo/x1e-nixos)** — source of the `cpu_parking` kernel module for Snapdragon X Elite
-- **[bootc](https://github.com/containers/bootc)** — the image-based update system the whole thing is built on
-- **[bootc-image-builder](https://github.com/osbuild/bootc-image-builder)** — converts the OCI container image into installable disk images and ISOs
-
----
-
-## Community
-
-- [Universal Blue Discord](https://discord.gg/WEu6BdFEtp)
-- [linux-surface Matrix / GitHub](https://github.com/linux-surface/linux-surface)
-- [bootc discussions](https://github.com/containers/bootc/discussions)
+Built on Fedora Silverblue, bootc, Universal Blue / Bluefin tooling,
+linux-surface and iptsd, Qualcomm upstream support, and the Surface Laptop 7
+community's kernel work. Microsoft supplies the Windows update MSI downloaded
+by the user during private firmware preparation.

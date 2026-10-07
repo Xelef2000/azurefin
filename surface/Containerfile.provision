@@ -1,0 +1,22 @@
+# Local installer preparation: no registry pulls or package resolution here.
+ARG RELEASE_BASE
+FROM scratch AS ctx
+COPY build /build
+FROM ${RELEASE_BASE}
+ARG FIRMWARE_SOURCE=download
+# Local installer tool snapshot; permits policy updates without rebuilding the
+# multi-gigabyte base. These files are also shipped by firmware-tools RPM 1-3.
+COPY firmware-tools/azurefin-extract-firmware /usr/bin/azurefin-extract-firmware
+COPY firmware-tools/firmware-policy.py /usr/libexec/azurefin/firmware-policy.py
+COPY firmware-tools/firmware-policy.json /usr/share/azurefin/firmware-policy.json
+COPY installer_fix_fstab.py /usr/libexec/azurefin-installer-fix-fstab.py
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    bash /ctx/build/19-check-firmware-free.sh
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    --mount=type=tmpfs,target=/tmp \
+    --mount=type=secret,id=surface-msi \
+    bash /ctx/build/20-firmware-initramfs.sh
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    bash /ctx/build/27-installed-boot.sh
+RUN bootc container lint
+LABEL org.azurefin.firmware="locally-provisioned-do-not-publish"

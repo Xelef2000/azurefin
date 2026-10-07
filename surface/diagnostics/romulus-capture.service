@@ -1,0 +1,13 @@
+[Unit]
+Description=Temporary Romulus installer boot-log capture
+DefaultDependencies=no
+ConditionPathExists=/etc/initrd-release
+Before=dracut-cmdline.service shutdown.target initrd-switch-root.target
+Conflicts=shutdown.target initrd-switch-root.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/bash /usr/libexec/romulus-capture
+TimeoutStopSec=3
+StandardOutput=journal+console
+StandardError=journal+console

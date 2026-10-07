@@ -1,0 +1,95 @@
+###############################################################################
+# Azurefin bootc-installer ISO image
+###############################################################################
+#
+# This image is not the installed system. It is the live Anaconda environment
+# consumed by bootc-image-builder --type bootc-installer.
+#
+# It intentionally derives from the Azurefin payload image so the ISO live
+# environment uses the same custom Azurefin kernel, initramfs, DTBs, firmware, and
+# Surface-specific userspace as the system being installed.
+###############################################################################
+
+ARG BASE_IMAGE=localhost/azurefin:stable
+FROM ${BASE_IMAGE}
+ARG INSTALLER_FIRMWARE=local
+
+# The "none" variant must start from the clean packages/base-image stage,
+# never a firmware-inclusive ancestor. It creates a live-only initramfs;
+# installed-system firmware and FDE initramfs are still prepared locally later.
+COPY surface/build/19-check-firmware-free.sh /usr/libexec/azurefin-check-firmware-free
+COPY surface/build/21-installer-firmware-free.sh /usr/libexec/azurefin-installer-firmware-free
+RUN case "$INSTALLER_FIRMWARE" in \
+        none) bash /usr/libexec/azurefin-installer-firmware-free ;; \
+        local) ;; \
+        *) echo 'INSTALLER_FIRMWARE must be local or none' >&2; exit 1 ;; \
+    esac
+
+# Only the installed payload should unpack Homebrew, not the live ISO session.
+RUN systemctl mask brew-setup.service brew-update.timer brew-upgrade.timer
+
+RUN mkdir -p /boot/efi /var/mnt
+
+RUN dnf5 install -y \
+        anaconda \
+        anaconda-install-env-deps \
+        anaconda-dracut \
+        dracut-config-generic \
+        dracut-network \
+        net-tools \
+        squashfs-tools \
+        grub2-efi-aa64 \
+        grub2-efi-aa64-modules \
+        shim-aa64 \
+        python3-mako \
+        lorax-templates-* \
+    && dnf5 install -y --skip-unavailable \
+        biosdevname \
+        prefixdevname \
+    && dnf5 clean all
+
+# The ISO composer requires gcdaa64.efi, not only the normal disk loader.
+RUN dnf5 install -y grub2-efi-aa64-cdboot && dnf5 clean all
+
+# Fail if package resolution introduced another kernel. Stage the canonical
+# bootc kernel in /boot for the live installer tooling; never silently select
+# a stock kernel or delete an unexpected kernel tree.
+RUN bash -euxo pipefail -c '\
+    mapfile -t kernels < <(find /usr/lib/modules -mindepth 1 -maxdepth 1 -type d -printf "%f\n"); \
+    test "${#kernels[@]}" -eq 1; \
+    kver=${kernels[0]}; \
+    [[ "$kver" == *-azurefin.* ]]; \
+    test -s "/usr/lib/modules/$kver/dtb/qcom/x1e80100-microsoft-romulus13.dtb"; \
+    install -m 0644 "/usr/lib/modules/$kver/vmlinuz" "/boot/vmlinuz-$kver"; \
+    install -m 0644 "/usr/lib/modules/$kver/initramfs.img" "/boot/initramfs-$kver.img"; \
+    cp -a "/usr/lib/modules/$kver/dtb" "/boot/dtb-$kver"; \
+    echo "Installer kernel: ${kver}" \
+'
+
+# bootc-image-builder's bootc-installer path expects EFI files in /boot/efi.
+# Fedora package layouts differ here: Fedora 43+ can stage files below
+# /usr/lib/efi, while Fedora 42 often needs shim reinstalled after /boot/efi
+# exists so the package scriptlets populate the target tree.
+RUN bash -euxo pipefail -c '\
+    if [ -d /usr/lib/efi ]; then \
+        find /usr/lib/efi -type d -name EFI -exec cp -ra {} /boot/efi/ \;; \
+    fi; \
+    if [ ! -d /boot/efi/EFI ]; then \
+        dnf5 reinstall -y shim-aa64 grub2-efi-aa64; \
+    fi; \
+    test -d /boot/efi/EFI; \
+    test -s /boot/efi/EFI/fedora/gcdaa64.efi; \
+    dnf5 clean all \
+'
+
+# Anaconda's graphical launcher invokes gnome-kiosk, but the selected package
+# set did not bring it in automatically. Keep this explicit and fail closed.
+COPY surface/build/26-check-installer-gui.sh /usr/libexec/azurefin-check-installer-gui
+RUN dnf5 install -y gnome-kiosk \
+    && dnf5 clean all \
+    && bash /usr/libexec/azurefin-check-installer-gui
+
+RUN if [ "$INSTALLER_FIRMWARE" = none ]; then \
+        bash /usr/libexec/azurefin-check-firmware-free; \
+    fi \
+    && bootc container lint
