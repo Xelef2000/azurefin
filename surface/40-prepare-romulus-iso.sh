@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Patch a locally composed ISO for Surface Laptop 7 13-inch USB boot.
 # This writes only a NEW image file, never a block device or the source ISO.
-set -euo pipefail
+set -Eeuo pipefail
+status=0
+trap 'status=$?; printf "Surface ISO patch failed at line %s (exit %s): %s\n" "$LINENO" "$status" "$BASH_COMMAND" >&2; exit "$status"' ERR
 if [[ ${GITHUB_ACTIONS:-false} == true || $# -lt 3 || $# -gt 4 ]]; then
     echo "Local-only usage: $0 SOURCE.iso ROMULUS13.dtb NEW_OUTPUT.iso [--diagnostic|--capture-logs]" >&2
     exit 1
@@ -20,7 +22,10 @@ script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 [[ -f $source_iso && -f $dtb && $output_iso == *.iso && ! -e $output_iso && ! -L $output_iso ]]
 [[ $(od -An -tx1 -N4 "$dtb" | tr -d ' \n') == d00dfeed ]]
 for command in xorriso mcopy grub2-script-check implantisomd5 checkisomd5 python3; do
-    command -v "$command" >/dev/null
+    command -v "$command" >/dev/null || {
+        printf 'Missing ISO patch prerequisite: %s\n' "$command" >&2
+        exit 1
+    }
 done
 work_dir=$(mktemp -d -p "$(dirname -- "$output_iso")" .romulus-iso.XXXXXXXX)
 echo "Inspection files retained at $work_dir"
