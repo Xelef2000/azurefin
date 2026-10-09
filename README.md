@@ -22,8 +22,9 @@ It is an independent community project, not an official Fedora or Microsoft prod
 ## Before you install
 
 The 13-inch model has been tested. The 15-inch model is not validated.
-A general-purpose downloadable installer is **not yet available**; installation
-currently requires prepared development media. See the
+The release ISO workflow is experimental and still needs end-to-end hardware
+validation. Only use ISO assets when they are present on the release; creating
+a release tag alone does not mean the ISO has finished building. See the
 [build and release guide](surface/RELEASING.md) if you want to build or contribute.
 
 You will need:
@@ -33,6 +34,27 @@ You will need:
 - Prepared Azurefin installation media with at least 30 GiB free workspace.
 - Either a USB Ethernet connection or the supported Microsoft Surface Laptop 7
   ARM64 driver MSI. Built-in Wi-Fi is not available before firmware preparation.
+
+### Downloading a release ISO
+
+Download all matching `.iso.part-*` assets, `SHA256SUMS` and `ISO-SHA256SUM`
+from the same [release](https://github.com/Xelef2000/azurefin/releases).
+In a directory containing only that release's files, verify and reassemble
+(replace the version if needed):
+
+```sh
+sha256sum -c SHA256SUMS
+cat azurefin-v0.0.1-alpha-aarch64.iso.part-* > azurefin-v0.0.1-alpha-aarch64.iso
+sha256sum -c ISO-SHA256SUM
+```
+
+Write the complete ISO, not an individual part, using your preferred image
+writer. Double-check the destination: writing the image erases that drive.
+For the release installer, also provide an existing USB ext4/XFS/Btrfs
+partition labeled `AZUREFIN_WORK` with at least 30 GiB free. A separate USB
+SSD is the simplest option; it is excluded from installation targets. The
+installer asks before using it and does not create or format the workspace.
+The writable workspace can hold your offline MSI in its `firmware/` directory.
 
 Download the ARM64 driver MSI from Microsoft's
 [Surface Laptop 7th Edition download page](https://www.microsoft.com/en-us/download/details.aspx?id=106120).

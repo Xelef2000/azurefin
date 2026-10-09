@@ -170,6 +170,7 @@ def main():
         raise SystemExit("Run from the test installer's Kickstart pre-script")
     disk = sys.argv[1]
     root = Path("/run/azurefin-work")
+    source = Path(os.environ.get("AZUREFIN_INSTALLER_SOURCE", str(root)))
     output = Path("/run/azurefin-prepared.ks")
     if output.exists():
         raise SystemExit("A prepared Kickstart already exists; refusing to overwrite")
@@ -184,7 +185,7 @@ def main():
     print("\nAzurefin firmware preparation — experimental installer")
     print("Use USB Ethernet to download firmware, or a USB drive containing the MSI.")
     print("The same installer SSD works: copy the MSI to AZUREFIN_WORK/firmware after flashing.")
-    tools = root / "support/firmware-tools"
+    tools = source / "support/firmware-tools"
     supported_msis = subprocess.check_output([
         "python3", str(tools / "firmware-policy.py"),
         str(tools / "firmware-policy.json"), "list-msis"], text=True)
@@ -201,7 +202,7 @@ def main():
     if choice == "1":
         input("Plug in Ethernet, wait for it to connect, then press Enter.")
         confirm_download()
-        payload = prepare(root)
+        payload = prepare(root, source=source)
         source_disk = None
     else:
         while True:
@@ -217,7 +218,7 @@ def main():
                 if not selected.isdigit() or not 1 <= int(selected) <= len(files):
                     continue
                 msi, source_disk = files[int(selected) - 1]
-                payload = prepare(root, msi)
+                payload = prepare(root, msi, source=source)
                 break
     with output.open("x") as stream:
         stream.write(kickstart(payload, disk, source_disk, bluetooth_mac))
@@ -225,15 +226,16 @@ def main():
     subprocess.run(["chvt", "1"], check=True)
 
 
-def prepare(root, msi=None):
-    expected = (root / "base-image-id").read_text().strip()
+def prepare(root, msi=None, source=None):
+    source = root if source is None else source
+    expected = (source / "base-image-id").read_text().strip()
     if not re.fullmatch(r"[a-f0-9]{64}", expected):
         raise ValueError("Invalid pinned base image ID")
     runs = root / "runs"
     runs.mkdir(exist_ok=True)
     payload = None
-    command = ["bash", str(root / "support/28-prepare-installer-payload.sh"),
-               str(root / "base-oci"), expected, str(runs)]
+    command = ["bash", str(source / "support/28-prepare-installer-payload.sh"),
+               str(source / "base-oci"), expected, str(runs)]
     if msi is not None:
         command.append(str(msi))
     with subprocess.Popen(command,

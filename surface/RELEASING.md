@@ -15,19 +15,51 @@ layers. This variant retains Fedora's redistributable firmware, generates a
 live-only initramfs, and checks it for Microsoft paths and per-device data.
 The installed FDE image must still use the normal provisioning path.
 
-Before distribution, audit the composed initrd, SquashFS and bundled OCI
-payload as well as their image ancestry. Do not include the test workspace's
-MSI, finalized payloads, old run directories, or Bluetooth address. Existing
-local-only ISO restrictions remain in force until generic workspace preparation
-and the composed-artifact audit are integrated. Do not assume built-in Wi-Fi
+The ISO workflow audits the composed initrd, SquashFS, EFI filesystem and
+bundled OCI payload as well as image ancestry. Do not assume built-in Wi-Fi
 works before provisioning; use USB Ethernet or an offline MSI.
 
-ISO builds remain local-only. The release workflow permits only
-audited clean base and Microsoft-firmware-free live-installer OCI images.
+The image release workflow publishes audited clean base and
+Microsoft-firmware-free live-installer OCI images.
 Firmware provisioning is an explicit local operation, using either a supplied
 MSI or the packaged CLI's checksum-pinned downloader. No download runs during
 RPM installation or automatically on first boot. The release workflow builds
-both OCI inputs, never an ISO or a locally finalized payload.
+both OCI inputs. A separate `release-iso.yml` workflow composes the public ISO
+after that workflow succeeds; neither workflow builds a locally finalized payload.
+
+## ISO release workflow
+
+`Build audited ARM64 installer ISO` runs after successful image publication.
+It can also be started manually with an existing `release_tag`, including
+`v0.0.1-alpha`, once the workflow has been merged into the default branch.
+It resolves both image references to immutable digests and checks their source
+revision against the release commit. The ISO-builder source is independently
+pinned by digest in `surface/Containerfile.iso-builder`.
+
+Use a native ARM64 runner with **at least 100 GiB free before pulling images**.
+The standard runner may not have sufficient disk space. Set the repository
+variable `AZUREFIN_ISO_RUNNER` to a JSON label list for a suitable dedicated
+runner, e.g. `["self-hosted","Linux","ARM64","azurefin-iso"]`. A privileged
+Fedora container is required for nested Podman/osbuild and loopback mounts.
+Do not use a runner carrying unrelated credentials or workloads. Disk-space
+checks fail explicitly; the workflow does not erase runner directories.
+
+The ISO includes a clean base OCI and trusted firmware preparation tools.
+At boot it asks for exactly one existing, unmounted USB partition labeled
+`AZUREFIN_WORK`, using ext4, XFS or Btrfs, with at least 30 GiB free. It never
+formats or creates this workspace. No machine-specific UUID, drive size,
+firmware binary or Bluetooth address is embedded. Firmware preparation must
+succeed before Anaconda receives an installation source.
+
+Final checks inspect the ISO filesystem, the live SquashFS (and any embedded
+root filesystem), its initramfs archives, the EFI filesystem, and every bundled
+OCI layer. These are technical content checks, not a comprehensive license or
+security review. A successful compose/audit is not a hardware boot test.
+
+GitHub limits each release asset to less than 2 GiB, so the workflow attaches
+ordered ISO chunks, chunk and whole-ISO SHA-256 checksums, build provenance and
+an audit log. It refuses to overwrite existing assets. See the README for
+reassembly. Firmware-inclusive local ISO helpers remain local-only.
 
 ## Order of operations
 
