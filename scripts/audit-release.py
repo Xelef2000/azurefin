@@ -31,7 +31,7 @@ def check_file(name, stream, size, hashes):
         raise ValueError(f'Forbidden release content: {name}')
     if (name.removeprefix('./').lstrip('/') == 'etc/machine-id' or
             name.endswith('/etc/machine-id')) and size:
-        raise ValueError('Nonempty machine-id')
+        raise ValueError(f'Nonempty machine-id: {name} ({size} bytes)')
     if hashlib.file_digest(stream, 'sha256').hexdigest() in hashes:
         raise ValueError(f'Known Microsoft firmware bytes: {name}')
 
