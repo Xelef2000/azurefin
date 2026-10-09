@@ -1,0 +1,51 @@
+# Local x86-host / ARM64-target workaround for Podman re-exec under qemu-user.
+# Shorter staging paths keep this image's overlay mount options below PAGE_SIZE.
+# No host storage paths or target-system packages are changed.
+FROM quay.io/centos-bootc/bootc-image-builder@sha256:afeffdb5a7ab6bb9d0593b5765412c4d821a9492dbaf26bb5a494e27181d2019
+RUN python3 - <<'PY'
+from pathlib import Path
+import osbuild.util.containers as containers
+
+path = Path(containers.__file__)
+source = path.read_text()
+for old, new in (
+    ('os.path.join(os.sep, "run", "osbuild", "containers", "storage")',
+     'os.path.join(os.sep, "s")'),
+    ('os.path.join(os.sep, "run", "osbuild", "containers", "storage2")',
+     'os.path.join(os.sep, "s2")'),
+):
+    assert source.count(old) == 1, f"Unexpected osbuild source: {old}"
+    source = source.replace(old, new)
+compile(source, str(path), "exec")
+path.write_text(source)
+
+# Correct the composer's buildstamp path and fail on incomplete installer
+# initramfs archives too (the composer regenerates the payload's initramfs).
+path = Path('/usr/lib/osbuild/stages/org.osbuild.dracut')
+source = path.read_text()
+old = 'opts += ["--install", i]'
+assert source.count(old) == 1
+source = source.replace(old, 'opts += ["--install", "/.buildstamp" if i == "./buildstamp" else i]')
+old = 'chroot.run([initfs_bin, "--no-hostonly", "--kver", kver] + opts, check=True)'
+assert source.count(old) == 1
+source = source.replace(old, '''chroot.run(["bash", "/usr/libexec/azurefin-check-initramfs", "preflight", kver], check=True)
+                ''' + old + '''
+                chroot.run(["bash", "/usr/libexec/azurefin-check-initramfs", "verify", kver,
+                            f"/usr/lib/modules/{kver}/initramfs.img"], check=True)''')
+compile(source, str(path), 'exec')
+path.write_text(source)
+
+# The Romulus kernel supports SquashFS XZ but not SquashFS Zstd. The composer
+# currently requests Zstd for the live installer, which makes dracut power off.
+path = Path('/usr/lib/osbuild/stages/org.osbuild.squashfs')
+source = path.read_text()
+old = 'compression = options.get("compression")'
+assert source.count(old) == 1
+source = source.replace(old, old + '''
+    if filename == "images/install.img":
+        compression = {"method": "xz"}
+        subprocess.run(["chroot", source, "/usr/bin/bash",
+                        "/usr/libexec/azurefin-check-installer-gui"], check=True)''')
+compile(source, str(path), 'exec')
+path.write_text(source)
+PY

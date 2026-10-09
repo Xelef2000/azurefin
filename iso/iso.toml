@@ -4,6 +4,15 @@
 # The installer will guide users through disk partitioning and basic system setup,
 # then automatically switch to your custom image on first boot.
 
+# Keep disk selection interactive and repair the installed composefs fstab.
+[customizations.installer.kickstart]
+contents = """
+graphical
+%post --erroronfail --log=/var/log/azurefin-fstab-post.log
+python3 /usr/libexec/azurefin-installer-fix-fstab.py
+%end
+"""
+
 [customizations.installer.modules]
 # Enable standard Anaconda installer modules for a guided installation experience
 enable = [
