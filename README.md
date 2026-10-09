@@ -37,6 +37,12 @@ You will need:
 
 ### Downloading a release ISO
 
+Full-ISO downloads are being set up on the
+[Azurefin SourceForge files page](https://sourceforge.net/projects/azurefin/files/).
+When a release is available there, download its `.iso` and `ISO-SHA256SUM`,
+then run `sha256sum -c ISO-SHA256SUM` in the download directory. No reassembly
+is needed for a complete ISO. The split GitHub assets below are the fallback.
+
 Download all matching `.iso.part-*` assets, `SHA256SUMS` and `ISO-SHA256SUM`
 from the same [release](https://github.com/Xelef2000/azurefin/releases).
 In a directory containing only that release's files, verify and reassemble
