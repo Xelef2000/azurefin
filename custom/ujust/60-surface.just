@@ -16,4 +16,3 @@ ec-reboot:
     #!/usr/bin/bash
     echo "Resetting the Surface embedded controller..."
     sudo /usr/local/bin/ec-reboot
-

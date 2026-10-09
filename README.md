@@ -1,132 +1,107 @@
 # Azurefin
 
-Experimental Fedora Silverblue / bootc for the **Surface Laptop 7 13-inch
-(Romulus13, Snapdragon X Elite)**. This is not an official Fedora or Microsoft
-image. The 15-inch model is not validated.
+Azurefin is an experimental Fedora Silverblue / bootc system for the
+**Microsoft Surface Laptop 7 13-inch (Romulus13, Snapdragon X Elite)**.
+It combines a GNOME desktop with Surface-specific kernel and userspace support.
+It is an independent community project, not an official Fedora or Microsoft product.
 
 ## What Makes this Raptor Different?
 
-- A versioned [Azurefin kernel](https://github.com/Xelef2000/azurefin-linux) and
-  [Surface packages](https://github.com/Xelef2000/azurefin-packages), built in COPR.
-- Surface touch input, encrypted-boot display/input support, conservative speaker
-  settings, camera support, and per-device Bluetooth configuration.
-- Fedora's redistributable firmware is included. **Microsoft-extracted Surface
-  firmware and personal data must not be included in public artifacts.**
-- The installer prepares a private firmware-complete system locally, using
-  either USB Ethernet or an offline Microsoft MSI. No Wi-Fi setup is required.
-- Homebrew integration with writable user tooling outside the immutable OS.
-- The legacy CPU-parking and restart-only input hooks are not used in the
-  current Romulus build path.
+- Surface keyboard, touchpad and touchscreen support, including input during
+  encrypted boot.
+- Wi-Fi, USB, Bluetooth configuration, conservative speaker profiles and
+  experimental camera support.
+- Full-disk encryption through the graphical Anaconda installer.
+- Homebrew integration for development tools outside the immutable system.
+- Surface firmware downloaded from Microsoft during installation, or extracted
+  from an MSI you provide. Public images include Fedora's redistributable
+  firmware but not Microsoft-extracted Surface firmware.
 
-*Last updated: 2026-10-07*
+*Last updated: 2026-10-09*
 
-## Installation status
+## Before you install
 
-The graphical installer, internal-SSD installation and full-disk encryption
-have been tested on the 13-inch device. Offline MSI and Ethernet-download
-provisioning succeeded; the live installer without Microsoft-extracted firmware
-also passed a hardware installation test.
+The 13-inch model has been tested. The 15-inch model is not validated.
+A general-purpose downloadable installer is **not yet available**; installation
+currently requires prepared development media. See the
+[build and release guide](surface/RELEASING.md) if you want to build or contribute.
 
-The tested media is currently a **locally prepared USB SSD**, not a generic
-download-and-flash release. Its workspace setup is still device-specific.
-Do not copy the entire test SSD for distribution: it contains private downloads
-and locally provisioned images.
+You will need:
 
-See [release policy and audit](surface/RELEASE-AUDIT.md),
-[build/release details](surface/RELEASING.md), and
-[development history](surface/PORTING.md). Tagged-release workflow changes are
-being prepared; this README is not a claim that release artifacts are already
-available.
+- A backup of any data on the installation target.
+- The charger connected and Secure Boot disabled for the custom kernel.
+- Prepared Azurefin installation media with at least 30 GiB free workspace.
+- Either a USB Ethernet connection or the supported Microsoft Surface Laptop 7
+  ARM64 driver MSI. Built-in Wi-Fi is not available before firmware preparation.
 
-## Installing with prepared USB media
+For offline installation, use the MSI filename specified in
+[the firmware policy](surface/firmware-policy.json). Copy it to the top level
+or a `firmware/` directory on a USB drive. With prepared media that includes
+an `AZUREFIN_WORK` partition, you can put it in that partition's `firmware/`
+directory instead. That partition is ext4 and normally needs Linux to write it.
 
-Back up the target computer first. Keep the charger connected.
+## Installation
 
-1. Use the prepared Azurefin USB SSD and select its Microsoft-firmware-free
-   installer entry in UEFI. Disable Secure Boot for this unsigned custom kernel.
-   If the internal OS starts instead, check UEFI boot order: installing another
-   OS can move USB storage below its entry.
-2. Have either:
-   - a working USB Ethernet connection for the Microsoft download, or
-   - the MSI named in the trusted firmware policy, on a USB drive's top level
-     or in a `firmware/` directory.
-   Do not rely on built-in Wi-Fi before firmware preparation.
-3. For offline installation using the same SSD, copy the MSI **after preparing
-   the media** to `firmware/` on its writable `AZUREFIN_WORK` partition.
-   This partition is ext4; copying directly from Windows is not supported.
-   Keep another copy of the original MSI. Do not place it in the EFI partition.
-4. In the preparation console, choose download or offline input. The installer
-   validates the MSI and extracted files against the reviewed policy. You may
-   enter the device's Windows **Bluetooth public MAC**, or leave it blank.
-   It is stored only in the installed system, not the published base.
-5. Wait for preparation to complete and graphical Anaconda to appear.
-   Preparation runs before partitioning and needs **at least 30 GiB free**
-   disk-backed workspace. Each attempt retains logs and build data; allow
-   substantial extra room when repeating tests.
-6. Select the internal NVMe as the installation target. Check model and size
-   carefully. Do not select the installer/workspace or MSI-source disk.
-   Reclaiming partitions erases their contents. Enable encryption if wanted
-   and retain the passphrase securely.
-7. Finish installation, shut down, remove the installer and boot the internal
-   SSD. Unlock encryption and complete account setup.
+1. Boot the prepared USB media through UEFI. If the internal OS starts instead,
+   check that USB storage precedes it in the boot order.
+2. Choose offline firmware extraction or download over USB Ethernet.
+   The installer verifies the MSI and extracted files before continuing.
+3. Optionally enter the device's **Bluetooth public address from Windows**.
+   This is not the Wi-Fi MAC address; leave it blank if you do not have it.
+4. Wait for firmware preparation to finish and graphical Anaconda to open.
+5. Select the internal NVMe drive, checking its model and size. Do not select
+   the installer or the drive carrying the MSI. Reclaiming partitions erases
+   their contents. Enable encryption if desired and keep the passphrase safe.
+6. Complete installation, shut down, remove the installation media, and boot
+   the internal SSD. Unlock encryption and finish account setup.
 
-On preparation failure, do not proceed with an unfinalized payload. Diagnostics
-are in `/tmp/azurefin-preparation.log` and the workspace's `launcher.log` /
-per-run directories. Do not delete an active preparation or installation.
+If firmware preparation fails, its log is at
+`/tmp/azurefin-preparation.log`. Repeated attempts use additional workspace;
+check available space before retrying.
 
-## Bluetooth after installation
+## Bluetooth configuration
 
-If you skipped the optional address prompt:
+If you skipped the address during installation, run:
 
 ```sh
-sudo azurefin-extract-firmware --bluetooth-address YOUR:FACTORY:ADDRESS
+sudo azurefin-extract-firmware --bluetooth-address AA:BB:CC:DD:EE:FF
 ```
 
-Replace the placeholder with the actual six-byte colon-separated Bluetooth
-public address from Windows, not the Wi-Fi MAC. Configuration takes effect on
-the next boot; the command does not reboot or disconnect peripherals itself.
-Never add a personal address to the source tree or public image.
+Replace the example with your device's actual Bluetooth public address from
+Windows, then reboot.
 
-## Updates and limitations
+## Current limitations
 
-The provisioned system contains locally extracted firmware. Automatic image
-updates are intentionally disabled in this prototype so an update cannot
-replace it with an unfinalized public base. **Do not run bootc switch to a
-`*-base` tag**, and do not install that base directly onto a disk.
+- Automatic OS image updates are not yet supported for locally provisioned
+  installations. Public `*-base` images are build inputs, not ready-to-boot
+  systems: do not switch an installed system to them.
+- Suspend battery drain and intermittent device initialization still need work.
+- Camera capture works, but colour and flicker tuning remain incomplete.
+- Speaker output uses conservative gain limits; full thermal protection is not
+  validated. Keep the supplied audio profiles and kernel limits.
+- Secure Boot is not supported by the current unsigned kernel.
 
-Secure Boot is not validated. Suspend/battery behavior, camera image quality
-and complete speaker protection still need work. Preserve the tested speaker
-gain limits; do not substitute unrestricted audio profiles.
+## Components and contributing
 
-## Building and releasing
+- [azurefin-linux](https://github.com/Xelef2000/azurefin-linux): kernel RPM.
+- [azurefin-packages](https://github.com/Xelef2000/azurefin-packages): touch input,
+  hardware integration and firmware extraction tools.
+- [Build and release guide](surface/RELEASING.md).
+- [Release content policy](surface/RELEASE-AUDIT.md).
 
-The supported clean path is `Containerfile.romulus --target packages`, not the
-legacy top-level Containerfile. Build the live environment with
-`Containerfile.installer`, `INSTALLER_FIRMWARE=none`, and an immutable clean
-base image ID. Microsoft firmware finalization is a separate local step.
+## Credits and upstream sources
 
-Published numeric GitHub releases (`vMAJOR.MINOR.PATCH`) trigger the component
-workflows when those workflows are present in the tagged commit:
+Azurefin builds on [Fedora Silverblue](https://fedoraproject.org/atomic-desktops/silverblue/),
+[bootc](https://github.com/bootc-dev/bootc),
+[bootc-image-builder](https://github.com/osbuild/bootc-image-builder),
+and [Universal Blue / Bluefin](https://github.com/ublue-os/bluefin).
 
-- `azurefin-linux`: source audit and kernel submission to COPR.
-- `azurefin-packages`: source audit and iptsd, Romulus configuration and
-  firmware-extractor submissions to COPR. The extractor RPM contains tools and
-  policy, not extracted firmware.
-- `azurefin`: audit-gated ARM64 base and live-installer OCI image builds.
-
-Wait for successful COPR binary builds, then pin their exact versions in
-`surface/build/packages.env` before releasing the image. A green submission
-workflow is not proof that COPR finished successfully. Plain tag pushes and
-draft releases do not trigger these workflows.
-
-Generic ISO publication remains blocked until the workspace setup and final
-ISO audit are integrated. No firmware-inclusive image may be published.
-Details and local finalization commands are in
-[RELEASING.md](surface/RELEASING.md).
-
-## Credits
-
-Built on Fedora Silverblue, bootc, Universal Blue / Bluefin tooling,
-linux-surface and iptsd, Qualcomm upstream support, and the Surface Laptop 7
-community's kernel work. Microsoft supplies the Windows update MSI downloaded
-by the user during private firmware preparation.
+Hardware support draws on [nix1e](https://github.com/orvitpng/nix1e),
+[ELLX-Kernel](https://github.com/ProgrammerIn-wonderland/ELLX-Kernel),
+[linux-surface](https://github.com/linux-surface),
+[Alex Lentz's iptsd fork](https://github.com/alex-lentz/iptsd),
+and [Bryce Hoehn's Surface Laptop 7 work](https://github.com/bryce-hoehn/linux-surface-laptop-7).
+Firmware tooling uses Qualcomm's
+[qca-swiss-army-knife](https://github.com/qca/qca-swiss-army-knife).
+Microsoft provides the Surface driver MSI. Azurefin-specific calibration,
+integration and fixes are maintained in these repositories.

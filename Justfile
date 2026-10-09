@@ -206,7 +206,6 @@ _build-bib $target_image $tag $type $config: (_require-disk-image type) (_rootfu
     sudo rmdir $BUILDTMP
     sudo chown -R $USER:$USER output/
 
-
 # Podman builds the image from the Containerfile and creates a bootable image
 # Parameters:
 #   target_image: The name of the image to build (ex. localhost/fedora)
