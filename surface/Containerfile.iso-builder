@@ -28,12 +28,15 @@ path.write_text(source)
 # tree is writable here; squashfs input trees must not be modified in place.
 path = Path('/usr/lib/osbuild/stages/org.osbuild.lorax-script')
 source = path.read_text()
+helper = Path('/usr/libexec/azurefin-reset-installer-machine-id.py').read_text()
+# osbuild stages run in an isolated buildroot without the builder's libexec.
+# Embed the helper at build time; only standard-library imports remain at runtime.
+anchor = 'def main(tree, options):'
+assert source.count(anchor) == 1
+source = source.replace(anchor, helper + '\n\n' + anchor)
 old = '    script()'
 assert source.count(old) == 1
-source = source.replace(old, old + '''
-    import runpy
-    reset = runpy.run_path('/usr/libexec/azurefin-reset-installer-machine-id.py')
-    reset['reset_machine_ids'](tree)''')
+source = source.replace(old, old + '\n    reset_machine_ids(tree)')
 compile(source, str(path), 'exec')
 path.write_text(source)
 
