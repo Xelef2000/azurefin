@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Inspect actual final artifacts, not just the image used to compose them.
-set -euo pipefail
+set -Eeuo pipefail
+status=0
+trap 'status=$?; printf "ISO audit failed at line %s (exit %s): %s\n" "$LINENO" "$status" "$BASH_COMMAND" >&2; exit "$status"' ERR
 [[ $EUID == 0 && $# == 2 ]]
 if [[ ${AZUREFIN_AUDIT_PRIVATE:-0} != 1 ]]; then
     exec unshare --mount --propagation private env AZUREFIN_AUDIT_PRIVATE=1 bash "$0" "$@"

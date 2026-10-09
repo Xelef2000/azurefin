@@ -16,8 +16,8 @@ jobs:
         run: python3 scripts/test_audit_release.py
       - name: Test installer transformations
         working-directory: surface
-        run: python3 -m unittest test_patch_installer_grub.py test_installed_boot.py test_installer_fix_fstab.py test_release_workspace.py test_release_iso_grub.py
+        run: python3 -m unittest test_patch_installer_grub.py test_installed_boot.py test_installer_fix_fstab.py test_release_workspace.py test_release_iso_grub.py test_iso_tools.py
       - name: Check release ISO shell scripts
-        run: shellcheck surface/50-compose-release-iso.sh surface/51-audit-release-iso.sh
+        run: shellcheck surface/40-prepare-romulus-iso.sh surface/50-compose-release-iso.sh surface/51-audit-release-iso.sh surface/52-check-iso-tools.sh
 # Publication is gated by release-romulus.yml and release-iso.yml. Never run the legacy
 # firmware-inclusive Containerfile automatically on a push or pull request.

@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 # Native ARM64, clean CI inputs only. Never accesses physical block devices.
-set -euo pipefail
+set -Eeuo pipefail
+status=0
+trap 'status=$?; printf "ISO composition failed at %s:%s (exit %s): %s\n" "${BASH_SOURCE[0]}" "$LINENO" "$status" "$BASH_COMMAND" >&2; exit "$status"' ERR
 [[ $EUID == 0 && $# == 4 && $(uname -m) == aarch64 ]]
 base=$1 installer=$2 output=$(realpath -m "$3") revision=$4
 [[ $base =~ @sha256:[a-f0-9]{64}$ && $installer =~ @sha256:[a-f0-9]{64}$ ]]
 [[ $revision =~ ^[a-f0-9]{40}$ && ! -e $output ]]
 repo=$(cd -- "$(dirname -- "$0")/.." && pwd)
+bash "$repo/surface/52-check-iso-tools.sh"
 mkdir "$output"
 available=$(df --output=avail -k "$output" | tail -n 1 | tr -d ' ')
 (( available >= 90 * 1024 * 1024 )) || {
@@ -54,7 +57,15 @@ podman run --rm --privileged --security-opt label=disable --network=host \
     --rootfs=xfs --output /output --installer-payload-ref "$base" "$installer"
 mapfile -t sources < <(find "$output/compose" -name '*.iso' -type f)
 mapfile -t dtbs < <(find "$output/modules" -name x1e80100-microsoft-romulus13.dtb -type f)
-[[ ${#sources[@]} == 1 && ${#dtbs[@]} == 1 ]]
+printf 'Composed ISO candidates (%s):\n' "${#sources[@]}"
+printf '  %s\n' "${sources[@]}"
+printf 'Romulus13 DTB candidates (%s):\n' "${#dtbs[@]}"
+printf '  %s\n' "${dtbs[@]}"
+[[ ${#sources[@]} == 1 && ${#dtbs[@]} == 1 ]] || {
+    echo 'Expected exactly one composed ISO and one Romulus13 DTB.' >&2
+    exit 1
+}
+echo 'Preparing Surface boot configuration...'
 # The reviewed patcher has a local-only guard. CI calls it only here, after
 # auditing both firmware-free OCI inputs, and audits the final ISO below.
 GITHUB_ACTIONS=false bash "$repo/surface/40-prepare-romulus-iso.sh" \
