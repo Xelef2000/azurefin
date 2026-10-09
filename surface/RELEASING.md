@@ -34,7 +34,9 @@ It can also be started manually with an existing `release_tag`, including
 `v0.0.1-alpha`, once the workflow has been merged into the default branch.
 It resolves both image references to immutable digests and checks their source
 revision against the release commit. The ISO-builder source is independently
-pinned by digest in `surface/Containerfile.iso-builder`.
+pinned by ARM64 digest in `surface/50-compose-release-iso.sh`. Both the upstream
+builder and patched builder must report ARM64 before composition. The Containerfile
+retains its separate x86 default for the existing local cross-build helper.
 
 Use a native ARM64 runner with **at least 100 GiB free before pulling images**.
 The standard runner may not have sufficient disk space. Set the repository
