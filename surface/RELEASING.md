@@ -65,6 +65,33 @@ reassembly. Firmware-inclusive local ISO helpers remain local-only.
 
 ## Order of operations
 
+### SourceForge full-ISO mirror
+
+`Publish complete ISO to SourceForge` runs after ISO publication when the
+repository variable `SOURCEFORGE_PROJECT` is configured. It can also be run
+manually with an existing release tag, without rebuilding the ISO.
+Set `SOURCEFORGE_USERNAME` and `SOURCEFORGE_PROJECT`, and store a dedicated
+Ed25519 private key in the `SOURCEFORGE_SSH_KEY` Actions secret. Add only its
+public key to the SourceForge account with release-upload permission.
+
+The publisher downloads the public GitHub release assets, requires the final
+audit success marker, and verifies chunk and whole-ISO SHA-256 checksums.
+This verifies the previously audited artifact; it does not rerun the filesystem
+audit or turn the checksum into a signature. It refuses ISOs at or above
+10,000,000,000 bytes, conservatively respecting SourceForge's 10 GB limit.
+The SSH host key is pinned in `surface/sourceforge_known_hosts`, verified against
+SourceForge's published fingerprint documentation.
+
+Only the assembled ISO, its checksum, build information and audit log are
+uploaded to `/home/frs/project/PROJECT/TAG/`. Existing release directories cause
+a failure rather than an overwrite. If a transfer fails partway, inspect that
+directory before arranging recovery; do not blindly rerun or delete releases.
+Mirrors may take time to make new files available. GitHub split assets remain
+available as a fallback. Keep only a reasonable number of large releases on
+SourceForge and consult its storage policy before expanding retention.
+
+### Component release sequence
+
 1. Publish a vMAJOR.MINOR.PATCH or vMAJOR.MINOR.PATCH-alpha GitHub release in azurefin-linux and/or
    azurefin-packages. Their release workflows submit ARM64 builds to COPR.
 2. Wait for successful COPR binary builds, not merely green submission workflows.

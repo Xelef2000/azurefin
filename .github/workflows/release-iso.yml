@@ -82,3 +82,11 @@ jobs:
           cp iso-audit.log assets/
       - name: Publish audited assets without replacing existing files
         run: gh release upload "$RELEASE_TAG" assets/* --repo "$GITHUB_REPOSITORY"
+  sourceforge:
+    needs: iso
+    if: vars.SOURCEFORGE_PROJECT != ''
+    uses: ./.github/workflows/publish-sourceforge.yml
+    with:
+      release_tag: ${{ inputs.release_tag || github.event.workflow_run.head_branch }}
+    secrets:
+      SOURCEFORGE_SSH_KEY: ${{ secrets.SOURCEFORGE_SSH_KEY }}
