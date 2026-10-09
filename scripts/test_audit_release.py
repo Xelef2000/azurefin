@@ -29,8 +29,11 @@ class AuditTests(unittest.TestCase):
                              {hashlib.sha256(b'private').hexdigest()})
 
     def test_nonempty_machine_id(self):
-        with self.assertRaises(ValueError):
-            audit.check_file('etc/machine-id', io.BytesIO(b'id'), 2, set())
+        for name in ('etc/machine-id', 'usr/etc/machine-id'):
+            for value in (b'id', b'\n'):
+                with self.assertRaisesRegex(ValueError, 'Nonempty machine-id:'):
+                    audit.check_file(name, io.BytesIO(value), len(value), set())
+            audit.check_file(name, io.BytesIO(b''), 0, set())
 
     def test_metadata_exception_does_not_allow_surface_path(self):
         # Even with no denied content hash, destination-path protection remains.

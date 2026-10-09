@@ -5,6 +5,7 @@
 # with the ARM64 sibling from the same upstream image index.
 ARG BUILDER_BASE=quay.io/centos-bootc/bootc-image-builder@sha256:afeffdb5a7ab6bb9d0593b5765412c4d821a9492dbaf26bb5a494e27181d2019
 FROM ${BUILDER_BASE}
+COPY surface/reset_installer_machine_id.py /usr/libexec/azurefin-reset-installer-machine-id.py
 RUN python3 - <<'PY'
 from pathlib import Path
 import osbuild.util.containers as containers
@@ -20,6 +21,20 @@ for old, new in (
     assert source.count(old) == 1, f"Unexpected osbuild source: {old}"
     source = source.replace(old, new)
 compile(source, str(path), "exec")
+path.write_text(source)
+
+# Lorax cleanup recreates /etc/machine-id with append, which may leave a newline.
+# Normalize after each template, before subsequent dracut/squashfs stages. The
+# tree is writable here; squashfs input trees must not be modified in place.
+path = Path('/usr/lib/osbuild/stages/org.osbuild.lorax-script')
+source = path.read_text()
+old = '    script()'
+assert source.count(old) == 1
+source = source.replace(old, old + '''
+    import runpy
+    reset = runpy.run_path('/usr/libexec/azurefin-reset-installer-machine-id.py')
+    reset['reset_machine_ids'](tree)''')
+compile(source, str(path), 'exec')
 path.write_text(source)
 
 # Correct the composer's buildstamp path and fail on incomplete installer
