@@ -26,8 +26,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
-            echo "Expected a tag such as v0.1.0" >&2; exit 1;
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-alpha)?$ ]] || {
+            echo "Expected vMAJOR.MINOR.PATCH or vMAJOR.MINOR.PATCH-alpha" >&2; exit 1;
           }
           [[ "$(uname -m)" == aarch64 ]]
           command -v podman >/dev/null || {

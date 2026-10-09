@@ -185,10 +185,10 @@ def main():
     print("Use USB Ethernet to download firmware, or a USB drive containing the MSI.")
     print("The same installer SSD works: copy the MSI to AZUREFIN_WORK/firmware after flashing.")
     tools = root / "support/firmware-tools"
-    metadata = subprocess.check_output([
+    supported_msis = subprocess.check_output([
         "python3", str(tools / "firmware-policy.py"),
-        str(tools / "firmware-policy.json"), "metadata"], text=True)
-    print("Required MSI: " + metadata.splitlines()[0])
+        str(tools / "firmware-policy.json"), "list-msis"], text=True)
+    print("Supported MSIs (first is used for downloads):\n" + supported_msis.strip())
     print("The external installer SSD is workspace only and will be excluded from installation.")
     print("No target disks are changed until you later confirm installation in Anaconda.")
     while True:

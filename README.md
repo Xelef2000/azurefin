@@ -34,8 +34,21 @@ You will need:
 - Either a USB Ethernet connection or the supported Microsoft Surface Laptop 7
   ARM64 driver MSI. Built-in Wi-Fi is not available before firmware preparation.
 
-For offline installation, use the MSI filename specified in
-[the firmware policy](surface/firmware-policy.json). Copy it to the top level
+Download the ARM64 driver MSI from Microsoft's
+[Surface Laptop 7th Edition download page](https://www.microsoft.com/en-us/download/details.aspx?id=106120).
+Download the file only—do not run the Windows installer. The updated firmware
+policy supports both:
+
+- `SurfaceLaptop7_ARM_Win11_26100_26.091.9400.0.msi` (default for downloads).
+- `SurfaceLaptop7_ARM_Win11_26100_26.053.36539.0.msi` (existing offline copies;
+  Microsoft no longer serves this version).
+
+Both MSI checksums and all extracted firmware checksums are pinned in
+[the firmware policy](surface/firmware-policy.json). Other versions are rejected.
+Use installation media built with the updated firmware tools and policy;
+older media only accepts the older MSI. Renaming a file does not bypass checks.
+
+Copy the supported MSI to the top level
 or a `firmware/` directory on a USB drive. With prepared media that includes
 an `AZUREFIN_WORK` partition, you can put it in that partition's `firmware/`
 directory instead. That partition is ext4 and normally needs Linux to write it.

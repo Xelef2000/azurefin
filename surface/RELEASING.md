@@ -22,7 +22,7 @@ local-only ISO restrictions remain in force until generic workspace preparation
 and the composed-artifact audit are integrated. Do not assume built-in Wi-Fi
 works before provisioning; use USB Ethernet or an offline MSI.
 
-ISO builds remain local-only. The proposed release workflow permits only
+ISO builds remain local-only. The release workflow permits only
 audited clean base and Microsoft-firmware-free live-installer OCI images.
 Firmware provisioning is an explicit local operation, using either a supplied
 MSI or the packaged CLI's checksum-pinned downloader. No download runs during
@@ -31,7 +31,7 @@ both OCI inputs, never an ISO or a locally finalized payload.
 
 ## Order of operations
 
-1. Publish a numeric vMAJOR.MINOR.PATCH GitHub release in azurefin-linux and/or
+1. Publish a vMAJOR.MINOR.PATCH or vMAJOR.MINOR.PATCH-alpha GitHub release in azurefin-linux and/or
    azurefin-packages. Their release workflows submit ARM64 builds to COPR.
 2. Wait for successful COPR binary builds, not merely green submission workflows.
 3. Update surface/build/packages.env to the exact published RPM NEVRAs.
@@ -39,8 +39,13 @@ both OCI inputs, never an ISO or a locally finalized payload.
    The tagged commit must contain .github/workflows/release-romulus.yml.
 
 Draft releases and plain tag pushes do not start builds. Published prereleases
-do. Workflows must be present at the release tag; initially target the testing
-branch rather than main. No release or tag has been created automatically.
+do. Tag the reviewed primary-branch commit after the release changes have
+passed CI and been merged. Workflows must be present at the release tag.
+
+Alpha tags map to RPM release `100.MAJOR.MINOR.PATCH.0`; stable tags use
+`100.MAJOR.MINOR.PATCH.1`. The release is stored in the source RPM's spec so
+COPR rebuilds retain it. Check the resulting binary metadata, not only the
+source RPM filename, before updating the image lock file.
 
 ## Image output
 
