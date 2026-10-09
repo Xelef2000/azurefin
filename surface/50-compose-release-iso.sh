@@ -13,7 +13,9 @@ available=$(df --output=avail -k "$output" | tail -n 1 | tr -d ' ')
     exit 1
 }
 for image in "$base" "$installer"; do
-    podman pull --platform linux/arm64 "$image"
+    # Resolution step already pulled these immutable inputs while authenticated.
+    # Do not require registry credentials during privileged composition.
+    podman image exists "$image"
     [[ $(podman inspect --format '{{ index .Labels "org.opencontainers.image.revision" }}' "$image") == "$revision" ]]
 done
 bundle="$output/bundle"
