@@ -1,7 +1,10 @@
 # Local x86-host / ARM64-target workaround for Podman re-exec under qemu-user.
 # Shorter staging paths keep this image's overlay mount options below PAGE_SIZE.
 # No host storage paths or target-system packages are changed.
-FROM quay.io/centos-bootc/bootc-image-builder@sha256:afeffdb5a7ab6bb9d0593b5765412c4d821a9492dbaf26bb5a494e27181d2019
+# Retain the tested x86 local default; native release builds override this
+# with the ARM64 sibling from the same upstream image index.
+ARG BUILDER_BASE=quay.io/centos-bootc/bootc-image-builder@sha256:afeffdb5a7ab6bb9d0593b5765412c4d821a9492dbaf26bb5a494e27181d2019
+FROM ${BUILDER_BASE}
 RUN python3 - <<'PY'
 from pathlib import Path
 import osbuild.util.containers as containers

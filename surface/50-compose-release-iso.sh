@@ -37,7 +37,15 @@ podman cp "$container:/usr/libexec/azurefin/firmware-policy.py" "$bundle/support
 podman cp "$container:/usr/share/azurefin/firmware-policy.json" "$bundle/support/firmware-tools/"
 podman cp "$container:/usr/lib/modules" "$output/modules"
 python3 "$repo/scripts/audit-release.py" tree "$bundle" "$repo/surface/firmware-policy.json"
-podman build -f "$repo/surface/Containerfile.iso-builder" -t localhost/azurefin-iso-builder "$repo"
+builder_base=quay.io/centos-bootc/bootc-image-builder@sha256:a4779fc2307a7c2e82fda09e5c7712871fdb2dfae8a587f61d1dab32e7c4edc8
+podman pull --platform linux/arm64 "$builder_base"
+[[ $(podman inspect --format '{{.Architecture}}' "$builder_base") == arm64 ]] || {
+    echo 'ISO builder must be native ARM64; refusing emulated composition.' >&2
+    exit 1
+}
+podman build --platform linux/arm64 --pull=never --build-arg "BUILDER_BASE=$builder_base" \
+    -f "$repo/surface/Containerfile.iso-builder" -t localhost/azurefin-iso-builder "$repo"
+[[ $(podman inspect --format '{{.Architecture}}' localhost/azurefin-iso-builder) == arm64 ]]
 mkdir "$output/compose"
 podman run --rm --privileged --security-opt label=disable --network=host \
     -v /var/lib/containers/storage:/var/lib/containers/storage \
