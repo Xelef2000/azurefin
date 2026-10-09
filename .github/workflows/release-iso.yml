@@ -1,0 +1,83 @@
+name: Build audited ARM64 installer ISO
+on:
+  workflow_run:
+    workflows: [Release audited Romulus base and installer]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing Azurefin release with successfully published base and installer images
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: iso-${{ inputs.release_tag || github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+jobs:
+  iso:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    # A native ARM64 runner with at least 90 GiB free is required. Override with
+    # a JSON runner label list, e.g. ["self-hosted","Linux","ARM64","azurefin-iso"].
+    runs-on: ${{ fromJSON(vars.AZUREFIN_ISO_RUNNER || '["ubuntu-24.04-arm"]') }}
+    timeout-minutes: 180
+    permissions:
+      contents: write
+      packages: read
+    container:
+      image: registry.fedoraproject.org/fedora:44
+      options: --privileged
+    env:
+      RELEASE_TAG: ${{ inputs.release_tag || github.event.workflow_run.head_branch }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Install composition and inspection tools
+        run: dnf5 install -y git gh podman python3 xorriso mtools grub2-tools-minimal isomd5sum squashfs-tools dracut util-linux findutils coreutils
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - name: Resolve release inputs to immutable digests
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-alpha)?$ ]]
+          [[ $(uname -m) == aarch64 ]]
+          available=$(df --output=avail -k "$RUNNER_TEMP" | tail -n 1 | tr -d ' ')
+          (( available >= 100 * 1024 * 1024 )) || {
+            echo 'At least 100 GiB free required before pulling inputs; configure AZUREFIN_ISO_RUNNER.' >&2
+            exit 1
+          }
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json isDraft --jq '.isDraft == false' | grep -qx true
+          REVISION=$(gh api "repos/$GITHUB_REPOSITORY/commits/$RELEASE_TAG" --jq .sha)
+          owner=${GITHUB_REPOSITORY_OWNER,,}
+          printf '%s' "$GH_TOKEN" | podman login ghcr.io -u "$owner" --password-stdin
+          for kind in base installer; do
+            ref="ghcr.io/$owner/azurefin:$RELEASE_TAG-$kind"
+            podman pull --platform linux/arm64 "$ref"
+            digest=$(podman inspect --format '{{.Digest}}' "$ref")
+            [[ $digest =~ ^sha256:[a-f0-9]{64}$ ]]
+            printf '%s_REF=ghcr.io/%s/azurefin@%s\n' "${kind^^}" "$owner" "$digest" >> "$GITHUB_ENV"
+          done
+          podman logout ghcr.io
+          printf 'RELEASE_REVISION=%s\n' "$REVISION" >> "$GITHUB_ENV"
+      - name: Compose and audit Microsoft-firmware-free ISO
+        shell: bash
+        run: |
+          set -euo pipefail
+          unset GH_TOKEN
+          bash surface/50-compose-release-iso.sh "$BASE_REF" "$INSTALLER_REF" "$RUNNER_TEMP/iso-release" "$RELEASE_REVISION" | tee iso-audit.log
+      - name: Prepare checksummed release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -qx FINAL_ISO_CONTENT_AUDIT_PASSED iso-audit.log
+          mkdir assets
+          # GitHub release assets are capped at 2 GiB each. These are plain byte
+          # chunks; concatenate in filename order to recover the bootable ISO.
+          split -b 1900M -d -a 3 "$RUNNER_TEMP/iso-release/azurefin-aarch64.iso" "assets/azurefin-$RELEASE_TAG-aarch64.iso.part-"
+          (cd assets && sha256sum ./*.part-* > SHA256SUMS)
+          sha256sum "$RUNNER_TEMP/iso-release/azurefin-aarch64.iso" | sed "s|  .*|  azurefin-$RELEASE_TAG-aarch64.iso|" > assets/ISO-SHA256SUM
+          printf 'Release: %s\nRelease commit: %s\nISO workflow commit: %s\nBase: %s\nInstaller: %s\n' "$RELEASE_TAG" "$RELEASE_REVISION" "$GITHUB_SHA" "$BASE_REF" "$INSTALLER_REF" > assets/BUILD-INFO.txt
+          cp iso-audit.log assets/
+      - name: Publish audited assets without replacing existing files
+        run: gh release upload "$RELEASE_TAG" assets/* --repo "$GITHUB_REPOSITORY"
