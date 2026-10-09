@@ -1,11 +1,16 @@
 {
   "schema": 1,
-  "version": "26.053.36539.0",
+  "version": "26.091.9400.0",
   "msi": {
+    "filename": "SurfaceLaptop7_ARM_Win11_26100_26.091.9400.0.msi",
+    "url": "https://download.microsoft.com/download/b7ca2c3f-d320-4795-be0f-529a0117abb4/SurfaceLaptop7_ARM_Win11_26100_26.091.9400.0.msi",
+    "sha512": "87d0e1721016a3e67ff218f431c8ec1296e4db1cefbc1c34777fc80919b7c5fb9c83e23e24fd622332fcefb75047d1bce924b2eae4a9a93d71a61dfd62bec7cf"
+  },
+  "compatible_msis": [{
     "filename": "SurfaceLaptop7_ARM_Win11_26100_26.053.36539.0.msi",
     "url": "https://download.microsoft.com/download/b7ca2c3f-d320-4795-be0f-529a0117abb4/SurfaceLaptop7_ARM_Win11_26100_26.053.36539.0.msi",
     "sha512": "a837256c64446fb44ee452eae269b9d3f8f0a374a39691559128189fd23d3cef38f84be3733a51b7d3103f57bdd6f79c64369ca4d3a7bedfa35298ead9f92c0e"
-  },
+  }],
   "fedora_shared_metadata": [
     {
       "source": "adspr.jsn",
