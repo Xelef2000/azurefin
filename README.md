@@ -37,24 +37,16 @@ You will need:
 
 ### Downloading a release ISO
 
-Full-ISO downloads are being set up on the
-[Azurefin SourceForge files page](https://sourceforge.net/projects/azurefin/files/).
-When a release is available there, download its `.iso` and `ISO-SHA256SUM`,
-then run `sha256sum -c ISO-SHA256SUM` in the download directory. No reassembly
-is needed for a complete ISO. The split GitHub assets below are the fallback.
-
-Download all matching `.iso.part-*` assets, `SHA256SUMS` and `ISO-SHA256SUM`
-from the same [release](https://github.com/Xelef2000/azurefin/releases).
-In a directory containing only that release's files, verify and reassemble
-(replace the version if needed):
+Open the [GitHub release](https://github.com/Xelef2000/azurefin/releases)
+and follow its SourceForge link to download the complete `.iso`. Download
+the attached `ISO-SHA256SUM` from the same release and verify it in your
+download directory:
 
 ```sh
-sha256sum -c SHA256SUMS
-cat azurefin-v0.0.1-alpha-aarch64.iso.part-* > azurefin-v0.0.1-alpha-aarch64.iso
 sha256sum -c ISO-SHA256SUM
 ```
 
-Write the complete ISO, not an individual part, using your preferred image
+No reassembly is needed. Write the complete ISO using your preferred image
 writer. Double-check the destination: writing the image erases that drive.
 For the release installer, also provide an existing USB ext4/XFS/Btrfs
 partition labeled `AZUREFIN_WORK` with at least 30 GiB free. A separate USB

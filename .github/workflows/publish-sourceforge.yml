@@ -6,6 +6,10 @@ on:
         description: Existing GitHub release with audited ISO parts
         required: true
         type: string
+      finalize_only:
+        description: Finalize an already uploaded SourceForge release without uploading again
+        default: false
+        type: boolean
   workflow_call:
     inputs:
       release_tag:
@@ -15,7 +19,7 @@ on:
       SOURCEFORGE_SSH_KEY:
         required: true
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: sourceforge-${{ inputs.release_tag }}
   cancel-in-progress: false
@@ -32,6 +36,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Download and verify published ISO
+        if: inputs.finalize_only != true
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -44,6 +49,7 @@ jobs:
             --pattern BUILD-INFO.txt --pattern iso-audit.log
           python3 surface/assemble_release_iso.py "$RELEASE_TAG" parts upload
       - name: Upload complete ISO with pinned SSH host key
+        if: inputs.finalize_only != true
         env:
           SOURCEFORGE_SSH_KEY: ${{ secrets.SOURCEFORGE_SSH_KEY }}
         shell: bash
@@ -72,3 +78,7 @@ jobs:
             "$SOURCEFORGE_USERNAME@frs.sourceforge.net:/home/frs/project/$SOURCEFORGE_PROJECT/$RELEASE_TAG/"
           printf 'Full ISO: https://sourceforge.net/projects/%s/files/%s/azurefin-%s-aarch64.iso/download\n' \
             "$SOURCEFORGE_PROJECT" "$RELEASE_TAG" "$RELEASE_TAG" >> "$GITHUB_STEP_SUMMARY"
+      - name: Link the ISO and retain only the release checksum
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 surface/finalize_iso_release.py "$GITHUB_REPOSITORY" "$RELEASE_TAG" "$SOURCEFORGE_PROJECT"
