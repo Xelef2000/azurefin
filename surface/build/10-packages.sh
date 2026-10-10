@@ -29,7 +29,7 @@ copr_install_isolated xelef2000/azurefin-kernel "$KERNEL_PACKAGE"
 copr_install_isolated xelef2000/azurefin-iptsd "$IPTSD_PACKAGE"
 copr_install_isolated xelef2000/azurefin-romulus "$ROMULUS_PACKAGE"
 copr_install_isolated xelef2000/azurefin-firmware-tools "$FIRMWARE_TOOLS_PACKAGE"
-dnf5 install -y linux-firmware dracut dracut-network cryptsetup plymouth bluez
+dnf5 install -y linux-firmware dracut dracut-network cryptsetup plymouth bluez podman
 dnf5 clean all
 install -Dm755 /ctx/build/25-check-initramfs.sh /usr/libexec/azurefin-check-initramfs
 

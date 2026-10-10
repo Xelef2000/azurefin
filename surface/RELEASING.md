@@ -13,7 +13,9 @@ set to the verified clean assembly base's immutable image ID. Never derive it
 from a locally provisioned image: removing files does not remove ancestor
 layers. This variant retains Fedora's redistributable firmware, generates a
 live-only initramfs, and checks it for Microsoft paths and per-device data.
-The installed FDE image must still use the normal provisioning path.
+The installed payload now gets a separate firmware-free, OSTree-capable
+bootstrap initramfs. Its first boot and FDE unlock remain hardware test gates;
+the earlier live-environment tests do not validate this new flow.
 
 The ISO workflow audits the composed initrd, SquashFS, EFI filesystem and
 bundled OCI payload as well as image ancestry. Do not assume built-in Wi-Fi
@@ -46,12 +48,16 @@ Fedora container is required for nested Podman/osbuild and loopback mounts.
 Do not use a runner carrying unrelated credentials or workloads. Disk-space
 checks fail explicitly; the workflow does not erase runner directories.
 
-The ISO includes a clean base OCI and trusted firmware preparation tools.
-At boot it asks for exactly one existing, unmounted USB partition labeled
-`AZUREFIN_WORK`, using ext4, XFS or Btrfs, with at least 30 GiB free. It never
-formats or creates this workspace. No machine-specific UUID, drive size,
-firmware binary or Bluetooth address is embedded. Firmware preparation must
-succeed before Anaconda receives an installation source.
+The ISO includes a clean, bootable bootstrap OCI and trusted firmware preparation
+tools. Anaconda installs it directly with interactive disk selection, then copies
+the clean OCI and tools into `/var/lib/azurefin/installer` on the target. No extra
+workspace partition is used. After account setup, the user explicitly runs
+`azurefin-setup-firmware --download` or `--msi PATH`, optionally adding
+`--bluetooth-address MAC`. Preparation uses at least 30 GiB of free internal disk
+space, creates a private local image and stages it with `bootc switch`. It never
+reboots automatically. Automatic bootc image updates stay masked until a safe
+firmware-preserving update path is implemented. No firmware or per-device
+address is embedded in public artifacts.
 
 Final checks inspect the ISO filesystem, the live SquashFS (and any embedded
 root filesystem), its initramfs archives, the EFI filesystem, and every bundled
@@ -129,12 +135,11 @@ There is no automatic stable/latest tag or deployment to a running machine.
 The job retains the installed-RPM manifest, audit reports and pushed OCI
 digests as artifacts. Both images must pass before either is published.
 
-**This is a firmware-free assembly base, not an installable system image.**
-It has the packaged kernel but no finalized Romulus initramfs. The workflow
-selects only the packages stage, which rejects the Microsoft firmware directory
-and a machine-specific Bluetooth address file. The default Containerfile target
-is now the same firmware-free base; use `--target local-image` for firmware builds.
-It never mounts an MSI or runs the firmware-extraction step.
+**The new base is a firmware-free bootstrap system, pending hardware validation.**
+The workflow selects `base-image`, including the Romulus initramfs with OSTree
+support and explicit device tree selection. It rejects Microsoft firmware and
+machine-specific Bluetooth configuration. No MSI is mounted or extracted during
+this build. Use `--target local-image` only for private firmware-inclusive builds.
 
 ## Local finalization
 
@@ -180,7 +185,11 @@ private firmware-inclusive image. It is never enabled in the public base stage.
 Bootloader/DTB selection, encrypted boot and physical hardware validation are
 still tracked in PORTING.md. Successful image assembly alone is not boot validation.
 
-## Experimental installer-time preparation
+## Legacy experimental installer-time preparation
+
+The following describes the older alpha/prototype flow, not the new release
+installer. It is retained as historical test documentation. The new installer
+uses the same preparation backend only after installing the bootstrap system.
 
 The tested live installer can omit Microsoft firmware. Its target
 payload is finalized separately from the firmware-free base, before

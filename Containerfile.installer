@@ -15,8 +15,8 @@ FROM ${BASE_IMAGE}
 ARG INSTALLER_FIRMWARE=local
 
 # The "none" variant must start from the clean packages/base-image stage,
-# never a firmware-inclusive ancestor. It creates a live-only initramfs;
-# installed-system firmware and FDE initramfs are still prepared locally later.
+# never a firmware-inclusive ancestor. It regenerates a live-only initramfs;
+# the separate payload has its own OSTree-capable bootstrap initramfs.
 COPY surface/build/19-check-firmware-free.sh /usr/libexec/azurefin-check-firmware-free
 COPY surface/build/21-installer-firmware-free.sh /usr/libexec/azurefin-installer-firmware-free
 RUN case "$INSTALLER_FIRMWARE" in \
