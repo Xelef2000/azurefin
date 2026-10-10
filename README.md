@@ -13,11 +13,15 @@ It is an independent community project, not an official Fedora or Microsoft prod
   experimental camera support.
 - Full-disk encryption through the graphical Anaconda installer.
 - Homebrew integration for development tools outside the immutable system.
-- Surface firmware downloaded from Microsoft during installation, or extracted
+- Surface firmware downloaded from Microsoft after installation, or extracted
   from an MSI you provide. Public images include Fedora's redistributable
   firmware but not Microsoft-extracted Surface firmware.
 
-*Last updated: 2026-10-09*
+*Last updated: 2026-10-10*
+
+The post-install firmware flow below is under development and has not yet been
+validated on hardware. Existing alpha release media still uses the older
+pre-install preparation flow.
 
 ## Before you install
 
@@ -31,7 +35,8 @@ You will need:
 
 - A backup of any data on the installation target.
 - The charger connected and Secure Boot disabled for the custom kernel.
-- Prepared Azurefin installation media with at least 30 GiB free workspace.
+- Azurefin installation media and at least 30 GiB free on the installed system
+  for the one-time firmware setup. No separate workspace drive is needed.
 - Either a USB Ethernet connection or the supported Microsoft Surface Laptop 7
   ARM64 driver MSI. Built-in Wi-Fi is not available before firmware preparation.
 
@@ -48,11 +53,6 @@ sha256sum -c ISO-SHA256SUM
 
 No reassembly is needed. Write the complete ISO using your preferred image
 writer. Double-check the destination: writing the image erases that drive.
-For the release installer, also provide an existing USB ext4/XFS/Btrfs
-partition labeled `AZUREFIN_WORK` with at least 30 GiB free. A separate USB
-SSD is the simplest option; it is excluded from installation targets. The
-installer asks before using it and does not create or format the workspace.
-The writable workspace can hold your offline MSI in its `firmware/` directory.
 
 Download the ARM64 driver MSI from Microsoft's
 [Surface Laptop 7th Edition download page](https://www.microsoft.com/en-us/download/details.aspx?id=106120).
@@ -68,29 +68,48 @@ Both MSI checksums and all extracted firmware checksums are pinned in
 Use installation media built with the updated firmware tools and policy;
 older media only accepts the older MSI. Renaming a file does not bypass checks.
 
-Copy the supported MSI to the top level
-or a `firmware/` directory on a USB drive. With prepared media that includes
-an `AZUREFIN_WORK` partition, you can put it in that partition's `firmware/`
-directory instead. That partition is ext4 and normally needs Linux to write it.
+For offline setup, keep the supported MSI on a USB drive. After installation,
+remove the installer drive and connect the MSI drive instead.
 
 ## Installation
 
 1. Boot the prepared USB media through UEFI. If the internal OS starts instead,
    check that USB storage precedes it in the boot order.
-2. Choose offline firmware extraction or download over USB Ethernet.
-   The installer verifies the MSI and extracted files before continuing.
-3. Optionally enter the device's **Bluetooth public address from Windows**.
-   This is not the Wi-Fi MAC address; leave it blank if you do not have it.
-4. Wait for firmware preparation to finish and graphical Anaconda to open.
-5. Select the internal NVMe drive, checking its model and size. Do not select
+2. Graphical Anaconda opens without firmware download or a workspace prompt.
+3. Select the internal NVMe drive, checking its model and size. Do not select
    the installer or the drive carrying the MSI. Reclaiming partitions erases
    their contents. Enable encryption if desired and keep the passphrase safe.
-6. Complete installation, shut down, remove the installation media, and boot
+4. Complete installation, shut down, remove the installation media, and boot
    the internal SSD. Unlock encryption and finish account setup.
+5. Install Surface firmware as described below, then reboot.
 
-If firmware preparation fails, its log is at
-`/tmp/azurefin-preparation.log`. Repeated attempts use additional workspace;
-check available space before retrying.
+## Install Surface firmware
+
+Built-in Wi-Fi and other firmware-dependent hardware will not work yet.
+Connect USB Ethernet, then run:
+
+```sh
+sudo azurefin-setup-firmware --download
+```
+
+Or use your downloaded MSI without a network connection:
+
+```sh
+sudo azurefin-setup-firmware --msi /path/to/SurfaceLaptop7_ARM_Win11.msi
+```
+
+Use the actual path to a supported MSI. Both methods verify the MSI and extracted
+firmware against the packaged policy. Optionally append
+`--bluetooth-address AA:BB:CC:DD:EE:FF`, using your device's **Bluetooth public
+address from Windows**, not its Wi-Fi MAC.
+
+The tool builds a private local OS image and stages it for the next boot; it
+does not write into immutable `/usr` or reboot automatically. Reboot when it
+reports success. The installer retains its clean base locally, so offline setup
+does not need a registry download. Preparation logs and intermediate files stay
+under `/var/lib/azurefin/provisioning`; failed builds do not stage a new OS.
+Keep this directory after setup: the staged deployment uses its OCI image.
+Repeated attempts need additional space.
 
 ## Bluetooth configuration
 
@@ -106,8 +125,10 @@ Windows, then reboot.
 ## Current limitations
 
 - Automatic OS image updates are not yet supported for locally provisioned
-  installations. Public `*-base` images are build inputs, not ready-to-boot
-  systems: do not switch an installed system to them.
+  installations. Do not switch a firmware-provisioned system back to the public
+  firmware-free bootstrap image; it would lose Surface firmware support.
+- The new firmware-free first boot, especially encrypted-root unlock, still
+  needs hardware validation before release.
 - Suspend battery drain and intermittent device initialization still need work.
 - Camera capture works, but colour and flicker tuning remain incomplete.
 - Speaker output uses conservative gain limits; full thermal protection is not

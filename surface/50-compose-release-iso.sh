@@ -29,7 +29,7 @@ python3 "$repo/scripts/audit-release.py" oci "$bundle/base-oci" "$repo/surface/f
 python3 "$repo/scripts/audit-release.py" oci "$output/installer-oci" "$repo/surface/firmware-policy.json"
 podman inspect --format '{{.Id}}' "$base" | sed 's/^sha256://' > "$bundle/base-image-id"
 cp -a "$repo/surface/build" "$bundle/support/"
-for name in 28-prepare-installer-payload.sh Containerfile.provision installer_fix_fstab.py installer_prepare.py release_workspace.py; do
+for name in 28-prepare-installer-payload.sh Containerfile.provision installer_fix_fstab.py; do
     cp "$repo/surface/$name" "$bundle/support/"
 done
 # Extract tooling from the exact released RPM image, not a neighboring checkout.

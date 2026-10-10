@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Run explicitly before launching Anaconda. Does not mount or partition disks.
+# Explicit local firmware image build, usable before or after OS installation.
+# Does not mount or partition disks, stage a deployment, or reboot.
 # Keep all intermediate state for diagnosis; never publish the resulting image.
 set -euo pipefail
 if [[ $# -lt 3 || $# -gt 4 || ${GITHUB_ACTIONS:-false} == true ]]; then
@@ -90,4 +91,4 @@ mv -- "$work/container.pending" "$work/container"
 printf '%s\n' "$expected" > "$work/base-image-id"
 printf '%s\n' "$work/container" > "$work/READY"
 echo "PAYLOAD_READY: $work/container"
-echo 'Preparation only: Anaconda has not been started and no disks were partitioned.'
+echo 'Preparation only: no deployment was staged and no disks were partitioned.'

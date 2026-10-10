@@ -70,6 +70,7 @@ sys.path.insert(0, sys.argv[2])
 from release_iso_grub import patch
 text = Path(sys.argv[1]).read_text()
 assert patch(text) == text, 'Unexpected installer Kickstart'
-assert 'set default=romulus-preload-display' in text
+assert 'set default=azurefin-install' in text
+assert text.count('menuentry ') == 1 and 'submenu ' not in text
 PY
 echo FINAL_ISO_CONTENT_AUDIT_PASSED
