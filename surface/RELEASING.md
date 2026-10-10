@@ -60,8 +60,10 @@ security review. A successful compose/audit is not a hardware boot test.
 
 GitHub limits each release asset to less than 2 GiB, so the workflow attaches
 ordered ISO chunks, chunk and whole-ISO SHA-256 checksums, build provenance and
-an audit log. It refuses to overwrite existing assets. See the README for
-reassembly. Firmware-inclusive local ISO helpers remain local-only.
+an audit log as temporary transport assets. After successful SourceForge
+publication, the release retains only the full-ISO link and `ISO-SHA256SUM`.
+It refuses to overwrite existing assets. Firmware-inclusive local ISO helpers
+remain local-only.
 
 ## Order of operations
 
@@ -86,8 +88,14 @@ Only the assembled ISO, its checksum, build information and audit log are
 uploaded to `/home/frs/project/PROJECT/TAG/`. Existing release directories cause
 a failure rather than an overwrite. If a transfer fails partway, inspect that
 directory before arranging recovery; do not blindly rerun or delete releases.
-Mirrors may take time to make new files available. GitHub split assets remain
-available as a fallback. Keep only a reasonable number of large releases on
+Mirrors may take time to make new files available. Finalization checks that the
+full download responds and the mirrored checksum matches GitHub, then replaces
+the release notes with the ISO link and verification instructions and deletes
+only the known temporary assets. Unknown assets cause a refusal. The checksum
+remains attached; build provenance and audit logs remain on SourceForge.
+If upload succeeded but finalization failed, rerun the publisher manually with
+`finalize_only=true`. This does not rebuild or re-upload the ISO. Keep only a
+reasonable number of large releases on
 SourceForge and consult its storage policy before expanding retention.
 
 ### Component release sequence

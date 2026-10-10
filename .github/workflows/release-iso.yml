@@ -84,6 +84,8 @@ jobs:
         run: gh release upload "$RELEASE_TAG" assets/* --repo "$GITHUB_REPOSITORY"
   sourceforge:
     needs: iso
+    permissions:
+      contents: write
     if: vars.SOURCEFORGE_PROJECT != ''
     uses: ./.github/workflows/publish-sourceforge.yml
     with:
