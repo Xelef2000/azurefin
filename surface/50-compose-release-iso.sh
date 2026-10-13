@@ -79,6 +79,7 @@ grub2-script-check "$output/boot/grub.cfg"
 mcopy -o -i "$output/boot/efiboot.img" "$output/boot/grub.cfg" ::/EFI/BOOT/grub.cfg
 xorriso -indev "$output/surface.iso" -outdev "$output/azurefin-aarch64.iso" \
     -boot_image any replay \
+    -rm_r /container -- \
     -map "$output/boot/grub.cfg" /EFI/BOOT/grub.cfg \
     -map "$output/boot/efiboot.img" /images/efiboot.img \
     -map "$bundle" /azurefin \

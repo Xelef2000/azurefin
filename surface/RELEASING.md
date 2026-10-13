@@ -14,8 +14,9 @@ from a locally provisioned image: removing files does not remove ancestor
 layers. This variant retains Fedora's redistributable firmware, generates a
 live-only initramfs, and checks it for Microsoft paths and per-device data.
 The installed payload now gets a separate firmware-free, OSTree-capable
-bootstrap initramfs. Its first boot and FDE unlock remain hardware test gates;
-the earlier live-environment tests do not validate this new flow.
+bootstrap initramfs. Installation and online post-install provisioning were
+reported successful on 2026-10-13. FDE unlock remains an explicit test gate;
+the earlier live-environment tests do not validate it in this new flow.
 
 The ISO workflow audits the composed initrd, SquashFS, EFI filesystem and
 bundled OCI payload as well as image ancestry. Do not assume built-in Wi-Fi
@@ -58,6 +59,11 @@ space, creates a private local image and stages it with `bootc switch`. It never
 reboots automatically. Automatic bootc image updates stay masked until a safe
 firmware-preserving update path is implemented. No firmware or per-device
 address is embedded in public artifacts.
+
+The final ISO removes the composer's unused `/container` payload copy. Its sole
+boot entry selects our Kickstart, which uses `/azurefin/base-oci` for both
+installation and the retained offline setup seed. The final audit requires the
+retained payload and rejects a duplicate `/container` directory.
 
 Final checks inspect the ISO filesystem, the live SquashFS (and any embedded
 root filesystem), its initramfs archives, the EFI filesystem, and every bundled

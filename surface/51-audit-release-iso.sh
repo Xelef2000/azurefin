@@ -38,6 +38,9 @@ audit_initrd() {
 }
 audit_tree "$work/iso"
 test -s "$work/iso/azurefin/base-oci/index.json"
+# Our sole boot entry uses release-installer.ks and its /azurefin/base-oci.
+# The composer's unused /container copy must not inflate release downloads.
+test ! -e "$work/iso/container"
 cmp "$repo/surface/release-installer.ks" "$work/iso/azurefin/install.ks"
 unsquashfs -s "$work/iso/images/install.img" | grep -qx 'Compression xz'
 mount -t squashfs -o loop,ro,nosuid,nodev,noexec "$work/iso/images/install.img" "$work/live"

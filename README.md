@@ -17,11 +17,11 @@ It is an independent community project, not an official Fedora or Microsoft prod
   from an MSI you provide. Public images include Fedora's redistributable
   firmware but not Microsoft-extracted Surface firmware.
 
-*Last updated: 2026-10-10*
+*Last updated: 2026-10-13*
 
-The post-install firmware flow below is under development and has not yet been
-validated on hardware. Existing alpha release media still uses the older
-pre-install preparation flow.
+Installation and online post-install firmware setup have been tested on the
+13-inch model. The existing v0.0.1-alpha media still uses the older pre-install
+preparation flow; the instructions below apply to the new installer.
 
 ## Before you install
 
@@ -127,6 +127,8 @@ Windows, then reboot.
 - Automatic OS image updates are not yet supported for locally provisioned
   installations. Do not switch a firmware-provisioned system back to the public
   firmware-free bootstrap image; it would lose Surface firmware support.
+- Rerunning firmware setup uses the original installer base, not a newer OS
+  release. It is not an OS updater.
 - The new firmware-free first boot, especially encrypted-root unlock, still
   needs hardware validation before release.
 - Suspend battery drain and intermittent device initialization still need work.
