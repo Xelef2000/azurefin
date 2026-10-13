@@ -1,4 +1,4 @@
-# Default output: firmware-free assembly base. Not directly installable.
+# Default output: firmware-free bootstrap system; provision after installation.
 # Microsoft firmware is only added by the explicit local-image target.
 ARG BASE_IMAGE=quay.io/fedora/fedora-silverblue:44
 FROM scratch AS ctx
@@ -13,7 +13,7 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     bash /ctx/build/19-check-firmware-free.sh
 
-# Release CI publishes only the firmware-free packages stage.
+# Release CI publishes only the firmware-free base-image stage below.
 # Select --target local-image explicitly for the firmware-complete image.
 FROM packages AS local-image
 ARG FIRMWARE_SOURCE=msi
@@ -28,4 +28,15 @@ RUN bootc container lint
 
 # Keep the default target independent of all firmware-inclusive layers.
 FROM packages AS base-image
-LABEL org.azurefin.firmware="requires-local-finalization"
+COPY surface/installer_fix_fstab.py /usr/libexec/azurefin-installer-fix-fstab.py
+COPY surface/build/19-check-firmware-free.sh /usr/libexec/azurefin-check-firmware-free
+COPY surface/postinstall_firmware.py /usr/bin/azurefin-setup-firmware
+RUN chmod 0755 /usr/bin/azurefin-setup-firmware
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    bash /ctx/build/21-installer-firmware-free.sh installed \
+    && bash /ctx/build/27-installed-boot.sh
+# Firmware provisioning creates a private local image. Do not automatically
+# replace it with the public bootstrap image on subsequent boots.
+RUN systemctl mask bootc-fetch-apply-updates.timer bootc-fetch-apply-updates.service
+RUN bootc container lint
+LABEL org.azurefin.firmware="post-install-provisioning"

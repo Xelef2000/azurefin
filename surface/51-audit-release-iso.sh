@@ -38,6 +38,9 @@ audit_initrd() {
 }
 audit_tree "$work/iso"
 test -s "$work/iso/azurefin/base-oci/index.json"
+# Our sole boot entry uses release-installer.ks and its /azurefin/base-oci.
+# The composer's unused /container copy must not inflate release downloads.
+test ! -e "$work/iso/container"
 cmp "$repo/surface/release-installer.ks" "$work/iso/azurefin/install.ks"
 unsquashfs -s "$work/iso/images/install.img" | grep -qx 'Compression xz'
 mount -t squashfs -o loop,ro,nosuid,nodev,noexec "$work/iso/images/install.img" "$work/live"
@@ -70,6 +73,7 @@ sys.path.insert(0, sys.argv[2])
 from release_iso_grub import patch
 text = Path(sys.argv[1]).read_text()
 assert patch(text) == text, 'Unexpected installer Kickstart'
-assert 'set default=romulus-preload-display' in text
+assert 'set default=azurefin-install' in text
+assert text.count('menuentry ') == 1 and 'submenu ' not in text
 PY
 echo FINAL_ISO_CONTENT_AUDIT_PASSED
