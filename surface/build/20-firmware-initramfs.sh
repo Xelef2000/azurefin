@@ -32,8 +32,16 @@ done
 printf 'install_items+=" %s "\n' "${firmware[*]}" \
     > /usr/lib/dracut/dracut.conf.d/51-romulus-firmware.conf
 depmod "$kver"
+# dracut copies /root's symlink even for generic images. Its bootc target
+# may be absent in a container until tmpfiles runs on the installed system.
+install -d -m 0700 /var/roothome
 bash /usr/libexec/azurefin-check-initramfs preflight "$kver"
-DRACUT_NO_XATTR=1 dracut --force --no-hostonly --add ostree \
+# Build containers have no syslog socket. Keep console diagnostics enabled;
+# this temporary override must not change logging on the installed system.
+dracut_conf=$(mktemp -d)
+trap 'rm -f -- "$dracut_conf/99-azurefin-build-logging.conf"; rmdir -- "$dracut_conf"' EXIT
+printf 'sysloglvl=0\n' > "$dracut_conf/99-azurefin-build-logging.conf"
+DRACUT_NO_XATTR=1 dracut --add-confdir "$dracut_conf" --force --no-hostonly --add ostree \
     "/usr/lib/modules/$kver/initramfs.img" "$kver"
 test -s "/usr/lib/modules/$kver/initramfs.img"
 bash /usr/libexec/azurefin-check-initramfs verify-ostree "$kver" "/usr/lib/modules/$kver/initramfs.img"

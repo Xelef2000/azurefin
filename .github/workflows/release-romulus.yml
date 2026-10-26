@@ -9,6 +9,9 @@ concurrency:
   cancel-in-progress: false
 jobs:
   image:
+    # A prebuilt release publishes an already audited, hardware-tested ISO.
+    # Do not silently replace its inputs with freshly resolved package builds.
+    if: "!contains(github.event.release.body, '<!-- azurefin:prebuilt-tested-iso -->')"
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 180
     permissions:

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Install Azurefin
+Comment=Install Azurefin to a disk; firmware can be added after installation
+Icon=system-software-install
+Exec=sudo -n --preserve-env=WAYLAND_DISPLAY,XDG_RUNTIME_DIR,DBUS_SESSION_BUS_ADDRESS /usr/bin/python3 /usr/libexec/azurefin-launch-installer.py
+Terminal=false
+Categories=System;
+StartupNotify=false

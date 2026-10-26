@@ -1,5 +1,24 @@
 # Azurefin tagged releases
 
+## Alpha 3: hardware-tested live ISO
+
+`v0.0.3-alpha` publishes the exact October 26 live ISO tested on the Surface:
+6,975,782,912 bytes, SHA-256
+`835cfe7626ad22c54cd81936579e3e24a4b8496a45e03e879d805ea4facd5043`.
+It boots a temporary passwordless GNOME account and launches Anaconda from the
+desktop, while installing a separate clean OS payload. The full artifact audit,
+VM desktop/installer launch, Surface installation, and post-install firmware
+deployment passed. bootc 1.17.1 removes the spurious OCI transport error.
+Firmware preparation can still emit a nonfatal root-cache tmpfiles warning.
+
+This release is marked `<!-- azurefin:prebuilt-tested-iso -->` in its GitHub
+notes. Both image-build and ISO-build workflows honor this marker, including
+manual ISO dispatches, so the legacy installer-only pipeline cannot replace
+the tested artifact. Keep the marker when editing the release notes. Automatic
+live ISO composition remains future work; the workflows documented below still
+apply to unmarked releases. Public release assets are the SourceForge ISO link
+and `ISO-SHA256SUM`. Retire older downloads only after verifying the replacement.
+
 ## Microsoft-firmware-free live installer (experimental)
 
 Offline and Ethernet provisioning/installation, followed by installation from

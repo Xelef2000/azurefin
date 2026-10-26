@@ -1,0 +1,4 @@
+# Local-only continuation of the existing VM prototype; never published.
+FROM localhost/azurefin:alpha3-live-vm
+COPY surface/live-session/vm-check.py /usr/libexec/azurefin-live-vm-check.py
+RUN systemctl mask bootloader-update.service

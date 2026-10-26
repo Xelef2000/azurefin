@@ -1,0 +1,8 @@
+# Local alpha 3 prototype. The installed OCI payload is NOT built from this.
+FROM localhost/azurefin:alpha3-live-enforcing
+COPY surface/live-session/launch-installer.py /usr/libexec/azurefin-launch-installer.py
+COPY surface/live-session/azurefin-install.desktop /usr/share/applications/
+COPY surface/live-session/90-azurefin-live.conf /etc/anaconda/conf.d/
+# With --liveinst Anaconda reads interactive defaults, ignoring --kickstart.
+# This source has no disk selection, automatic partitioning, or live account.
+COPY surface/release-installer.ks /usr/share/anaconda/interactive-defaults.ks

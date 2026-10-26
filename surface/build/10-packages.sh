@@ -30,6 +30,13 @@ copr_install_isolated xelef2000/azurefin-iptsd "$IPTSD_PACKAGE"
 copr_install_isolated xelef2000/azurefin-romulus "$ROMULUS_PACKAGE"
 copr_install_isolated xelef2000/azurefin-firmware-tools "$FIRMWARE_TOOLS_PACKAGE"
 dnf5 install -y linux-firmware dracut dracut-network cryptsetup plymouth bluez podman
+# Older Silverblue bases contain bootc 1.16.10, which incorrectly asks Podman
+# to look up OCI directory references and prints a spurious transport error.
+# Upstream fix: https://github.com/bootc-dev/bootc/pull/2410 (1.16.11).
+# Require this in the clean OS payload: upgrading only the firmware-derived
+# image is too late for the first post-install `bootc switch`.
+dnf5 install -y 'bootc >= 1.16.11'
+bootc --version
 dnf5 clean all
 install -Dm755 /ctx/build/25-check-initramfs.sh /usr/libexec/azurefin-check-initramfs
 

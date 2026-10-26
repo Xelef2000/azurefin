@@ -3,7 +3,9 @@
 set -Eeuo pipefail
 status=0
 trap 'status=$?; printf "ISO audit failed at line %s (exit %s): %s\n" "$LINENO" "$status" "$BASH_COMMAND" >&2; exit "$status"' ERR
-[[ $EUID == 0 && $# == 2 ]]
+[[ $EUID == 0 && ( $# == 2 || $# == 3 ) ]]
+mode=${3:-installer}
+[[ $mode == installer || $mode == live ]]
 if [[ ${AZUREFIN_AUDIT_PRIVATE:-0} != 1 ]]; then
     exec unshare --mount --propagation private env AZUREFIN_AUDIT_PRIVATE=1 bash "$0" "$@"
 fi
@@ -21,6 +23,7 @@ trap cleanup EXIT
 mount -o loop,ro,nosuid,nodev,noexec "$iso" "$work/iso"
 mounts+=("$work/iso")
 checkisomd5 "$iso"
+python3 "$repo/surface/verify_installer_support.py" "$repo/surface" "$work/iso/azurefin/support"
 audit_tree() {
     python3 "$repo/scripts/audit-release.py" tree "$1" "$policy"
     while IFS= read -r -d '' layout; do
@@ -42,8 +45,14 @@ test -s "$work/iso/azurefin/base-oci/index.json"
 # The composer's unused /container copy must not inflate release downloads.
 test ! -e "$work/iso/container"
 cmp "$repo/surface/release-installer.ks" "$work/iso/azurefin/install.ks"
-unsquashfs -s "$work/iso/images/install.img" | grep -qx 'Compression xz'
-mount -t squashfs -o loop,ro,nosuid,nodev,noexec "$work/iso/images/install.img" "$work/live"
+if [[ $mode == live ]]; then
+    squashfs="$work/iso/LiveOS/squashfs.img"
+    test ! -e "$work/iso/images/install.img"
+else
+    squashfs="$work/iso/images/install.img"
+    unsquashfs -s "$squashfs" | grep -qx 'Compression xz'
+fi
+mount -t squashfs -o loop,ro,nosuid,nodev,noexec "$squashfs" "$work/live"
 mounts+=("$work/live")
 audit_tree "$work/live"
 root="$work/live"
@@ -55,6 +64,9 @@ if [[ -f $root/LiveOS/rootfs.img ]]; then
     audit_tree "$root"
 fi
 test -d "$root/usr/lib/modules"
+mapfile -t romulus_dtbs < <(find "$root/usr/lib/modules" -type f -path '*/dtb/qcom/x1e80100-microsoft-romulus13.dtb')
+[[ ${#romulus_dtbs[@]} == 1 ]]
+cmp "$work/iso/images/dtbs/qcom/x1e80100-microsoft-romulus13.dtb" "${romulus_dtbs[0]}"
 audit_initrd "$work/iso/images/pxeboot/initrd.img" "$work/boot-initrd"
 index=0
 while IFS= read -r -d '' initrd; do
@@ -66,14 +78,19 @@ mount -t vfat -o loop,ro,nosuid,nodev,noexec "$work/iso/images/efiboot.img" "$wo
 mounts+=("$work/efi")
 audit_tree "$work/efi"
 cmp "$work/efi/EFI/BOOT/grub.cfg" "$work/iso/EFI/BOOT/grub.cfg"
-python3 - "$work/iso/EFI/BOOT/grub.cfg" "$repo/surface" <<'PY'
+python3 - "$work/iso/EFI/BOOT/grub.cfg" "$repo/surface" "$mode" <<'PY'
 from pathlib import Path
+import runpy
 import sys
 sys.path.insert(0, sys.argv[2])
-from release_iso_grub import patch
 text = Path(sys.argv[1]).read_text()
-assert patch(text) == text, 'Unexpected installer Kickstart'
-assert 'set default=azurefin-install' in text
+if sys.argv[3] == 'live':
+    expected = runpy.run_path(str(Path(sys.argv[2]) / 'live-session/iso_grub.py'))['CONFIG']
+    assert text == expected, 'Unexpected live boot configuration'
+else:
+    from release_iso_grub import patch
+    assert patch(text) == text, 'Unexpected installer Kickstart'
+    assert 'set default=azurefin-install' in text
 assert text.count('menuentry ') == 1 and 'submenu ' not in text
 PY
 echo FINAL_ISO_CONTENT_AUDIT_PASSED

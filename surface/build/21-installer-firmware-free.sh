@@ -31,8 +31,14 @@ for name in gen70500_gmu.bin gen70500_sqe.fw; do
 done
 printf 'install_items+=" %s "\n' "${firmware[*]}" > /usr/lib/dracut/dracut.conf.d/51-romulus-firmware.conf
 depmod "$kver"
+# Resolve bootc's /root symlink before dracut copies the directory layout.
+install -d -m 0700 /var/roothome
 bash /usr/libexec/azurefin-check-initramfs preflight "$kver"
-DRACUT_NO_XATTR=1 dracut --force --no-hostonly "${dracut_args[@]}" "/usr/lib/modules/$kver/initramfs.img" "$kver"
+# Disable only the unavailable build-container syslog destination, not stderr.
+dracut_conf=$(mktemp -d)
+trap 'rm -f -- "$dracut_conf/99-azurefin-build-logging.conf"; rmdir -- "$dracut_conf"' EXIT
+printf 'sysloglvl=0\n' > "$dracut_conf/99-azurefin-build-logging.conf"
+DRACUT_NO_XATTR=1 dracut --add-confdir "$dracut_conf" --force --no-hostonly "${dracut_args[@]}" "/usr/lib/modules/$kver/initramfs.img" "$kver"
 bash /usr/libexec/azurefin-check-initramfs "$verify" "$kver" "/usr/lib/modules/$kver/initramfs.img"
 listing=$(lsinitrd "/usr/lib/modules/$kver/initramfs.img")
 if grep -Eq 'qcom/x1e80100/microsoft|romulus-bluetooth-address|SurfaceLaptop.*\.msi' <<< "$listing"; then

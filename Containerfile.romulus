@@ -24,7 +24,8 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     bash /ctx/build/20-firmware-initramfs.sh
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     bash /ctx/build/27-installed-boot.sh
-RUN bootc container lint
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    bash /ctx/build/29-clean-build-state.sh && bootc container lint
 
 # Keep the default target independent of all firmware-inclusive layers.
 FROM packages AS base-image
@@ -38,5 +39,6 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
 # Firmware provisioning creates a private local image. Do not automatically
 # replace it with the public bootstrap image on subsequent boots.
 RUN systemctl mask bootc-fetch-apply-updates.timer bootc-fetch-apply-updates.service
-RUN bootc container lint
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    bash /ctx/build/29-clean-build-state.sh && bootc container lint
 LABEL org.azurefin.firmware="post-install-provisioning"
