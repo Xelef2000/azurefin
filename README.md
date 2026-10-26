@@ -16,19 +16,22 @@ It is an independent community project, not an official Fedora or Microsoft prod
 - Surface firmware downloaded from Microsoft after installation, or extracted
   from an MSI you provide. Public images include Fedora's redistributable
   firmware but not Microsoft-extracted Surface firmware.
+- Updated bootc tooling for local firmware deployment without the older
+  misleading OCI transport error.
 
-*Last updated: 2026-10-13*
+*Last updated: 2026-10-26*
 
 Installation and online post-install firmware setup have been tested on the
-13-inch model. The existing v0.0.1-alpha media still uses the older pre-install
-preparation flow; the instructions below apply to the new installer.
+13-inch model. Alpha 3 boots into a live GNOME desktop with a passwordless
+`liveuser` account. You can try the desktop before opening **Install Azurefin**.
+Live-session changes are discarded at reboot; your installed system uses its
+own account and does not inherit the live user's passwordless access.
 
 ## Before you install
 
 The 13-inch model has been tested. The 15-inch model is not validated.
-The release ISO workflow is experimental and still needs end-to-end hardware
-validation. Only use ISO assets when they are present on the release; creating
-a release tag alone does not mean the ISO has finished building. See the
+Only use ISO assets linked from the release; creating a release tag alone does
+not mean the ISO has finished building. See the
 [build and release guide](surface/RELEASING.md) if you want to build or contribute.
 
 You will need:
@@ -75,7 +78,8 @@ remove the installer drive and connect the MSI drive instead.
 
 1. Boot the prepared USB media through UEFI. If the internal OS starts instead,
    check that USB storage precedes it in the boot order.
-2. Graphical Anaconda opens without firmware download or a workspace prompt.
+2. From the live GNOME desktop, open **Install Azurefin**. Graphical Anaconda
+   opens without firmware download or a workspace prompt.
 3. Select the internal NVMe drive, checking its model and size. Do not select
    the installer or the drive carrying the MSI. Reclaiming partitions erases
    their contents. Enable encryption if desired and keep the passphrase safe.

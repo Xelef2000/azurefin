@@ -1,0 +1,14 @@
+[Unit]
+Description=Local VM live-session test (not for release)
+After=gdm.service
+Requires=azurefin-live-user.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/libexec/azurefin-live-vm-check.py
+StandardOutput=journal+console
+StandardError=journal+console
+TimeoutStartSec=300
+
+[Install]
+WantedBy=graphical.target

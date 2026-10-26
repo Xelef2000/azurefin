@@ -15,4 +15,5 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     bash /ctx/build/20-firmware-initramfs.sh
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     bash /ctx/build/27-installed-boot.sh
-RUN bootc container lint
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    bash /ctx/build/29-clean-build-state.sh && bootc container lint

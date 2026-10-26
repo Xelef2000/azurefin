@@ -1,0 +1,22 @@
+# Local-only VM prototype. Not used by any publishing workflow.
+ARG BASE_IMAGE=localhost/azurefin-installer:postinstall-test
+FROM ${BASE_IMAGE}
+COPY surface/live-session/setup.py /usr/libexec/azurefin-live-user.py
+COPY surface/live-session/azurefin-live-user.service /usr/lib/systemd/system/
+COPY surface/live-session/gdm-live-user.conf /usr/lib/systemd/system/gdm.service.d/10-live-user.conf
+COPY surface/live-session/vm-check.py /usr/libexec/azurefin-live-vm-check.py
+COPY surface/live-session/azurefin-live-vm-check.service /usr/lib/systemd/system/
+RUN systemctl enable gdm.service azurefin-live-user.service azurefin-live-vm-check.service \
+    && systemctl set-default graphical.target \
+    && systemctl mask anaconda.service anaconda-direct.service anaconda.target anaconda-sshd.service \
+    && mkdir -p /var/home /var/roothome \
+    && truncate -s 0 /etc/machine-id
+# Deliberately exclude Anaconda/OSTree boot hooks: this is a plain disposable
+# live root. Keep the actual Surface kernel, but include virtio for the VM.
+RUN --mount=type=tmpfs,target=/var/roothome \
+    mkdir -p /tmp/empty-dracut \
+    && kver=$(basename /usr/lib/modules/*) \
+    && dracut --force --no-hostonly --conf /dev/null --confdir /tmp/empty-dracut \
+       --add 'dmsquash-live systemd' --omit 'anaconda ostree' \
+       --add-drivers 'virtio_gpu overlay squashfs' \
+       /boot/azurefin-live-vm.initrd "$kver"

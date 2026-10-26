@@ -1,0 +1,13 @@
+[Unit]
+Description=Prepare temporary Azurefin live desktop account
+AssertKernelCommandLine=azurefin.live=1
+After=local-fs.target
+Before=gdm.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/libexec/azurefin-live-user.py
+RemainAfterExit=yes
+
+[Install]
+WantedBy=graphical.target

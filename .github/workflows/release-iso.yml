@@ -15,8 +15,31 @@ concurrency:
   group: iso-${{ inputs.release_tag || github.event.workflow_run.head_branch }}
   cancel-in-progress: false
 jobs:
-  iso:
+  policy:
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    outputs:
+      build: ${{ steps.policy.outputs.build }}
+    steps:
+      - id: policy
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag || github.event.workflow_run.head_branch }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-alpha)?$ ]]
+          prebuilt=$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json body \
+            --jq '.body | contains("<!-- azurefin:prebuilt-tested-iso -->")')
+          if [[ "$prebuilt" == true ]]; then
+            echo 'build=false' >> "$GITHUB_OUTPUT"
+            echo 'Preserving the audited, hardware-tested prebuilt ISO.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'build=true' >> "$GITHUB_OUTPUT"
+          fi
+  iso:
+    needs: policy
+    if: needs.policy.outputs.build == 'true'
     # A native ARM64 runner with at least 90 GiB free is required. Override with
     # a JSON runner label list, e.g. ["self-hosted","Linux","ARM64","azurefin-iso"].
     runs-on: ${{ fromJSON(vars.AZUREFIN_ISO_RUNNER || '["ubuntu-24.04-arm"]') }}
