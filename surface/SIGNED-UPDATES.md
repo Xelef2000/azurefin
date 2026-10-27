@@ -1,7 +1,7 @@
 # Signed OS updates
 
-Implementation status: development/testing. No signed OTA release has yet been
-published or tested on hardware. Alpha 3 predates this updater and cannot use
+Implementation status: development/testing. Signed tag-only candidates have
+been tested on hardware with the private-image updater. Alpha 3 predates this updater and cannot use
 these commands without a reviewed bootstrap migration. Do not unmask the stock
 bootc update timer or switch a firmware-enabled installation to the public base.
 
@@ -9,8 +9,42 @@ bootc update timer or switch a firmware-enabled installation to the public base.
 
 Release CI audits the public base and installer before publishing. It signs
 each immutable digest with Cosign 3 / Sigstore keyless signing, using GitHub's
-OIDC issuer. No long-lived signing private key or new repository secret is
-needed. Signing and verification failures fail the release job.
+OIDC issuer. This keyless path does not require a long-lived private key.
+Signing and verification failures fail the release job.
+
+### Native bootc signature integration (not yet deployed)
+
+The native verifier cannot currently match GitHub Actions' Fulcio URI identity.
+The proposed release workflow therefore adds a second, public-key signature to
+the audited **base only**, retaining the existing keyless signatures on both
+base and installer. `surface/ota-signing.pub` is the native trust anchor;
+`cosign.pub` is unrelated and is not replaced. The native key must never sign
+installer images, development builds or non-bootable test fixtures.
+
+The encrypted private key and password are repository Actions secrets named
+`AZUREFIN_OTA_SIGNING_KEY` and `AZUREFIN_OTA_SIGNING_PASSWORD`. These are repository
+secrets, not a separately approval-protected GitHub environment: repository and
+workflow write access are part of the signing trust boundary. Only the tagged
+release signing step receives them. Maintain a restricted offline backup and
+review workflow changes before allowing a release to use the key.
+
+Public-key fingerprint (SHA-256 of DER SubjectPublicKeyInfo):
+`c784e8b27ac8400842a580c9a8e6bb1c123555ca37812641365b69c0a18fbd65`.
+
+Cosign 3.1.4 uses legacy attachments for this additional signature because that
+is the format consumed by containers/image. Transparency logging and Cosign's
+verification remain enabled. Native public-key policy authenticates the key,
+digest and repository; it does **not** enforce our release/component annotations
+or prevent replay of an older valid image. Do not describe it as release-tag
+freshness enforcement. Key rotation needs an overlap release trusting both
+public keys before switching signers; compromise requires explicit recovery
+and removal of the compromised key, not merely generating another key.
+
+`scripts/test-native-signatures.py` passes offline acceptance and rejection
+tests. The manual registry test uses disposable keys and anonymous reads;
+it must pass before production signing is enabled in a merged workflow.
+No native policy or public-key trust has been installed on the Surface, and
+automatic bootc updates remain disabled pending end-to-end migration tests.
 
 `azurefin-update` accepts only `ghcr.io/xelef2000/azurefin`, the exact
 `release-romulus.yml@refs/tags/VERSION` certificate identity, GitHub's OIDC

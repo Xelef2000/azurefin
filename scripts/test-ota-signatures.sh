@@ -67,4 +67,7 @@ update.fetch(Path(os.environ['OTA_TEST_WORK']), ref, manifest)
 print('PRODUCTION_DIGEST_FETCH_PASSED')
 PY
 printf '%s\n' "$signed" "$unsigned" > ota-signature-results/references.txt
+bash scripts/test-native-registry-signatures.sh "$signed" "$unsigned"
+# Adding legacy native signatures must not break the existing keyless path.
+"${verify[@]}" -a release="$tag" -a component=base "$signed" > ota-signature-results/keyless-after-native.json
 echo 'REAL_SIGNATURE_INTEGRATION_PASSED' | tee ota-signature-results/result.txt
