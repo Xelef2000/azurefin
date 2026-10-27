@@ -25,8 +25,11 @@ image uses a different manifest.
 ## Validation and remaining gates
 
 The generic loader has passed local hardware boot, rollback and return tests.
-The release-recipe wiring is covered by source-level regression tests, but a
-fresh release-base build and complete layer/initramfs audit are still required.
+The release-recipe wiring is covered by source-level regression tests. A fresh
+local ARM64 release-base build passed bootc lint (14 checks, one skipped),
+the complete 85-layer audit and unpacked initramfs audit. Its loader and
+manifest matched the reviewed sources. This is not yet a signed candidate or
+a hardware test of that fresh image.
 
 Before enabling normal public-image updates:
 
@@ -47,3 +50,17 @@ change that workflow or modify existing deployments.
 Tests: from `surface/`, run `python3 -m unittest test_firmware_bundle
 test_firmware_store_probe test_firmware_loader test_firmware_store_build`
 (as one command).
+
+### Read-only migration diagnostic
+
+`sudo python3 surface/firmware_preflight.py` (from a checkout) checks the booted
+image's policy and manifest, a separate writable ext4 `/boot`, the matching
+local boot UUID argument, root-owned store directories, all required firmware
+hashes and a conservative 512 MiB free-space floor. It prints JSON and returns
+nonzero on failure; it never deletes, provisions, stages or reboots anything.
+It is a development diagnostic, not yet installed in the image. Its eight
+unit tests run with `python3 -m unittest test_firmware_preflight` from `surface/`.
+
+A pass is not evidence of signature enforcement or compatibility with a future
+image. Target-image policy checks, sizing for the actual deployment, locking
+and recovery must still be integrated before enabling unattended updates.
