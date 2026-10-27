@@ -18,6 +18,8 @@ It is an independent community project, not an official Fedora or Microsoft prod
   firmware but not Microsoft-extracted Surface firmware.
 - Updated bootc tooling for local firmware deployment without the older
   misleading OCI transport error.
+- The next image includes kernel support for Fedora's workstation firewall,
+  including IPv6 reverse-path filtering and Samba-client connection tracking.
 - Signed-update tooling under development: verifies the release base before
   rebuilding firmware locally. This is not yet enabled on released installations.
 
