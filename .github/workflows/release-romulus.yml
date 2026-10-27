@@ -17,6 +17,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
     env:
       RELEASE_TAG: ${{ github.event.release.tag_name }}
       REGISTRY_OWNER: ${{ github.repository_owner }}
@@ -39,6 +40,9 @@ jobs:
           }
           printf 'IMAGE=ghcr.io/%s/azurefin:%s-base\n' "${REGISTRY_OWNER,,}" "$RELEASE_TAG" >> "$GITHUB_ENV"
           printf 'INSTALLER=ghcr.io/%s/azurefin:%s-installer\n' "${REGISTRY_OWNER,,}" "$RELEASE_TAG" >> "$GITHUB_ENV"
+      - uses: sigstore/cosign-installer@b9c35392b7c1401bcc77d30c9b07cf4b1c7a7b07
+        with:
+          cosign-release: v3.1.4
       - name: Build firmware-free ARM64 base
         shell: bash
         run: |
@@ -77,10 +81,26 @@ jobs:
         run: |
           set -euo pipefail
           printf '%s' "$GHCR_TOKEN" | podman login ghcr.io -u "$REGISTRY_OWNER" --password-stdin
+          export DOCKER_CONFIG="$RUNNER_TEMP/azurefin-cosign-auth"
+          mkdir -m 0700 -p "$DOCKER_CONFIG"
+          printf '%s' "$GHCR_TOKEN" | cosign login ghcr.io -u "$REGISTRY_OWNER" --password-stdin
           unset GHCR_TOKEN
           trap 'podman logout ghcr.io' EXIT
           podman push --digestfile release-metadata/digest.txt "$IMAGE"
           podman push --digestfile release-metadata/installer-digest.txt "$INSTALLER"
+          # Sign immutable digests, not mutable tags. Bind the requested release
+          # and component into the signed payload as well as the certificate.
+          for component in base installer; do
+            digestfile=release-metadata/digest.txt
+            [[ "$component" == base ]] || digestfile=release-metadata/installer-digest.txt
+            reference="${IMAGE%:*}@$(cat "$digestfile")"
+            cosign sign --yes -a "release=$RELEASE_TAG" -a "component=$component" "$reference"
+            cosign verify \
+              --certificate-identity "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/.github/workflows/release-romulus.yml@refs/tags/$RELEASE_TAG" \
+              --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+              -a "release=$RELEASE_TAG" -a "component=$component" "$reference" \
+              > "release-metadata/$component-signature.json"
+          done
           {
             printf 'Image: %s\n\n' "$IMAGE"
             printf 'Digest: %s\n\n' "$(cat release-metadata/digest.txt)"
