@@ -51,5 +51,10 @@ jobs:
         run: python3 -m unittest test_patch_installer_grub.py test_installed_boot.py test_installer_fix_fstab.py test_release_workspace.py test_release_iso_grub.py test_iso_tools.py test_reset_installer_machine_id.py test_live_user.py test_live_media_local.py test_verify_installer_support.py test_update.py
       - name: Check release ISO shell scripts
         run: shellcheck surface/40-prepare-romulus-iso.sh surface/50-compose-release-iso.sh surface/51-audit-release-iso.sh surface/52-check-iso-tools.sh surface/live-session/*.sh surface/build/16-ota-tools.sh scripts/test-ota-signatures.sh scripts/test-native-registry-signatures.sh scripts/sign-native-ota.sh
+      - name: Test firmware store and generic loader
+        working-directory: surface
+        run: python3 -m unittest test_firmware_bundle.py test_firmware_store_probe.py test_firmware_loader.py test_firmware_store_build.py
+      - name: Check firmware-store shell scripts
+        run: shellcheck surface/build/20-firmware-store.sh surface/dracut/91azurefin-firmware/*.sh
 # Publication is gated by release-romulus.yml and release-iso.yml. Never run the legacy
 # firmware-inclusive Containerfile automatically on a push or pull request.
