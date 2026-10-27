@@ -36,6 +36,8 @@ COPY surface/build/19-check-firmware-free.sh /usr/libexec/azurefin-check-firmwar
 COPY surface/postinstall_firmware.py /usr/bin/azurefin-setup-firmware
 COPY surface/postinstall_firmware.py /usr/libexec/azurefin/postinstall_firmware.py
 COPY surface/update.py /usr/libexec/azurefin/update.py
+COPY surface/firmware_bundle.py surface/firmware_store_probe.py /usr/libexec/azurefin/
+COPY surface/dracut/91azurefin-firmware /usr/lib/dracut/modules.d/91azurefin-firmware
 COPY surface/build /usr/share/azurefin/update-support/build
 COPY surface/28-prepare-installer-payload.sh surface/Containerfile.provision surface/installer_fix_fstab.py /usr/share/azurefin/update-support/
 RUN mkdir -p /usr/share/azurefin/update-support/firmware-tools \
@@ -44,6 +46,8 @@ RUN mkdir -p /usr/share/azurefin/update-support/firmware-tools \
     && chmod 0755 /usr/libexec/azurefin/update.py \
     && ln -s /usr/libexec/azurefin/update.py /usr/bin/azurefin-update
 RUN chmod 0755 /usr/bin/azurefin-setup-firmware
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    bash /ctx/build/20-firmware-store.sh
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     bash /ctx/build/21-installer-firmware-free.sh installed \
     && bash /ctx/build/27-installed-boot.sh
