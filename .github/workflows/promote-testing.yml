@@ -1,0 +1,52 @@
+name: Promote signed base to testing channel
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: Existing audited release tag (for example v0.0.7-alpha)
+        required: true
+        type: string
+      digest:
+        description: Exact signed base image digest (sha256 followed by colon and hash)
+        required: true
+        type: string
+      expected_current:
+        description: Current testing digest, or absent for first publication
+        required: true
+        default: absent
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: azurefin-testing-channel
+  cancel-in-progress: false
+jobs:
+  promote:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - uses: sigstore/cosign-installer@b9c35392b7c1401bcc77d30c9b07cf4b1c7a7b07
+        with:
+          cosign-release: v3.1.4
+      - name: Install registry tools
+        run: sudo apt-get update && sudo apt-get install -y skopeo
+      - name: Verify and promote existing base
+        env:
+          RELEASE_TAG: ${{ inputs.release }}
+          IMAGE_DIGEST: ${{ inputs.digest }}
+          EXPECTED_CURRENT: ${{ inputs.expected_current }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash scripts/promote-testing.sh
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: testing-promotion-${{ github.run_id }}
+          path: promotion-results/
+          if-no-files-found: warn
