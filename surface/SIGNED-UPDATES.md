@@ -58,8 +58,8 @@ Bluetooth configuration in `/etc` is not overwritten by the update tool.
 ## Before enabling OTA for users
 
 - [ ] Review and merge the implementation; publish a signed test release.
-- [ ] Verify actual valid, unsigned, wrong-identity and tampered image cases,
-      not just command orchestration tests.
+- [x] Verify real valid and unsigned images, wrong identity/issuer/claims,
+      substituted tags, and digest-preserving OCI downloads (manual CI fixtures).
 - [ ] Test firmware rebuilding/staging in a VM and on the Surface, including
       LUKS unlock, input, Wi-Fi, audio safety settings and Bluetooth retention.
 - [ ] Test interrupted downloads/builds and rollback to the previous deployment.
@@ -69,6 +69,25 @@ Bluetooth configuration in `/etc` is not overwritten by the update tool.
 
 Prebuilt-tested-ISO releases remain excluded by the existing release marker.
 Do not re-sign alpha 3 as if it had been produced by this new workflow.
+
+## Validation evidence (2026-10-27)
+
+- [Manual signature run](https://github.com/Xelef2000/azurefin/actions/runs/40506105875)
+  passed using two tiny, non-bootable GHCR fixtures. Negative-case logs showed
+  the expected signature, identity and annotation failures, not network errors.
+  These test-workflow signatures are explicitly rejected under the production
+  release-workflow identity.
+- Anonymous GHCR reads and Cosign verification were independently confirmed
+  after the container package was made public. CI credentials alone are not
+  sufficient evidence that installed systems can download updates.
+- Local ARM64 base `ac9270c0b8f552b104e7315f85efaa9de5e0725987ea24583fb027b614d89f27`
+  built successfully; updater help, Cosign, Skopeo and bootc ran in the image.
+  All 82 OCI layers passed the release-content audit. Automatic bootc updates
+  remain masked. This local image is not a signed release.
+- Its two lint warnings came from `/var/log/dnf5.log.1`. The updated cleanup
+  removed only DNF log rotations in a disposable container; lint then passed
+  14 checks, skipped one, and reported no warnings. A rebuilt image is still
+  required to include that cleanup change.
 
 References: [Cosign verification](https://github.com/sigstore/cosign/blob/main/doc/cosign_verify.md)
 and [bootc security model](https://bootc.dev/bootc/bootc-security.7.html).
