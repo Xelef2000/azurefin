@@ -10,3 +10,7 @@ set -euo pipefail
 dnf5 clean all
 rm -rf -- /run/dnf /var/cache/libdnf5 /var/lib/dnf/repos
 rm -f -- /var/log/dnf5.log /var/cache/ldconfig/aux-cache
+# Repeated package transactions can rotate the log before this final cleanup.
+# Match only DNF's numbered rotations, not other image logs.
+find /var/log -maxdepth 1 -type f -regextype posix-extended \
+    -regex '/var/log/dnf5\.log\.[0-9]+(\.gz)?' -delete

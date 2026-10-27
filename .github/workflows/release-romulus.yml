@@ -2,28 +2,32 @@ name: Release audited Romulus base and installer
 on:
   release:
     types: [published]
+  # A tag-only candidate permits OTA testing before publishing a GitHub release.
+  # Dispatch using a reviewed version tag, never a branch.
+  workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: romulus-release-${{ github.event.release.tag_name }}
+  group: romulus-release-${{ github.event.release.tag_name || github.ref_name }}
   cancel-in-progress: false
 jobs:
   image:
     # A prebuilt release publishes an already audited, hardware-tested ISO.
     # Do not silently replace its inputs with freshly resolved package builds.
-    if: "!contains(github.event.release.body, '<!-- azurefin:prebuilt-tested-iso -->')"
+    if: "(github.event_name == 'release' && !contains(github.event.release.body, '<!-- azurefin:prebuilt-tested-iso -->')) || (github.event_name == 'workflow_dispatch' && github.ref_type == 'tag')"
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 180
     permissions:
       contents: read
       packages: write
+      id-token: write
     env:
-      RELEASE_TAG: ${{ github.event.release.tag_name }}
+      RELEASE_TAG: ${{ github.event.release.tag_name || github.ref_name }}
       REGISTRY_OWNER: ${{ github.repository_owner }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ github.event.release.tag_name || github.ref_name }}
           persist-credentials: false
       - name: Prepare builder
         shell: bash
@@ -39,6 +43,9 @@ jobs:
           }
           printf 'IMAGE=ghcr.io/%s/azurefin:%s-base\n' "${REGISTRY_OWNER,,}" "$RELEASE_TAG" >> "$GITHUB_ENV"
           printf 'INSTALLER=ghcr.io/%s/azurefin:%s-installer\n' "${REGISTRY_OWNER,,}" "$RELEASE_TAG" >> "$GITHUB_ENV"
+      - uses: sigstore/cosign-installer@b9c35392b7c1401bcc77d30c9b07cf4b1c7a7b07
+        with:
+          cosign-release: v3.1.4
       - name: Build firmware-free ARM64 base
         shell: bash
         run: |
@@ -77,10 +84,26 @@ jobs:
         run: |
           set -euo pipefail
           printf '%s' "$GHCR_TOKEN" | podman login ghcr.io -u "$REGISTRY_OWNER" --password-stdin
+          export DOCKER_CONFIG="$RUNNER_TEMP/azurefin-cosign-auth"
+          mkdir -m 0700 -p "$DOCKER_CONFIG"
+          printf '%s' "$GHCR_TOKEN" | cosign login ghcr.io -u "$REGISTRY_OWNER" --password-stdin
           unset GHCR_TOKEN
           trap 'podman logout ghcr.io' EXIT
           podman push --digestfile release-metadata/digest.txt "$IMAGE"
           podman push --digestfile release-metadata/installer-digest.txt "$INSTALLER"
+          # Sign immutable digests, not mutable tags. Bind the requested release
+          # and component into the signed payload as well as the certificate.
+          for component in base installer; do
+            digestfile=release-metadata/digest.txt
+            [[ "$component" == base ]] || digestfile=release-metadata/installer-digest.txt
+            reference="${IMAGE%:*}@$(cat "$digestfile")"
+            cosign sign --yes -a "release=$RELEASE_TAG" -a "component=$component" "$reference"
+            cosign verify \
+              --certificate-identity "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/.github/workflows/release-romulus.yml@refs/tags/$RELEASE_TAG" \
+              --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+              -a "release=$RELEASE_TAG" -a "component=$component" "$reference" \
+              > "release-metadata/$component-signature.json"
+          done
           {
             printf 'Image: %s\n\n' "$IMAGE"
             printf 'Digest: %s\n\n' "$(cat release-metadata/digest.txt)"
@@ -89,7 +112,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: image-metadata-${{ github.event.release.tag_name }}
+          name: image-metadata-${{ github.event.release.tag_name || github.ref_name }}
           path: release-metadata/
           if-no-files-found: error
           retention-days: 90

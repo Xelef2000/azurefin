@@ -18,8 +18,10 @@ It is an independent community project, not an official Fedora or Microsoft prod
   firmware but not Microsoft-extracted Surface firmware.
 - Updated bootc tooling for local firmware deployment without the older
   misleading OCI transport error.
+- Signed-update tooling under development: verifies the release base before
+  rebuilding firmware locally. This is not yet enabled on released installations.
 
-*Last updated: 2026-10-26*
+*Last updated: 2026-10-27*
 
 Installation and online post-install firmware setup have been tested on the
 13-inch model. Alpha 3 boots into a live GNOME desktop with a passwordless
@@ -131,6 +133,7 @@ Windows, then reboot.
 - Automatic OS image updates are not yet supported for locally provisioned
   installations. Do not switch a firmware-provisioned system back to the public
   firmware-free bootstrap image; it would lose Surface firmware support.
+  See [signed-update development status](surface/SIGNED-UPDATES.md).
 - Rerunning firmware setup uses the original installer base, not a newer OS
   release. It is not an OS updater.
 - The new firmware-free first boot, especially encrypted-root unlock, still
