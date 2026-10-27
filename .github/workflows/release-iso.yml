@@ -16,7 +16,9 @@ concurrency:
   cancel-in-progress: false
 jobs:
   policy:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    # Tag-only OTA candidates are not installer releases. Do not compose an ISO
+    # when release-romulus was manually dispatched for signature/OTA testing.
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'release')
     runs-on: ubuntu-24.04
     outputs:
       build: ${{ steps.policy.outputs.build }}

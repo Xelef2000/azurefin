@@ -70,6 +70,21 @@ Bluetooth configuration in `/etc` is not overwritten by the update tool.
 Prebuilt-tested-ISO releases remain excluded by the existing release marker.
 Do not re-sign alpha 3 as if it had been produced by this new workflow.
 
+### Tag-only candidate builds
+
+After reviewing and merging the workflow changes, a maintainer may explicitly
+create a new version tag and manually dispatch `release-romulus.yml` at that
+tag. Branch dispatches are skipped. This uses the same release-tag signing
+identity as the eventual release, but creates no GitHub release or ISO.
+The ISO workflow ignores manually dispatched candidate builds. Both workflow
+changes must be on the default branch before using this path, because GitHub
+loads the downstream `workflow_run` policy from that branch.
+
+Creating a candidate tag and publishing its images requires explicit maintainer
+approval. A successfully signed candidate still requires boot/update testing;
+do not treat it as a validated public release. Do not move a published signed
+candidate tag to different code: corrections need a new version.
+
 ## Validation evidence (2026-10-27)
 
 - [Manual signature run](https://github.com/Xelef2000/azurefin/actions/runs/40506105875)
@@ -88,6 +103,16 @@ Do not re-sign alpha 3 as if it had been produced by this new workflow.
   removed only DNF log rotations in a disposable container; lint then passed
   14 checks, skipped one, and reported no warnings. A rebuilt image is still
   required to include that cleanup change.
+- The ARM64 image's Cosign binary verified the public test signature and rejected
+  it under the production release identity, without registry credentials.
+- Local offline firmware preparation completed using tools exported from that
+  audited base. MSI/extracted-file verification, initramfs preflight and final
+  verification, and OCI export passed. Result:
+  `2ce18443d7e3291825a90f6f8610e8bd502d594bb5d0c2aeeadcf463b4a7291e`,
+  labelled `locally-provisioned-do-not-publish`. Nothing was staged or uploaded.
+  This used the pre-cleanup base and retained its DNF log warning plus the known
+  root-cache tmpfiles warning. It is a preparation test, not an end-to-end signed
+  release deployment or successful boot/rollback test.
 
 References: [Cosign verification](https://github.com/sigstore/cosign/blob/main/doc/cosign_verify.md)
 and [bootc security model](https://bootc.dev/bootc/bootc-security.7.html).
