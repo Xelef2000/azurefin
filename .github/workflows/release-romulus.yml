@@ -110,6 +110,15 @@ jobs:
             printf 'Firmware-free bootstrap system: run azurefin-setup-firmware after installation.\n'
             printf '\nInstaller build input: %s\nFedora redistributable firmware is included; Microsoft-extracted firmware is excluded.\n' "$INSTALLER"
           } >> "$GITHUB_STEP_SUMMARY"
+      - name: Add native OTA signature to audited base only
+        shell: bash
+        env:
+          AZUREFIN_OTA_SIGNING_KEY: ${{ secrets.AZUREFIN_OTA_SIGNING_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.AZUREFIN_OTA_SIGNING_PASSWORD }}
+        run: |
+          set -euo pipefail
+          export DOCKER_CONFIG="$RUNNER_TEMP/azurefin-cosign-auth"
+          bash scripts/sign-native-ota.sh "${IMAGE%:*}@$(cat release-metadata/digest.txt)"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: image-metadata-${{ github.event.release.tag_name || github.ref_name }}
