@@ -2,7 +2,7 @@
 # This configuration creates a bootable ISO image for installing your custom bootc image.
 #
 # The installer will guide users through disk partitioning and basic system setup,
-# then automatically switch to your custom image on first boot.
+# then configure its signed update source without downloading another image.
 
 # Keep disk selection interactive and repair the installed composefs fstab.
 [customizations.installer.kickstart]
@@ -10,6 +10,11 @@ contents = """
 graphical
 %post --erroronfail --log=/var/log/azurefin-fstab-post.log
 python3 /usr/libexec/azurefin-installer-fix-fstab.py
+%end
+%post --erroronfail --log=/var/log/azurefin-update-channel-post.log
+set -eu
+# Installer-only origin rewrite; no registry access or new deployment.
+bootc switch --mutate-in-place --transport registry --enforce-container-sigpolicy ghcr.io/xelef2000/azurefin:testing
 %end
 """
 

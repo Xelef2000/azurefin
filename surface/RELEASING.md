@@ -77,8 +77,10 @@ workspace partition is used. After account setup, the user explicitly runs
 space for extraction and provisions a verified, versioned firmware bundle on
 the separate ext4 `/boot`. It configures the early-boot loader without rebuilding
 or switching the OS image, and never reboots automatically. The retained OCI is
-not required by this setup path. Automatic OS updates stay masked pending signed
-update and rollback validation. No Microsoft-extracted firmware or per-device
+not required by this setup path. The installer now configures the signed registry
+origin through bootc's offline, in-place Anaconda hook; scheduled updates still
+require a provisioned firmware store. Rebuilt media must pass an offline install
+and first-boot origin check before publication. No Microsoft-extracted firmware or per-device
 address is embedded in public artifacts.
 
 The final ISO removes the composer's unused `/container` payload copy. Its sole
