@@ -1,8 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Application Updates (Preview)
-Comment=Update Flatpak applications and Homebrew; OS updates are not enabled yet
-Icon=system-software-update
-Categories=System;
-Terminal=true
-Exec=sudo /usr/bin/uupd --hw-check=false --disable-module-system

@@ -1,8 +1,9 @@
-# Universal Blue updater and Bazaar preview
+# System Update and Bazaar
 
 This testing branch packages Universal Blue's `uupd` without forking its
 update engine. Bazaar replaces GNOME Software as the application store.
-This is not yet the final System Update interface.
+The development branch adds the System Update interface described below. It is
+not yet included in the tested `v0.0.9-alpha` image.
 
 ## Bazaar on fresh installations
 
@@ -43,11 +44,42 @@ Open **Bazaar** from the application menu. It installs Flatpak applications;
 it does not update the operating system. Its initial download includes a
 GNOME runtime. Offline firmware installation does not require Bazaar.
 
-The preview image adds **Application Updates (Preview)** for manual Flatpak
-and Homebrew updates using upstream `uupd`. It does not reboot, update the OS,
-or enable an automatic update timer. Distrobox updates are disabled, matching
-Bluefin's configuration. Existing Homebrew timers are unchanged in this preview;
-they must be consolidated before enabling scheduled `uupd` updates.
+## Manual system updates
+
+Open **System Update**, or run `ujust update` (`ujust upgrade` is an alias).
+Following Bluefin's manual recipe, this calls upstream `bootc upgrade`, then
+updates system/user Flatpaks and Homebrew packages owned by the desktop user.
+It requests sudo authentication for OS staging and never reboots automatically.
+
+Azurefin adds a preflight under the firmware setup lock. It requires an installed
+system following the signed `:testing` channel, no pending deployment/rollback or
+development overlay, a verified firmware store, at least 768 MiB free on `/boot`
+and 10 GiB on `/var`, and matching target firmware contract metadata. It never
+deletes pinned deployments to recover space. After staging an OS update, reboot
+before running another update. Bazaar can still update apps independently.
+
+This is not a replacement update engine: bootc still performs downloads,
+signature enforcement and deployment. The target-metadata check is an early
+compatibility check, not a substitute for signature verification.
+
+## Scheduling safeguards (not enabled yet)
+
+The prepared systemd drop-ins use Bluefin's six-hour schedule with ten minutes
+of jitter, AC-power and live-session conditions, upstream uupd hardware checks,
+and the same firmware lock/preflight as manual updates. They never use `--apply`.
+`uupd.timer` remains masked and its system module disabled until hardware tests
+pass. Existing Homebrew timers remain unchanged for now; disable those overlapping
+timers when scheduled uupd is enabled, not before. Distrobox updates remain off.
+
+Channel promotion verifies both release signatures and then checks the candidate's
+firmware-bundle and loader-ABI labels against `surface/update-contract.json`.
+The build rejects a firmware manifest that differs from this contract. Images
+without labels (including v0.0.9-alpha) cannot pass the new promotion/preflight
+gate; a new signed candidate is required to test this workflow. Do not change
+the existing channel's contract casually: different required firmware needs a
+provisioning/channel transition plan. Registry/channel publication and the
+release workflow remain trusted parts of this design; this is not protection
+against a malicious authorized publisher.
 
 ## Before enabling full System Update
 
@@ -130,6 +162,18 @@ No Microsoft firmware, device identifiers or credentials belong
 in this integration.
 
 ## Validation (2026-10-28)
+
+The signed v0.0.9-alpha base was staged with native container-policy enforcement,
+booted, rolled back to the previous local candidate, and returned successfully.
+All 11 firmware files verified, Wi-Fi and battery reporting worked, and no
+system services failed. Promotion to `:testing` and the subsequent channel-based
+boot also passed. Automatic update timers remained masked throughout. The USB
+Ethernet adapter needed one replug after a reboot; that issue is deferred.
+
+These tests do not yet validate the newly added System Update launcher,
+compatibility-label gate or scheduled service. Local validation covers 164
+Surface tests plus six promotion-orchestration tests, including rejection before
+publication when firmware metadata is missing or incompatible.
 
 An isolated installation on the ARM64 Surface (Flatpak 1.18.4) reproduced a
 silent skip when the preinstall definition specified `CollectionID`: a newly

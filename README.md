@@ -21,11 +21,14 @@ It is an independent community project, not an official Fedora or Microsoft prod
   including IPv6 reverse-path filtering and Samba-client connection tracking.
 - Signed system updates under development. Automatic OS updates remain disabled
   while the standard update and rollback workflow is validated.
-- Universal Blue updater preview for manual application updates; Bazaar replaces
-  GNOME Software and is prepared after installation once internet access is
+- A **System Update** launcher (`ujust update`) follows Bluefin's manual workflow:
+  bootc for the OS, then Flatpak and Homebrew. Firmware and space checks run
+  before OS staging; reboot separately when convenient. Automatic OS updates
+  remain disabled pending scheduling tests.
+- Bazaar replaces GNOME Software and is prepared after installation once internet access is
   available. Automatic OS updates remain disabled. The live session does not
   automatically download an app store.
-  See [the preview instructions](surface/UBLUE-UPDATES.md).
+  See [update status and instructions](surface/UBLUE-UPDATES.md).
 
 *Last updated: 2026-10-28*
 

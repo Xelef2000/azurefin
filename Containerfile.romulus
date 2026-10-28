@@ -35,6 +35,9 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
 
 # Keep the default target independent of all firmware-inclusive layers.
 FROM packages AS base-image
+LABEL org.azurefin.firmware-bundle="3ee310bc1a7398c361987a5685a50b3208e9b4930ba46280a8e336b5db79e08b"
+LABEL org.azurefin.firmware-loader-abi="1"
+COPY surface/update-contract.json /usr/share/azurefin/update-contract.json
 COPY surface/ota-signing.pub /usr/lib/pki/containers/azurefin-ota.pub
 COPY surface/native-ota/policy.json /etc/containers/policy.json
 COPY surface/native-ota/azurefin.yaml /etc/containers/registries.d/azurefin.yaml
@@ -44,6 +47,7 @@ COPY surface/postinstall_firmware.py /usr/libexec/azurefin/postinstall_firmware.
 COPY surface/update.py /usr/libexec/azurefin/update.py
 COPY surface/firmware_bundle.py surface/firmware_store_probe.py /usr/libexec/azurefin/
 COPY surface/firmware_preflight.py surface/setup_firmware_store.py /usr/libexec/azurefin/
+COPY surface/system_update_preflight.py /usr/libexec/azurefin/
 RUN chmod 0755 /usr/libexec/azurefin/setup_firmware_store.py \
     && ln -s /usr/libexec/azurefin/setup_firmware_store.py /usr/bin/azurefin-setup-firmware \
     && ln -s /usr/libexec/azurefin/setup_firmware_store.py /usr/bin/azurefin-setup-firmware-store

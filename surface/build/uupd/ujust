@@ -1,0 +1,3 @@
+#!/usr/bin/bash
+# Minimal entry point following projectbluefin/common's ujust convention.
+exec just --justfile /usr/share/ublue-os/just/00-entry.just "$@"

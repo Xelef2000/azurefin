@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=System Update
+Comment=Update Azurefin and applications; reboot separately when ready
+Icon=system-software-update
+Categories=System;
+Terminal=true
+Exec=/usr/bin/ujust update
