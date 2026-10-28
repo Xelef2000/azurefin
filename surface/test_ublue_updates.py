@@ -15,13 +15,27 @@ class UpdaterPreviewTests(unittest.TestCase):
         self.assertFalse(config["modules"]["flatpak"]["disable"])
         self.assertFalse(config["modules"]["brew"]["disable"])
 
-    def test_launcher_does_not_stage_or_reboot(self):
+    def test_launcher_uses_standard_manual_entrypoint_without_reboot(self):
         desktop = configparser.ConfigParser(interpolation=None)
-        desktop.read(ROOT / "build/uupd/application-updates.desktop")
+        desktop.read(ROOT / "build/uupd/system-update.desktop")
         command = desktop["Desktop Entry"]["Exec"]
-        self.assertIn("--disable-module-system", command.split())
+        self.assertEqual(command, '/usr/bin/ujust update')
         self.assertNotIn("--apply", command.split())
-        self.assertIn("Preview", desktop["Desktop Entry"]["Name"])
+        self.assertEqual(desktop["Desktop Entry"]["Name"], 'System Update')
+
+    def test_manual_and_scheduled_paths_share_provisioning_lock_and_guard(self):
+        for name in ('update.just', '20-azurefin-safety.conf'):
+            contents = (ROOT / 'build/uupd' / name).read_text()
+            self.assertIn('flock --nonblock /var/lib/azurefin/firmware-store.lock', contents)
+            self.assertIn('system_update_preflight.py &&', contents)
+            self.assertNotIn('--apply', contents)
+        safety = (ROOT / 'build/uupd/20-azurefin-safety.conf').read_text()
+        self.assertIn('ConditionACPower=true', safety)
+        self.assertIn('ConditionKernelCommandLine=!azurefin.live=1', safety)
+        self.assertIn('ConditionKernelCommandLine=!rd.live.image', safety)
+        self.assertIn('--hw-check', safety)
+        timer = (ROOT / 'build/uupd/20-azurefin-schedule.conf').read_text()
+        self.assertIn('OnCalendar=\nOnCalendar=*-*-* 00,06,12,18:00:00', timer)
 
     def test_timer_mask_and_package_pin(self):
         script = (ROOT / "build/17-uupd.sh").read_text()

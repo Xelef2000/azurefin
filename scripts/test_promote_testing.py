@@ -14,6 +14,12 @@ class PromotionTests(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name)
         (self.root / 'bin').mkdir()
+        (self.root / 'scripts').mkdir()
+        (self.root / 'surface').mkdir()
+        (self.root / 'scripts/check-update-contract.py').write_bytes(
+            SCRIPT.with_name('check-update-contract.py').read_bytes())
+        (self.root / 'surface/update-contract.json').write_bytes(
+            (SCRIPT.parent.parent / 'surface/update-contract.json').read_bytes())
         for command in ('cosign', 'skopeo'):
             mock = self.root / 'bin' / command
             mock.write_text('''#!/bin/bash
@@ -25,7 +31,12 @@ case "${0##*/}:$1" in
     [[ ${FAIL_REGISTRY:-0} == 0 ]]
     printf '%s' "${TEST_TAGS}"
     ;;
-  skopeo:inspect) echo "$IMAGE_DIGEST" ;;
+  skopeo:inspect)
+    if [[ "$*" == *--config* ]]; then
+      if [[ ${BAD_CONTRACT:-0} == 1 ]]; then echo '{}'; else
+        echo '{"config":{"Labels":{"org.azurefin.firmware-bundle":"3ee310bc1a7398c361987a5685a50b3208e9b4930ba46280a8e336b5db79e08b","org.azurefin.firmware-loader-abi":"1"}}}'
+      fi
+    else echo "$IMAGE_DIGEST"; fi ;;
   skopeo:login) [[ $(cat) == fake-token ]] ;;
   skopeo:copy) [[ -z ${GHCR_TOKEN+x} ]] ;;
   *) exit 1 ;;
@@ -53,12 +64,16 @@ esac
         result = self.run_script()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual((self.root / 'calls').read_text().splitlines(), [
-            'cosign verify', 'cosign verify', 'skopeo list-tags', 'skopeo login',
+            'cosign verify', 'cosign verify', 'skopeo inspect', 'skopeo list-tags', 'skopeo login',
             'skopeo copy', 'skopeo inspect', 'cosign verify'])
         self.assertEqual(list(self.root.glob('azurefin-promotion-auth.*')), [])
 
     def test_signature_failure(self):
         self.env['FAIL_VERIFY'] = '1'
+        self.assert_no_publication()
+
+    def test_incompatible_firmware_never_reaches_channel(self):
+        self.env['BAD_CONTRACT'] = '1'
         self.assert_no_publication()
 
     def test_registry_failure(self):

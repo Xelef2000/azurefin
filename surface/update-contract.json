@@ -1,0 +1,5 @@
+{
+  "channel": "ghcr.io/xelef2000/azurefin:testing",
+  "firmware_bundle": "3ee310bc1a7398c361987a5685a50b3208e9b4930ba46280a8e336b5db79e08b",
+  "firmware_loader_abi": "1"
+}

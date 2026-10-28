@@ -20,6 +20,11 @@ cosign verify --key surface/ota-signing.pub --new-bundle-format=false \
     -a "release=$RELEASE_TAG" -a component=base "$reference" \
     > promotion-results/native.json
 
+# The digest and release claims were verified above. Only promote images with
+# the firmware contract supported by existing installations on this channel.
+skopeo inspect --no-creds --config "docker://$reference" > promotion-results/config.json
+python3 scripts/check-update-contract.py promotion-results/config.json surface/update-contract.json
+
 # Fail on registry errors, rather than treating them as a missing channel.
 skopeo list-tags --no-creds "docker://$repository" > promotion-results/tags-before.json
 current=absent

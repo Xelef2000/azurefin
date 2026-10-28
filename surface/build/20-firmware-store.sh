@@ -5,6 +5,16 @@ python3 /usr/libexec/azurefin/firmware_bundle.py \
     --policy /usr/share/azurefin/firmware-policy.json --emit-manifest \
     > /usr/share/azurefin/boot-firmware.sha256
 test -s /usr/share/azurefin/boot-firmware.sha256
+python3 - <<'PY'
+import hashlib
+import json
+from pathlib import Path
+root = Path('/usr/share/azurefin')
+contract = json.loads((root / 'update-contract.json').read_text())
+actual = hashlib.sha256((root / 'boot-firmware.sha256').read_bytes()).hexdigest()
+if actual != contract['firmware_bundle']:
+    raise SystemExit('Firmware policy changed: this image cannot use the existing update channel')
+PY
 chmod 0644 /usr/share/azurefin/boot-firmware.sha256
 chmod 0755 /usr/lib/dracut/modules.d/91azurefin-firmware/*.sh
 install -d /usr/lib/dracut/dracut.conf.d
