@@ -4,7 +4,31 @@ This testing branch packages Universal Blue's `uupd` without forking its
 update engine. GNOME Software remains installed while Bazaar is evaluated.
 This is not yet the final System Update interface.
 
-## Try Bazaar
+## Bazaar on fresh installations
+
+The image schedules Bazaar setup shortly after boot. It configures Flathub
+and runs the upstream `flatpak preinstall` command. Downloads happen on the
+installed system, not during image construction. If the machine is offline,
+setup retries every 15 minutes without blocking boot or firmware preparation.
+After a successful run, it stays idle until the next boot. User removal of a
+preinstalled app is respected by Flatpak's preinstall mechanism.
+
+The automatic setup is skipped in the nonpersistent live session to avoid
+downloading runtimes that would disappear at reboot. GNOME Software remains
+available there and on installed systems. You can install Bazaar manually in
+either environment with the commands below.
+
+To retry immediately after connecting, run:
+
+```sh
+sudo systemctl restart azurefin-flatpak-preinstall.service
+```
+
+Check progress with `journalctl -u azurefin-flatpak-preinstall.service`.
+This wiring is prepared for image testing; it has not yet passed a fresh-install
+hardware test. Bazaar itself passed the user's ARM64 desktop test.
+
+## Try Bazaar manually
 
 After connecting to the internet (install Surface firmware first if using
 built-in Wi-Fi), run as your desktop user:
@@ -26,10 +50,9 @@ they must be consolidated before enabling scheduled `uupd` updates.
 
 ## Before enabling full System Update
 
-- Test Bazaar launch, browsing, installation and removal on ARM64.
-- Add Bluefin-style Flatpak preinstallation, with Flathub configured, and test
-  delayed connectivity after offline firmware provisioning. Keep GNOME Software
-  until that works on fresh installs and in the live session.
+- Verify the prepared Flatpak preinstallation on a fresh install, including
+  delayed connectivity after offline firmware provisioning and user removal.
+  Keep GNOME Software until that works and the live-session experience is tested.
 - Make the tested versioned `/boot` firmware store the fresh-install default.
   The current setup tool still creates a private firmware-inclusive image.
 - Ensure normal updates enforce Azurefin's native signature policy and preserve
@@ -53,6 +76,7 @@ they must be consolidated before enabling scheduled `uupd` updates.
 - [Bluefin administration guide](https://docs.projectbluefin.io/administration/).
 
 Azurefin's temporary differences are intentional: the system module and timer
-are disabled, Bazaar is installed explicitly for testing, and GNOME Software
-is retained. No Microsoft firmware, device identifiers or credentials belong
+are disabled, Flatpak preinstallation uses a delayed retry timer for firmware-free
+offline boots (and skips the live session), and GNOME Software is retained.
+No Microsoft firmware, device identifiers or credentials belong
 in this integration.

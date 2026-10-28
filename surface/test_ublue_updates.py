@@ -34,6 +34,36 @@ class UpdaterPreviewTests(unittest.TestCase):
         containerfile = (ROOT.parent / "Containerfile.romulus").read_text()
         self.assertIn("bash /ctx/build/17-uupd.sh", containerfile)
 
+    def test_bazaar_preinstall_definition(self):
+        manifest = configparser.ConfigParser()
+        manifest.read(ROOT / "build/bazaar/bazaar.preinstall")
+        app = manifest["Flatpak Preinstall io.github.kolunmi.Bazaar"]
+        self.assertEqual(app["Branch"], "stable")
+        self.assertEqual(app["CollectionID"], "org.flathub.Stable")
+        self.assertFalse(app.getboolean("IsRuntime"))
+
+    def test_bazaar_offline_retry_and_live_exclusion(self):
+        service = (ROOT / "build/bazaar/azurefin-flatpak-preinstall.service").read_text()
+        timer = (ROOT / "build/bazaar/azurefin-flatpak-preinstall.timer").read_text()
+        self.assertIn("RemainAfterExit=true", service)
+        self.assertIn("TimeoutStartSec=30min", service)
+        self.assertIn("OnUnitInactiveSec=15min", timer)
+        self.assertIn("OnBootSec=2min", timer)
+        self.assertNotIn("WantedBy=multi-user.target", service)
+        for unit in (service, timer):
+            self.assertIn("ConditionKernelCommandLine=!rd.live.image", unit)
+            self.assertIn("ConditionKernelCommandLine=!azurefin.live=1", unit)
+        self.assertIn("--if-not-exists flathub https://flathub.org/", service)
+        self.assertNotIn("--no-gpg-verify", service)
+
+    def test_bazaar_build_does_not_download_applications(self):
+        script = (ROOT / "build/18-bazaar.sh").read_text()
+        self.assertIn("systemctl enable azurefin-flatpak-preinstall.timer", script)
+        self.assertNotIn("flatpak install", script)
+        self.assertNotIn("remote-add", script)
+        self.assertIn("bash /ctx/build/18-bazaar.sh",
+                      (ROOT.parent / "Containerfile.romulus").read_text())
+
 
 if __name__ == "__main__":
     unittest.main()

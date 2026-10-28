@@ -23,7 +23,8 @@ It is an independent community project, not an official Fedora or Microsoft prod
 - Signed-update tooling under development: verifies the release base before
   rebuilding firmware locally. This is not yet enabled on released installations.
 - Universal Blue updater preview for manual application updates; Bazaar is
-  being tested alongside GNOME Software. Automatic OS updates remain disabled.
+  prepared after installation once internet access is available, with GNOME
+  Software retained as a fallback. Automatic OS updates remain disabled.
   See [the preview instructions](surface/UBLUE-UPDATES.md).
 
 *Last updated: 2026-10-28*
