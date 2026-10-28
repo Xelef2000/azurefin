@@ -1,9 +1,12 @@
 # System Update and Bazaar
 
-This testing branch packages Universal Blue's `uupd` without forking its
-update engine. Bazaar replaces GNOME Software as the application store.
-The development branch adds the System Update interface described below. It is
-not yet included in the tested `v0.0.9-alpha` image.
+Azurefin uses Universal Blue's packaged `uupd`, without forking its update
+engine. Bazaar replaces GNOME Software for Flatpak applications; bootc handles
+signed OS downloads and deployments.
+
+The next image enables scheduled updates. The service configuration has been
+tested and enabled on the development Surface; published images through
+`v0.0.11-alpha` still default to disabled scheduled updates.
 
 ## Bazaar on fresh installations
 
@@ -62,147 +65,95 @@ This is not a replacement update engine: bootc still performs downloads,
 signature enforcement and deployment. The target-metadata check is an early
 compatibility check, not a substitute for signature verification.
 
-## Scheduling safeguards (not enabled yet)
+## Scheduled updates
 
-The prepared systemd drop-ins use Bluefin's six-hour schedule with ten minutes
-of jitter, AC-power and live-session conditions, upstream uupd hardware checks,
-and the same firmware lock/preflight as manual updates. They never use `--apply`.
-`uupd.timer` remains masked and its system module disabled until hardware tests
-pass. Existing Homebrew timers remain unchanged for now; disable those overlapping
-timers when scheduled uupd is enabled, not before. Distrobox updates remain off.
+`uupd.timer` runs at midnight, 06:00, noon and 18:00 with up to ten minutes
+of random delay. Its persistent timer can catch up after downtime. The service
+requires AC power and upstream hardware checks. The configured thresholds are
+20% minimum battery, 50% maximum CPU, 90% maximum memory and 700000 bytes for
+network activity. A skipped run can be retried at the next scheduled time.
 
-Channel promotion verifies both release signatures and then checks the candidate's
-firmware-bundle and loader-ABI labels against `surface/update-contract.json`.
-The build rejects a firmware manifest that differs from this contract. Images
-without labels (including v0.0.9-alpha) cannot pass the new promotion/preflight
-gate; a new signed candidate is required to test this workflow. Do not change
-the existing channel's contract casually: different required firmware needs a
-provisioning/channel transition plan. Registry/channel publication and the
-release workflow remain trusted parts of this design; this is not protection
-against a malicious authorized publisher.
+OS, Flatpak and Homebrew updates are enabled; Distrobox updates remain disabled.
+Separate Homebrew update timers are disabled to avoid duplicate scheduling;
+initial Homebrew setup remains enabled. The independent bootc auto-apply service
+and timer remain masked. Neither update entry point uses `--apply` or reboots
+automatically.
 
-## Before enabling full System Update
+Both the timer and service exclude live sessions. Manual OS updates also reject
+live sessions in the preflight. Complete persistent firmware setup and reboot
+before updating. A failed preflight stops the combined run before updating OS
+or apps; Bazaar remains available independently.
 
-### Persistent firmware setup
-
-This branch routes `azurefin-setup-firmware` to the persistent store helper.
-`azurefin-setup-firmware-store` remains an alias for the same implementation.
-The legacy private-image code remains available internally to the older updater;
-it is no longer the default firmware setup entry point.
-
-On an installed system with no pending update or rollback:
+Inspect the schedule and results:
 
 ```sh
-# Reuse the verified firmware in an existing private deployment:
-sudo azurefin-setup-firmware --from-installed
-# Or extract directly into a staging directory, without rebuilding the OS:
-sudo azurefin-setup-firmware --download
+systemctl list-timers uupd.timer
+journalctl -u uupd.service
 ```
 
-`--msi PATH` supports offline extraction, and `--bluetooth-address MAC` remains
-optional. Setup verifies the image's policy, the separate ext4 boot mount,
-available boot space and all copied firmware. It keeps versioned bundles for
-rollback and opts into the existing early-boot loader only after verification.
-It neither switches the OS image nor enables updates or reboots. Download and
-extraction workspaces are retained under `/var/lib/azurefin` for diagnosis.
+Pause scheduled updates with `sudo systemctl disable --now uupd.timer`.
+Re-enable them with `sudo systemctl enable --now uupd.timer`. This does not
+cancel a running update. Older installations with a masked timer or locally
+modified `/etc/uupd/config.json` may retain those overrides across image
+updates; enabling the timer alone does not enable its OS module.
 
-Hardware setup using `--from-installed` and a subsequent clean candidate boot
-passed on 2026-10-28: all 11 firmware hashes verified, the loader exposed
-`/run/azurefin-firmware`, battery reporting and Wi-Fi worked, and no system units
-failed. The clean candidate contained no Microsoft-extracted firmware fallback.
-This local OCI test was unsigned; it does not validate signed OTA updates.
-Download and MSI extraction through the new default entry point still need
-end-to-end hardware tests. The upstream update schedule remains disabled.
+Channel promotion verifies both release signatures and checks firmware-bundle
+and loader-ABI labels against `surface/update-contract.json`. Builds reject a
+firmware manifest that differs from that contract. Changing required firmware
+needs an explicit provisioning/channel transition plan. The authorized image
+publisher and channel publication remain trusted parts of this design.
 
-The fresh test installation's read-only firmware preflight also passed, with
-1.25 GiB available on `/boot`. Its container policy still has the default
-`insecureAcceptAnything` rule and no Azurefin registry override. Native signature
-enforcement must be installed and tested on this installation before switching
-to signed registry updates; earlier tests on a previous installation do not
-establish its current trust configuration. Both `uupd.timer` and
-`bootc-fetch-apply-updates.timer` remain masked.
+## Persistent firmware
 
-The branch now includes a Bluefin-style native container policy for future
-images: Azurefin's repository requires its dedicated OTA key and exact repository
-identity, while other development containers remain usable. Isolated native
-signature tests passed locally and on the Surface without changing its host
-policy. A rebuilt image and signed registry-to-bootc tests are still required.
+`azurefin-setup-firmware` provisions the independent firmware store on the
+separate ext4 `/boot` filesystem. Use `--download` for online setup or
+`--msi PATH` for offline extraction; `--bluetooth-address MAC` is optional.
+Verified versioned bundles remain across OS updates and rollback. Setup neither
+switches images nor reboots. See the [installation guide](../README.md).
 
-### Update enablement gates
+## Known updater limitation
 
-- Verify the prepared Flatpak preinstallation on a fresh install, including
-  delayed connectivity after offline firmware provisioning and user removal.
-  Automatic installation passed; verify the app-store-free live session after
-  rebuilding with GNOME Software removed.
-- Test download and offline MSI setup through the new persistent-store default
-  on a fresh installation, including failures and insufficient extraction space.
-- Ensure normal updates enforce Azurefin's native signature policy and preserve
-  firmware across updates and rollback. Gate firmware-policy changes against
-  available local bundles before enabling unattended OS updates.
-- Test manual `uupd` OS staging on the signed testing channel, then reboot with
-  the user's approval for LUKS unlock.
-- Adopt Bluefin's scheduling/AC-power policy; disable overlapping Homebrew,
-  rpm-ostree, GNOME Software and bootc automatic updaters.
-- Replace the preview launcher with System Update only when OS updates work.
+The pinned `uupd-1.5.0-1.fc44.aarch64` package does not honor `--dry-run` in its
+OS updater. **Do not use `uupd --dry-run` with the system module enabled:** it
+can stage a real update. Normal updates do not depend on dry-run support.
+The regression was reproduced safely using a fake bootc executable, and the
+[upstream fix](https://github.com/ublue-os/uupd/pull/207) has been merged.
+Adopt the official fixed package after it is available and validated;
+Azurefin does not ship a temporary fork. Neither shipped update entry point
+passes `--dry-run`.
+
+## Hardware validation (2026-10-28)
+
+- Signed staging, boot, rollback and return passed with the persistent firmware
+  store; all 11 firmware hashes verified and Wi-Fi remained functional.
+- `v0.0.11-alpha` booted with native signature enforcement. Its preflight passed,
+  including the deployed terminal-output parsing fix. Approved removal of
+  obsolete test deployments recovered boot space without lowering the threshold.
+- `ujust update` completed successfully with the channel already current.
+- The real upstream OS module ran `bootc upgrade` successfully against the
+  current channel. A forced check exercised that command even without a newer
+  image; it did not bypass signature, firmware or hardware checks, or stage a
+  deployment.
+- The scheduled service completed with OS, Homebrew and Flatpak modules enabled.
+  AC conditions, lock contention, hardware checks and calendar parsing were
+  checked. The timer is enabled on the development Surface.
+- Bazaar offline retry, successful installation and respect for user removal
+  passed. Automatic system-wide setup also passed on a fresh installation.
+
+Still to validate: a new image built with these scheduling defaults, an actual
+new-version deployment initiated by the scheduled service, and physical
+battery-only/suspend-resume scheduling. The service test above was invoked
+explicitly, not by waiting for a calendar event. This configuration change
+does not itself publish an image.
 
 ## Upstream provenance
 
 - [Universal Blue uupd](https://github.com/ublue-os/uupd/tree/v1.5.0), packaged by
   [ublue-os/packages](https://github.com/ublue-os/packages/tree/main/packages/uupd).
-  The preview pins `uupd-1.5.0-1.fc44.aarch64` from that COPR.
 - [Bluefin shared configuration](https://github.com/projectbluefin/common):
-  `system_files/shared/etc/uupd/config.json`, the `uupd` systemd units, and
-  `system_files/bluefin/usr/share/flatpak/preinstall.d/bazaar.preinstall`.
+  the uupd configuration, systemd units, manual recipe and Bazaar definition.
 - [Bluefin administration guide](https://docs.projectbluefin.io/administration/).
 
-Azurefin's temporary differences are intentional: the system module and timer
-are disabled, Flatpak preinstallation uses a delayed retry timer for firmware-free
-offline boots (and skips the live session).
-No Microsoft firmware, device identifiers or credentials belong
-in this integration.
-
-## Validation (2026-10-28)
-
-The v0.0.10-alpha candidate passed both signatures and the firmware-contract
-promotion gate, then staged through `bootc upgrade` and booted successfully.
-Wi-Fi was connected, all 11 persistent firmware files verified, and no services
-failed. The System Update launcher and `ujust update` recipe were installed;
-automatic updates remained masked.
-
-The read-only updater preflight exposed terminal-dependent status output:
-with stdout captured but stderr on a TTY, a mount/fstab warning preceded the
-JSON. Capturing both streams separately produced valid JSON on the Surface.
-The preflight now captures stderr separately as well. This is not yet deployed.
-The update left 529 MiB free on `/boot`, below the updater's 768 MiB staging
-threshold. Retained test deployments need review before the next update;
-no recovery deployment has been removed and the threshold has not been lowered.
-
-The signed v0.0.9-alpha base was staged with native container-policy enforcement,
-booted, rolled back to the previous local candidate, and returned successfully.
-All 11 firmware files verified, Wi-Fi and battery reporting worked, and no
-system services failed. Promotion to `:testing` and the subsequent channel-based
-boot also passed. Automatic update timers remained masked throughout. The USB
-Ethernet adapter needed one replug after a reboot; that issue is deferred.
-
-These tests do not yet validate the newly added System Update launcher,
-compatibility-label gate or scheduled service. Local validation covers 164
-Surface tests plus six promotion-orchestration tests, including rejection before
-publication when firmware metadata is missing or incompatible.
-
-An isolated installation on the ARM64 Surface (Flatpak 1.18.4) reproduced a
-silent skip when the preinstall definition specified `CollectionID`: a newly
-added Flathub remote did not have that ID in its local configuration. The
-definition now matches Bluefin's unrestricted preinstall definition.
-
-With the corrected definition and retry behavior, the hardware test passed:
-
-- Offline attempt, then automatic retry and successful Bazaar installation.
-- A subsequent periodic preinstall completed without reinstalling the app.
-- Removing Bazaar was respected by the next preinstall run.
-
-The test used an isolated user installation, redirected Flatpak configuration
-and data directories, temporary user systemd units, a 20-second retry interval,
-and a deliberately unreachable proxy to simulate network failure. The normal
-user's apps and network settings were not modified. This validates Flatpak and
-timer behavior, not a complete fresh-install/system-service test or a new ISO.
-Automatic OS updates remain disabled.
+Azurefin adds Surface firmware compatibility/space checks and delayed Flatpak
+setup for offline installations. Microsoft-extracted firmware, device identifiers
+and credentials are not included in public images.

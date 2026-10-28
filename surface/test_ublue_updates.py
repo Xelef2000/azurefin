@@ -1,4 +1,4 @@
-"""Safety defaults for the initial upstream-updater preview."""
+"""Safety defaults for upstream scheduled and manual updates."""
 import configparser
 import json
 from pathlib import Path
@@ -7,10 +7,11 @@ import unittest
 ROOT = Path(__file__).resolve().parent
 
 
-class UpdaterPreviewTests(unittest.TestCase):
-    def test_system_and_distrobox_are_disabled(self):
+class UpdaterTests(unittest.TestCase):
+    def test_system_and_apps_enabled_with_hardware_checks(self):
         config = json.loads((ROOT / "build/uupd/config.json").read_text())
-        self.assertTrue(config["modules"]["system"]["disable"])
+        self.assertFalse(config["modules"]["system"]["disable"])
+        self.assertTrue(config["checks"]["hardware"]["enable"])
         self.assertTrue(config["modules"]["distrobox"]["disable"])
         self.assertFalse(config["modules"]["flatpak"]["disable"])
         self.assertFalse(config["modules"]["brew"]["disable"])
@@ -36,17 +37,29 @@ class UpdaterPreviewTests(unittest.TestCase):
         self.assertIn('--hw-check', safety)
         timer = (ROOT / 'build/uupd/20-azurefin-schedule.conf').read_text()
         self.assertIn('OnCalendar=\nOnCalendar=*-*-* 00,06,12,18:00:00', timer)
+        self.assertIn('Persistent=true', timer)
+        self.assertIn('RandomizedDelaySec=10m', timer)
+        self.assertIn('ConditionKernelCommandLine=!azurefin.live=1', timer)
+        self.assertIn('ConditionKernelCommandLine=!rd.live.image', timer)
 
-    def test_timer_mask_and_package_pin(self):
+    def test_single_scheduler_and_package_pin(self):
         script = (ROOT / "build/17-uupd.sh").read_text()
-        self.assertIn("systemctl mask uupd.timer", script)
+        self.assertIn("systemctl unmask uupd.timer", script)
+        self.assertIn("systemctl enable uupd.timer", script)
+        self.assertIn("systemctl disable brew-update.timer brew-upgrade.timer", script)
+        self.assertNotIn("systemctl disable brew-setup.service", script)
+        self.assertNotIn("systemctl mask uupd.timer", script)
         self.assertIn("uupd-1.5.0-1.fc44.aarch64", script)
         self.assertLess(script.index("dnf5 copr disable"), script.index("dnf5 install"))
         self.assertNotIn("gnome-software", script)
 
-    def test_build_wires_preview(self):
+    def test_build_wires_updater_and_blocks_unguarded_scheduler(self):
         containerfile = (ROOT.parent / "Containerfile.romulus").read_text()
         self.assertIn("bash /ctx/build/17-uupd.sh", containerfile)
+        self.assertLess(containerfile.index('bash /ctx/build/15-homebrew.sh'),
+                        containerfile.index('bash /ctx/build/17-uupd.sh'))
+        self.assertIn('systemctl mask bootc-fetch-apply-updates.timer bootc-fetch-apply-updates.service',
+                      containerfile)
 
     def test_bazaar_preinstall_definition(self):
         manifest = configparser.ConfigParser()
