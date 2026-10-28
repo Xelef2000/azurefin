@@ -19,14 +19,14 @@ It is an independent community project, not an official Fedora or Microsoft prod
 - A verified firmware store on `/boot`, independent of the immutable OS image.
 - The next image includes kernel support for Fedora's workstation firewall,
   including IPv6 reverse-path filtering and Samba-client connection tracking.
-- Signed system updates under development. Automatic OS updates remain disabled
-  while the standard update and rollback workflow is validated.
+- Signed system updates with persistent Surface firmware. The next image enables
+  Universal Blue's updater on a six-hour schedule while connected to AC power;
+  it stages updates but leaves rebooting to you.
 - A **System Update** launcher (`ujust update`) follows Bluefin's manual workflow:
   bootc for the OS, then Flatpak and Homebrew. Firmware and space checks run
-  before OS staging; reboot separately when convenient. Automatic OS updates
-  remain disabled pending scheduling tests.
+  before OS staging; reboot separately when convenient.
 - Bazaar replaces GNOME Software and is prepared after installation once internet access is
-  available. Automatic OS updates remain disabled. The live session does not
+  available. The live session does not run automatic OS updates or
   automatically download an app store.
   See [update status and instructions](surface/UBLUE-UPDATES.md).
 

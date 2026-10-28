@@ -18,10 +18,12 @@ install -Dm644 /ctx/build/uupd/update.just /usr/share/ublue-os/just/update.just
 install -Dm644 /ctx/build/uupd/20-azurefin-safety.conf /usr/lib/systemd/system/uupd.service.d/20-azurefin-safety.conf
 install -Dm644 /ctx/build/uupd/20-azurefin-schedule.conf /usr/lib/systemd/system/uupd.timer.d/20-azurefin-schedule.conf
 
-# Package presets must not turn on unattended updates during this preview.
-# The manual ujust path uses guarded bootc; unattended uupd OS updates remain
-# disabled until the compatibility gate and scheduling pass hardware tests.
-systemctl disable uupd.timer
-systemctl mask uupd.timer
-test "$(systemctl is-enabled uupd.timer)" = masked
+# Use one scheduler for OS, Flatpak and Homebrew updates. Keep brew-setup.service
+# for initial provisioning; uupd replaces only its recurring update timers.
+systemctl disable brew-update.timer brew-upgrade.timer
+systemctl unmask uupd.timer
+systemctl enable uupd.timer
+test "$(systemctl is-enabled uupd.timer)" = enabled
+test "$(systemctl is-enabled brew-update.timer)" = disabled
+test "$(systemctl is-enabled brew-upgrade.timer)" = disabled
 uupd config-dump

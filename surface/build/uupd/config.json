@@ -12,6 +12,6 @@
     "brew": {"disable": false},
     "distrobox": {"disable": true},
     "flatpak": {"disable": false},
-    "system": {"disable": true}
+    "system": {"disable": false}
   }
 }
