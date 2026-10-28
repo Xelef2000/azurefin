@@ -19,8 +19,8 @@ It is an independent community project, not an official Fedora or Microsoft prod
 - A verified firmware store on `/boot`, independent of the immutable OS image.
 - The next image includes kernel support for Fedora's workstation firewall,
   including IPv6 reverse-path filtering and Samba-client connection tracking.
-- Signed system updates with persistent Surface firmware. The next image enables
-  Universal Blue's updater on a six-hour schedule while connected to AC power;
+- Signed system updates with persistent Surface firmware. From `v0.0.12-alpha`,
+  Universal Blue's updater runs on a six-hour schedule while connected to AC power;
   it stages updates but leaves rebooting to you.
 - A **System Update** launcher (`ujust update`) follows Bluefin's manual workflow:
   bootc for the OS, then Flatpak and Homebrew. Firmware and space checks run
@@ -143,10 +143,10 @@ Windows, then reboot.
 
 ## Current limitations
 
-- Automatic OS image updates remain disabled until signed updates and rollback
-  are validated with the persistent firmware store. Do not manually switch to
+- Scheduled updates are enabled in the `v0.0.12-alpha` testing image; older
+  release ISOs do not acquire the new defaults until updated. Do not switch to
   an image that lacks the loader or requires an unprovisioned firmware bundle.
-  See [signed-update development status](surface/SIGNED-UPDATES.md).
+  See [update requirements and validation](surface/UBLUE-UPDATES.md).
 - Firmware setup uses the currently installed image's firmware policy. It is
   not an OS updater.
 - The new firmware-free first boot, especially encrypted-root unlock, still
