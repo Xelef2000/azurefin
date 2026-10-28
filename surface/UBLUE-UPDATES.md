@@ -50,6 +50,35 @@ they must be consolidated before enabling scheduled `uupd` updates.
 
 ## Before enabling full System Update
 
+### Persistent firmware candidate
+
+The next test image includes `azurefin-setup-firmware-store`. This is an
+explicit test path; `azurefin-setup-firmware` still uses the previous private
+image workflow until the new path passes its hardware gates.
+
+On an installed system with no pending update or rollback:
+
+```sh
+# Reuse the verified firmware in an existing private deployment:
+sudo azurefin-setup-firmware-store --from-installed
+# Or extract directly into a staging directory, without rebuilding the OS:
+sudo azurefin-setup-firmware-store --download
+```
+
+`--msi PATH` supports offline extraction, and `--bluetooth-address MAC` remains
+optional. Setup verifies the image's policy, the separate ext4 boot mount,
+available boot space and all copied firmware. It keeps versioned bundles for
+rollback and opts into the existing early-boot loader only after verification.
+It neither switches the OS image nor enables updates or reboots. Download and
+extraction workspaces are retained under `/var/lib/azurefin` for diagnosis.
+
+Next gates: test setup on hardware, boot a clean candidate without GNOME
+Software using that store, then verify signed standard updates and rollback.
+Only after those pass should this replace the default setup command and the
+upstream update schedule be enabled.
+
+### Update enablement gates
+
 - Verify the prepared Flatpak preinstallation on a fresh install, including
   delayed connectivity after offline firmware provisioning and user removal.
   Automatic installation passed; verify the app-store-free live session after
