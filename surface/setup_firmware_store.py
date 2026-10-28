@@ -19,6 +19,7 @@ POLICY = Path('/usr/share/azurefin/firmware-policy.json')
 MANIFEST = Path('/usr/share/azurefin/boot-firmware.sha256')
 BOOT = Path('/boot')
 STATE = Path('/var/lib/azurefin')
+MIN_EXTRACTION_FREE = 30 * 1024**3
 
 
 def run(*args, **kwargs):
@@ -53,6 +54,11 @@ def seed_extractor(root):
             shutil.copyfile(source, destination / source.name)
             return
     raise ValueError('Fedora WCN7850 board data is missing')
+
+
+def check_extraction_space(path):
+    if shutil.disk_usage(path).free < MIN_EXTRACTION_FREE:
+        raise ValueError('Firmware extraction requires at least 30 GiB free on /var/lib/azurefin')
 
 
 def install_store(source, policy, expected, uuid):
@@ -101,6 +107,7 @@ def main():
         if args.from_installed:
             destination = install_store(Path('/usr/lib/firmware'), policy, expected, uuid)
         else:
+            check_extraction_space(STATE)
             workspace = Path(tempfile.mkdtemp(prefix='firmware-extraction.', dir=STATE))
             print(f'Extraction workspace (retained for diagnosis): {workspace}', flush=True)
             root = workspace / 'root'

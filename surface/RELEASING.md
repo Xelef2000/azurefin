@@ -74,9 +74,11 @@ the clean OCI and tools into `/var/lib/azurefin/installer` on the target. No ext
 workspace partition is used. After account setup, the user explicitly runs
 `azurefin-setup-firmware --download` or `--msi PATH`, optionally adding
 `--bluetooth-address MAC`. Preparation uses at least 30 GiB of free internal disk
-space, creates a private local image and stages it with `bootc switch`. It never
-reboots automatically. Automatic bootc image updates stay masked until a safe
-firmware-preserving update path is implemented. No firmware or per-device
+space for extraction and provisions a verified, versioned firmware bundle on
+the separate ext4 `/boot`. It configures the early-boot loader without rebuilding
+or switching the OS image, and never reboots automatically. The retained OCI is
+not required by this setup path. Automatic OS updates stay masked pending signed
+update and rollback validation. No Microsoft-extracted firmware or per-device
 address is embedded in public artifacts.
 
 The final ISO removes the composer's unused `/container` payload copy. Its sole

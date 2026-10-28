@@ -1,4 +1,5 @@
 import unittest
+from types import SimpleNamespace
 from pathlib import Path
 from unittest.mock import patch
 
@@ -8,6 +9,21 @@ UUID = 'a98d77ee-68a7-4863-8fca-843cc4808aba'
 
 
 class StoreSetupTests(unittest.TestCase):
+    def test_default_command_uses_store_without_private_image_rebuild(self):
+        recipe = (Path(__file__).resolve().parent.parent / 'Containerfile.romulus').read_text()
+        for name in ('azurefin-setup-firmware', 'azurefin-setup-firmware-store'):
+            self.assertIn('ln -s /usr/libexec/azurefin/setup_firmware_store.py /usr/bin/' + name, recipe)
+        self.assertNotIn('COPY surface/postinstall_firmware.py /usr/bin/azurefin-setup-firmware', recipe)
+
+    def test_extraction_space_floor(self):
+        for free in (setup.MIN_EXTRACTION_FREE - 1, setup.MIN_EXTRACTION_FREE):
+            with patch.object(setup.shutil, 'disk_usage', return_value=SimpleNamespace(free=free)):
+                if free < setup.MIN_EXTRACTION_FREE:
+                    with self.assertRaisesRegex(ValueError, '30 GiB'):
+                        setup.check_extraction_space(Path('/state'))
+                else:
+                    setup.check_extraction_space(Path('/state'))
+
     def mounts(self):
         return {'filesystems': [{'target': '/boot', 'fstype': 'ext4',
                                  'uuid': UUID, 'options': 'rw,nodev'}]}

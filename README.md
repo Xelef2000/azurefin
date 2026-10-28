@@ -16,12 +16,11 @@ It is an independent community project, not an official Fedora or Microsoft prod
 - Surface firmware downloaded from Microsoft after installation, or extracted
   from an MSI you provide. Public images include Fedora's redistributable
   firmware but not Microsoft-extracted Surface firmware.
-- Updated bootc tooling for local firmware deployment without the older
-  misleading OCI transport error.
+- A verified firmware store on `/boot`, independent of the immutable OS image.
 - The next image includes kernel support for Fedora's workstation firewall,
   including IPv6 reverse-path filtering and Samba-client connection tracking.
-- Signed-update tooling under development: verifies the release base before
-  rebuilding firmware locally. This is not yet enabled on released installations.
+- Signed system updates under development. Automatic OS updates remain disabled
+  while the standard update and rollback workflow is validated.
 - Universal Blue updater preview for manual application updates; Bazaar replaces
   GNOME Software and is prepared after installation once internet access is
   available. Automatic OS updates remain disabled. The live session does not
@@ -50,7 +49,8 @@ You will need:
 - Azurefin installation media and at least 30 GiB free on the installed system
   for the one-time firmware setup. No separate workspace drive is needed.
 - Either a USB Ethernet connection or the supported Microsoft Surface Laptop 7
-  ARM64 driver MSI. Built-in Wi-Fi is not available before firmware preparation.
+  ARM64 driver MSI. Built-in Wi-Fi may work with Fedora's current firmware,
+  but should not be relied on before firmware preparation.
 
 ### Downloading a release ISO
 
@@ -98,8 +98,8 @@ remove the installer drive and connect the MSI drive instead.
 
 ## Install Surface firmware
 
-Built-in Wi-Fi and other firmware-dependent hardware will not work yet.
-Connect USB Ethernet, then run:
+Some hardware, including battery reporting, needs additional Surface firmware.
+Connect to the internet (use USB Ethernet if Wi-Fi is unavailable), then run:
 
 ```sh
 sudo azurefin-setup-firmware --download
@@ -116,13 +116,16 @@ firmware against the packaged policy. Optionally append
 `--bluetooth-address AA:BB:CC:DD:EE:FF`, using your device's **Bluetooth public
 address from Windows**, not its Wi-Fi MAC.
 
-The tool builds a private local OS image and stages it for the next boot; it
-does not write into immutable `/usr` or reboot automatically. Reboot when it
-reports success. The installer retains its clean base locally, so offline setup
-does not need a registry download. Preparation logs and intermediate files stay
-under `/var/lib/azurefin/provisioning`; failed builds do not stage a new OS.
-Keep this directory after setup: the staged deployment uses its OCI image.
-Repeated attempts need additional space.
+The tool verifies and stores firmware on the separate `/boot` filesystem, then
+configures the early-boot loader. It does not rebuild or switch the OS image,
+write into immutable `/usr`, or reboot automatically. Reboot when it reports
+success. Offline setup does not need a registry download. Extraction workspaces
+are retained under `/var/lib/azurefin/firmware-extraction.*` for diagnostics;
+repeated attempts need additional space. Versioned firmware bundles remain on
+`/boot` across OS updates; older bundles are retained for rollback.
+
+This is the testing branch's setup workflow. Older released images may still
+use private-image provisioning; use the documentation matching your release.
 
 ## Bluetooth configuration
 
@@ -137,12 +140,12 @@ Windows, then reboot.
 
 ## Current limitations
 
-- Automatic OS image updates are not yet supported for locally provisioned
-  installations. Do not switch a firmware-provisioned system back to the public
-  firmware-free bootstrap image; it would lose Surface firmware support.
+- Automatic OS image updates remain disabled until signed updates and rollback
+  are validated with the persistent firmware store. Do not manually switch to
+  an image that lacks the loader or requires an unprovisioned firmware bundle.
   See [signed-update development status](surface/SIGNED-UPDATES.md).
-- Rerunning firmware setup uses the original installer base, not a newer OS
-  release. It is not an OS updater.
+- Firmware setup uses the currently installed image's firmware policy. It is
+  not an OS updater.
 - The new firmware-free first boot, especially encrypted-root unlock, still
   needs hardware validation before release.
 - Suspend battery drain and intermittent device initialization still need work.

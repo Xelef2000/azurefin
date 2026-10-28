@@ -1,7 +1,8 @@
 # Firmware store integration status
 
-This is an opt-in development path, not yet a replacement for
-`azurefin-setup-firmware` or the tested private-image updater.
+This testing branch uses the persistent store for `azurefin-setup-firmware`.
+Older releases may still use private-image provisioning. Automatic OS updates
+remain disabled pending signed staging and rollback validation.
 
 The release base includes a generic dracut module and a deterministic manifest
 of approved firmware hashes. It does not include Microsoft-extracted firmware,
@@ -33,8 +34,9 @@ a hardware test of that fresh image.
 
 Before enabling normal public-image updates:
 
-- Add supported installation/migration, including boot mount validation,
-  provisioning locks, persistent local boot-device selection and space checks.
+- Validate fresh-install download and offline MSI setup. The setup helper now
+  validates the boot mount, serializes provisioning, preserves local boot-device
+  selection and checks boot and extraction space.
 - Check required bundles before staging and define recovery for missing or
   corrupt firmware. Currently the initramfs logs failure and creates
   `/run/azurefin-firmware.failed`; it does not provide a complete recovery UI.
@@ -43,9 +45,11 @@ Before enabling normal public-image updates:
 - Install and test native signature enforcement as a separate migration step.
 - Evaluate desktop and automatic updates only after these gates pass.
 
-Automatic updates remain masked. Existing post-install provisioning still
-creates a private firmware-enabled image; this integration does not silently
-change that workflow or modify existing deployments.
+On 2026-10-28, provisioning from the installed firmware and booting a clean
+candidate passed: all 11 files verified, battery reporting and Wi-Fi worked,
+and no system services failed. The candidate had no Microsoft firmware fallback
+and GNOME Software was absent. This was a local unsigned OCI test, not signed
+OTA validation. The working private deployment remains pinned for recovery.
 
 Tests: from `surface/`, run `python3 -m unittest test_firmware_bundle
 test_firmware_store_probe test_firmware_loader test_firmware_store_build`
@@ -58,7 +62,7 @@ image's policy and manifest, a separate writable ext4 `/boot`, the matching
 local boot UUID argument, root-owned store directories, all required firmware
 hashes and a conservative 512 MiB free-space floor. It prints JSON and returns
 nonzero on failure; it never deletes, provisions, stages or reboots anything.
-It is a development diagnostic, not yet installed in the image. Its eight
+It is installed at `/usr/libexec/azurefin/firmware_preflight.py`. Its eight
 unit tests run with `python3 -m unittest test_firmware_preflight` from `surface/`.
 
 A pass is not evidence of signature enforcement or compatibility with a future

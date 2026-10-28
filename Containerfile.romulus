@@ -37,12 +37,12 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
 FROM packages AS base-image
 COPY surface/installer_fix_fstab.py /usr/libexec/azurefin-installer-fix-fstab.py
 COPY surface/build/19-check-firmware-free.sh /usr/libexec/azurefin-check-firmware-free
-COPY surface/postinstall_firmware.py /usr/bin/azurefin-setup-firmware
 COPY surface/postinstall_firmware.py /usr/libexec/azurefin/postinstall_firmware.py
 COPY surface/update.py /usr/libexec/azurefin/update.py
 COPY surface/firmware_bundle.py surface/firmware_store_probe.py /usr/libexec/azurefin/
 COPY surface/firmware_preflight.py surface/setup_firmware_store.py /usr/libexec/azurefin/
 RUN chmod 0755 /usr/libexec/azurefin/setup_firmware_store.py \
+    && ln -s /usr/libexec/azurefin/setup_firmware_store.py /usr/bin/azurefin-setup-firmware \
     && ln -s /usr/libexec/azurefin/setup_firmware_store.py /usr/bin/azurefin-setup-firmware-store
 COPY surface/dracut/91azurefin-firmware /usr/lib/dracut/modules.d/91azurefin-firmware
 COPY surface/build /usr/share/azurefin/update-support/build
@@ -52,14 +52,13 @@ RUN mkdir -p /usr/share/azurefin/update-support/firmware-tools \
     && cp /usr/libexec/azurefin/firmware-policy.py /usr/share/azurefin/firmware-policy.json /usr/share/azurefin/update-support/firmware-tools/ \
     && chmod 0755 /usr/libexec/azurefin/update.py \
     && ln -s /usr/libexec/azurefin/update.py /usr/bin/azurefin-update
-RUN chmod 0755 /usr/bin/azurefin-setup-firmware
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     bash /ctx/build/20-firmware-store.sh
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     bash /ctx/build/21-installer-firmware-free.sh installed \
     && bash /ctx/build/27-installed-boot.sh
-# Firmware provisioning creates a private local image. Do not automatically
-# replace it with the public bootstrap image on subsequent boots.
+# Keep automatic OS updates off until signed staging, target firmware-policy
+# compatibility and rollback are validated with the persistent firmware store.
 RUN systemctl mask bootc-fetch-apply-updates.timer bootc-fetch-apply-updates.service
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     bash /ctx/build/29-clean-build-state.sh && bootc container lint

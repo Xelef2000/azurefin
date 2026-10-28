@@ -27,7 +27,8 @@ sudo systemctl restart azurefin-flatpak-preinstall.service
 
 Check progress with `journalctl -u azurefin-flatpak-preinstall.service`.
 Automatic system-wide Bazaar installation passed the fresh-install hardware
-test. The image change removing GNOME Software still needs a rebuilt-image test.
+test. A rebuilt clean candidate also booted with GNOME Software absent and
+Bazaar still installed.
 
 ## Try Bazaar manually
 
@@ -50,19 +51,20 @@ they must be consolidated before enabling scheduled `uupd` updates.
 
 ## Before enabling full System Update
 
-### Persistent firmware candidate
+### Persistent firmware setup
 
-The next test image includes `azurefin-setup-firmware-store`. This is an
-explicit test path; `azurefin-setup-firmware` still uses the previous private
-image workflow until the new path passes its hardware gates.
+This branch routes `azurefin-setup-firmware` to the persistent store helper.
+`azurefin-setup-firmware-store` remains an alias for the same implementation.
+The legacy private-image code remains available internally to the older updater;
+it is no longer the default firmware setup entry point.
 
 On an installed system with no pending update or rollback:
 
 ```sh
 # Reuse the verified firmware in an existing private deployment:
-sudo azurefin-setup-firmware-store --from-installed
+sudo azurefin-setup-firmware --from-installed
 # Or extract directly into a staging directory, without rebuilding the OS:
-sudo azurefin-setup-firmware-store --download
+sudo azurefin-setup-firmware --download
 ```
 
 `--msi PATH` supports offline extraction, and `--bluetooth-address MAC` remains
@@ -72,10 +74,21 @@ rollback and opts into the existing early-boot loader only after verification.
 It neither switches the OS image nor enables updates or reboots. Download and
 extraction workspaces are retained under `/var/lib/azurefin` for diagnosis.
 
-Next gates: test setup on hardware, boot a clean candidate without GNOME
-Software using that store, then verify signed standard updates and rollback.
-Only after those pass should this replace the default setup command and the
-upstream update schedule be enabled.
+Hardware setup using `--from-installed` and a subsequent clean candidate boot
+passed on 2026-10-28: all 11 firmware hashes verified, the loader exposed
+`/run/azurefin-firmware`, battery reporting and Wi-Fi worked, and no system units
+failed. The clean candidate contained no Microsoft-extracted firmware fallback.
+This local OCI test was unsigned; it does not validate signed OTA updates.
+Download and MSI extraction through the new default entry point still need
+end-to-end hardware tests. The upstream update schedule remains disabled.
+
+The fresh test installation's read-only firmware preflight also passed, with
+1.25 GiB available on `/boot`. Its container policy still has the default
+`insecureAcceptAnything` rule and no Azurefin registry override. Native signature
+enforcement must be installed and tested on this installation before switching
+to signed registry updates; earlier tests on a previous installation do not
+establish its current trust configuration. Both `uupd.timer` and
+`bootc-fetch-apply-updates.timer` remain masked.
 
 ### Update enablement gates
 
@@ -83,8 +96,8 @@ upstream update schedule be enabled.
   delayed connectivity after offline firmware provisioning and user removal.
   Automatic installation passed; verify the app-store-free live session after
   rebuilding with GNOME Software removed.
-- Make the tested versioned `/boot` firmware store the fresh-install default.
-  The current setup tool still creates a private firmware-inclusive image.
+- Test download and offline MSI setup through the new persistent-store default
+  on a fresh installation, including failures and insufficient extraction space.
 - Ensure normal updates enforce Azurefin's native signature policy and preserve
   firmware across updates and rollback. Gate firmware-policy changes against
   available local bundles before enabling unattended OS updates.
@@ -128,4 +141,4 @@ and data directories, temporary user systemd units, a 20-second retry interval,
 and a deliberately unreachable proxy to simulate network failure. The normal
 user's apps and network settings were not modified. This validates Flatpak and
 timer behavior, not a complete fresh-install/system-service test or a new ISO.
-All 145 local Surface tests pass. Automatic OS updates remain disabled.
+Automatic OS updates remain disabled.

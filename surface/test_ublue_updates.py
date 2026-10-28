@@ -72,6 +72,12 @@ class UpdaterPreviewTests(unittest.TestCase):
         self.assertIn("if rpm -q gnome-software", script)
         self.assertIn("flatpak preinstall --help", script)
 
+    def test_generated_appstream_cache_is_cleaned_inside_build_only(self):
+        script = (ROOT / "build/29-clean-build-state.sh").read_text()
+        self.assertIn("Refusing build-state cleanup outside a container", script)
+        self.assertIn("/var/cache/swcatalog/cache/C-local-metainfo.xb", script)
+        self.assertIn("/var/cache/swcatalog/cache/C-os-catalog.xb", script)
+
 
 if __name__ == "__main__":
     unittest.main()
