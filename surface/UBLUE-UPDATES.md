@@ -4,9 +4,10 @@ Azurefin uses Universal Blue's packaged `uupd`, without forking its update
 engine. Bazaar replaces GNOME Software for Flatpak applications; bootc handles
 signed OS downloads and deployments.
 
-The next image enables scheduled updates. The service configuration has been
-tested and enabled on the development Surface; published images through
-`v0.0.11-alpha` still default to disabled scheduled updates.
+The signed `v0.0.12-alpha` testing image enables scheduled updates and has
+passed OTA and resume testing on the development Surface. Images through
+`v0.0.11-alpha` default to disabled scheduled updates. These tests did not
+publish a new release ISO or validate a fresh installation of this candidate.
 
 ## Bazaar on fresh installations
 
@@ -140,11 +141,35 @@ passes `--dry-run`.
 - Bazaar offline retry, successful installation and respect for user removal
   passed. Automatic system-wide setup also passed on a fresh installation.
 
-Still to validate: a new image built with these scheduling defaults, an actual
-new-version deployment initiated by the scheduled service, and physical
-battery-only/suspend-resume scheduling. The service test above was invoked
-explicitly, not by waiting for a calendar event. This configuration change
-does not itself publish an image.
+### Scheduled-update candidate: v0.0.12-alpha
+
+- Base and installer layer audits passed (92 and 104 layers respectively).
+  Keyless and native OTA signature verification passed before channel promotion.
+- The real `uupd.service` staged v0.0.12-alpha from v0.0.11-alpha successfully.
+  This run was requested manually through systemd, not initiated by a calendar
+  event. No automatic reboot occurred.
+- After an explicitly approved reboot, v0.0.12-alpha was running with native
+  signature enforcement, no staged deployment and v0.0.11-alpha as rollback.
+  All 11 firmware files loaded and verified, Wi-Fi was connected, no system
+  services had failed, and the update preflight passed.
+- The image's six-hour timer was active, duplicate Homebrew timers disabled,
+  and the independent bootc auto-apply service and timer masked.
+- With all external power disconnected, requesting `uupd.service` was skipped
+  by `ConditionACPower=true`. No updater process started or deployment staged.
+- On AC power, a temporary 20-second timer invoked the real update service.
+  The OS was current; Homebrew and Flatpak checks completed successfully.
+- A temporary one-time calendar timer became due during suspend. On resume
+  after approximately 86 minutes, it invoked the real service; firmware and
+  hardware checks passed, and OS/application checks completed successfully.
+  No automatic reboot or failed system service was observed.
+
+The temporary timers invoked `systemctl start uupd.service`; they did not
+replace the normal six-hour timer. Thus timer execution and missed-event resume
+catch-up were exercised, but a production six-hour calendar event has not yet
+been observed. A new-version update and timer triggering were tested separately.
+This is not a suspend power-consumption measurement or a cold-boot missed-timer
+test. Fresh-install/live-session validation of the new candidate remains before
+publishing replacement installation media.
 
 ## Upstream provenance
 
