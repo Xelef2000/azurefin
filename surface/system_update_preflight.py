@@ -36,7 +36,10 @@ def main():
     contract = json.loads(Path('/usr/share/azurefin/update-contract.json').read_text())
     if any(arg in ('rd.live.image', 'azurefin.live=1') for arg in Path('/proc/cmdline').read_text().split()):
         raise ValueError('OS updates are not supported in the live session')
-    state = json.loads(subprocess.check_output(['bootc', 'status', '--json'], text=True, timeout=30))
+    # Keep both streams non-terminal: bootc's privilege/mount setup can mix
+    # mount warnings into captured stdout when stderr still points at a TTY.
+    state = json.loads(subprocess.check_output(
+        ['bootc', 'status', '--json'], text=True, stderr=subprocess.PIPE, timeout=30))
     validate_status(state, contract)
     if firmware_preflight.main() != 0:
         raise ValueError('Repair the firmware store before updating')

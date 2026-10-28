@@ -78,6 +78,8 @@ class SystemUpdateTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, message):
                     preflight.main()
                 self.assertTrue(all(call.args[0][0] == 'bootc' for call in command.call_args_list))
+                for call in command.call_args_list:
+                    self.assertEqual(call.kwargs['stderr'], preflight.subprocess.PIPE)
 
 
 if __name__ == '__main__':

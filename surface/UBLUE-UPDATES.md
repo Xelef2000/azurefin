@@ -163,6 +163,20 @@ in this integration.
 
 ## Validation (2026-10-28)
 
+The v0.0.10-alpha candidate passed both signatures and the firmware-contract
+promotion gate, then staged through `bootc upgrade` and booted successfully.
+Wi-Fi was connected, all 11 persistent firmware files verified, and no services
+failed. The System Update launcher and `ujust update` recipe were installed;
+automatic updates remained masked.
+
+The read-only updater preflight exposed terminal-dependent status output:
+with stdout captured but stderr on a TTY, a mount/fstab warning preceded the
+JSON. Capturing both streams separately produced valid JSON on the Surface.
+The preflight now captures stderr separately as well. This is not yet deployed.
+The update left 529 MiB free on `/boot`, below the updater's 768 MiB staging
+threshold. Retained test deployments need review before the next update;
+no recovery deployment has been removed and the threshold has not been lowered.
+
 The signed v0.0.9-alpha base was staged with native container-policy enforcement,
 booted, rolled back to the previous local candidate, and returned successfully.
 All 11 firmware files verified, Wi-Fi and battery reporting worked, and no
