@@ -66,6 +66,12 @@ class UpdaterPreviewTests(unittest.TestCase):
         self.assertIn("bash /ctx/build/18-bazaar.sh",
                       (ROOT.parent / "Containerfile.romulus").read_text())
 
+    def test_bazaar_replaces_gnome_software_without_dependency_cleanup(self):
+        script = (ROOT / "build/18-bazaar.sh").read_text()
+        self.assertIn("dnf5 remove -y --setopt=clean_requirements_on_remove=False gnome-software", script)
+        self.assertIn("if rpm -q gnome-software", script)
+        self.assertIn("flatpak preinstall --help", script)
+
 
 if __name__ == "__main__":
     unittest.main()

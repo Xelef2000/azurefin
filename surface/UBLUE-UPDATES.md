@@ -1,7 +1,7 @@
 # Universal Blue updater and Bazaar preview
 
 This testing branch packages Universal Blue's `uupd` without forking its
-update engine. GNOME Software remains installed while Bazaar is evaluated.
+update engine. Bazaar replaces GNOME Software as the application store.
 This is not yet the final System Update interface.
 
 ## Bazaar on fresh installations
@@ -15,9 +15,9 @@ after skipping an unreachable remote. Already-preinstalled apps are skipped,
 and user removal is respected by Flatpak's preinstall mechanism.
 
 The automatic setup is skipped in the nonpersistent live session to avoid
-downloading runtimes that would disappear at reboot. GNOME Software remains
-available there and on installed systems. You can install Bazaar manually in
-either environment with the commands below.
+downloading runtimes that would disappear at reboot. GNOME Software is removed
+from the image, so the live session has no preinstalled app store. You can
+install Bazaar manually in either environment with the commands below.
 
 To retry immediately after connecting, run:
 
@@ -26,13 +26,12 @@ sudo systemctl restart azurefin-flatpak-preinstall.service
 ```
 
 Check progress with `journalctl -u azurefin-flatpak-preinstall.service`.
-This wiring is prepared for image testing; it has not yet passed a fresh-install
-hardware test. Bazaar itself passed the user's ARM64 desktop test.
+Automatic system-wide Bazaar installation passed the fresh-install hardware
+test. The image change removing GNOME Software still needs a rebuilt-image test.
 
 ## Try Bazaar manually
 
-After connecting to the internet (install Surface firmware first if using
-built-in Wi-Fi), run as your desktop user:
+After connecting to the internet, run as your desktop user:
 
 ```sh
 flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
@@ -53,7 +52,8 @@ they must be consolidated before enabling scheduled `uupd` updates.
 
 - Verify the prepared Flatpak preinstallation on a fresh install, including
   delayed connectivity after offline firmware provisioning and user removal.
-  Keep GNOME Software until that works and the live-session experience is tested.
+  Automatic installation passed; verify the app-store-free live session after
+  rebuilding with GNOME Software removed.
 - Make the tested versioned `/boot` firmware store the fresh-install default.
   The current setup tool still creates a private firmware-inclusive image.
 - Ensure normal updates enforce Azurefin's native signature policy and preserve
@@ -64,7 +64,6 @@ they must be consolidated before enabling scheduled `uupd` updates.
 - Adopt Bluefin's scheduling/AC-power policy; disable overlapping Homebrew,
   rpm-ostree, GNOME Software and bootc automatic updaters.
 - Replace the preview launcher with System Update only when OS updates work.
-  Remove GNOME Software only after its replacement passes the above checks.
 
 ## Upstream provenance
 
@@ -78,7 +77,7 @@ they must be consolidated before enabling scheduled `uupd` updates.
 
 Azurefin's temporary differences are intentional: the system module and timer
 are disabled, Flatpak preinstallation uses a delayed retry timer for firmware-free
-offline boots (and skips the live session), and GNOME Software is retained.
+offline boots (and skips the live session).
 No Microsoft firmware, device identifiers or credentials belong
 in this integration.
 

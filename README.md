@@ -22,9 +22,10 @@ It is an independent community project, not an official Fedora or Microsoft prod
   including IPv6 reverse-path filtering and Samba-client connection tracking.
 - Signed-update tooling under development: verifies the release base before
   rebuilding firmware locally. This is not yet enabled on released installations.
-- Universal Blue updater preview for manual application updates; Bazaar is
-  prepared after installation once internet access is available, with GNOME
-  Software retained as a fallback. Automatic OS updates remain disabled.
+- Universal Blue updater preview for manual application updates; Bazaar replaces
+  GNOME Software and is prepared after installation once internet access is
+  available. Automatic OS updates remain disabled. The live session does not
+  automatically download an app store.
   See [the preview instructions](surface/UBLUE-UPDATES.md).
 
 *Last updated: 2026-10-28*
