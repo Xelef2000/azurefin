@@ -6,8 +6,9 @@ signed OS downloads and deployments.
 
 The signed `v0.0.12-alpha` testing image enables scheduled updates and has
 passed OTA and resume testing on the development Surface. Images through
-`v0.0.11-alpha` default to disabled scheduled updates. These tests did not
-publish a new release ISO or validate a fresh installation of this candidate.
+`v0.0.11-alpha` default to disabled scheduled updates. The rebuilt installer
+also passed a fresh offline OS installation and subsequent online firmware
+setup on 2026-10-29; release preparation is tracked in [RELEASING.md](RELEASING.md).
 
 ## Bazaar on fresh installations
 
@@ -108,7 +109,7 @@ publisher and channel publication remain trusted parts of this design.
 
 ### Fresh-install update source
 
-The next installer retains `ostreecontainer` with the local OCI payload, then
+The tested installer retains `ostreecontainer` with the local OCI payload, then
 runs `bootc switch --mutate-in-place --transport registry
 --enforce-container-sigpolicy ghcr.io/xelef2000/azurefin:testing` in its chrooted
 Anaconda `%post` hook. This changes only the deployment's future update origin:
@@ -125,9 +126,13 @@ Firmware preflight still prevents updates before provisioning is complete.
 
 A disposable ARM64 container with networking disabled confirmed that bootc
 1.17.1 writes `ostree-image-signed:docker://ghcr.io/xelef2000/azurefin:testing`.
-This used a synthetic deployment directory, not the Surface's disk. Full
-Anaconda installation, first-boot origin verification and offline firmware
-setup still need testing on rebuilt media. Do not run this installer-only
+This used a synthetic deployment directory, not the Surface's disk. A subsequent
+full Anaconda installation with networking disconnected passed on the Surface.
+The user then installed firmware online and rebooted; the installed origin was
+the signed registry channel, all 11 firmware files loaded and verified, Wi-Fi
+connected, the update preflight passed, and no system services had failed.
+The installer hook log confirmed the in-place origin switch succeeded. Offline
+MSI provisioning was not repeated in this test. Do not run this installer-only
 command manually on an existing multi-deployment installation.
 
 ### Provisioning
@@ -194,8 +199,8 @@ replace the normal six-hour timer. Thus timer execution and missed-event resume
 catch-up were exercised, but a production six-hour calendar event has not yet
 been observed. A new-version update and timer triggering were tested separately.
 This is not a suspend power-consumption measurement or a cold-boot missed-timer
-test. Fresh-install/live-session validation of the new candidate remains before
-publishing replacement installation media.
+test. Fresh installation of the rebuilt media passed on 2026-10-29 as described
+above; no separate new-version OTA was run on that newly installed system.
 
 ## Upstream provenance
 
