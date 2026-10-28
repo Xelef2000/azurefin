@@ -13,6 +13,8 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     bash /ctx/build/16-ota-tools.sh
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    bash /ctx/build/17-uupd.sh
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     bash /ctx/build/19-check-firmware-free.sh
 
 # Release CI publishes only the firmware-free base-image stage below.

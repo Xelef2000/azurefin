@@ -22,8 +22,11 @@ It is an independent community project, not an official Fedora or Microsoft prod
   including IPv6 reverse-path filtering and Samba-client connection tracking.
 - Signed-update tooling under development: verifies the release base before
   rebuilding firmware locally. This is not yet enabled on released installations.
+- Universal Blue updater preview for manual application updates; Bazaar is
+  being tested alongside GNOME Software. Automatic OS updates remain disabled.
+  See [the preview instructions](surface/UBLUE-UPDATES.md).
 
-*Last updated: 2026-10-27*
+*Last updated: 2026-10-28*
 
 Installation and online post-install firmware setup have been tested on the
 13-inch model. Alpha 3 boots into a live GNOME desktop with a passwordless
