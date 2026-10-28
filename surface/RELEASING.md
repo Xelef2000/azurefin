@@ -1,5 +1,33 @@
 # Azurefin tagged releases
 
+## Prepared v0.0.13-alpha: signed-update live installer
+
+The next media release is prepared from the exact Surface-tested ISO, without
+rebuilding it: 7,109,869,568 bytes, SHA-256
+`5d31aa9f991f2bd65328293c0ffeb73baee2dd31944b35b65238f1a64c6930a4`.
+It installs the audited `v0.0.12-alpha` OS and adds the offline signed-channel
+hook from source commit `296a9bde66f554db4fb19b8a8286a058952b8f30`.
+The media version and installed OS version therefore intentionally differ.
+
+Pinned build inputs:
+
+- Base: `ghcr.io/xelef2000/azurefin@sha256:646374cde6bf71fbdf4db0304df9fa42bfca063fbc96347b9078fcd0ab0d9545`.
+- Installer: `ghcr.io/xelef2000/azurefin@sha256:1c4dae14b137035365f8d49929b70a1208ae25714afb91de620a0db0a215e05f`.
+
+The final media audit passed, including all 92 payload layers, live filesystem,
+initramfs and EFI contents. Fedora redistributable firmware is included;
+Microsoft-extracted firmware and prohibited personal data are excluded.
+Flash read-back matched the full ISO. On 2026-10-29 the user confirmed OS
+installation with networking disconnected, followed by online firmware setup.
+SSH verification confirmed the signed registry origin, all 11 firmware files,
+connected Wi-Fi, successful update preflight and enabled scheduling, with no
+failed system services. This fresh-install test did not repeat offline MSI setup
+or a new-version OTA deployment. No new FDE-specific result was recorded.
+
+Publication must use the prebuilt marker described below to avoid an automatic
+rebuild, and attach only the full SourceForge ISO link and `ISO-SHA256SUM`.
+This section records preparation, not confirmation of publication.
+
 ## Alpha 3: hardware-tested live ISO
 
 `v0.0.3-alpha` publishes the exact October 26 live ISO tested on the Surface:
