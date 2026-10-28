@@ -90,6 +90,12 @@ to signed registry updates; earlier tests on a previous installation do not
 establish its current trust configuration. Both `uupd.timer` and
 `bootc-fetch-apply-updates.timer` remain masked.
 
+The branch now includes a Bluefin-style native container policy for future
+images: Azurefin's repository requires its dedicated OTA key and exact repository
+identity, while other development containers remain usable. Isolated native
+signature tests passed locally and on the Surface without changing its host
+policy. A rebuilt image and signed registry-to-bootc tests are still required.
+
 ### Update enablement gates
 
 - Verify the prepared Flatpak preinstallation on a fresh install, including

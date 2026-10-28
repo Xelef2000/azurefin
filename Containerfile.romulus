@@ -35,6 +35,9 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
 
 # Keep the default target independent of all firmware-inclusive layers.
 FROM packages AS base-image
+COPY surface/ota-signing.pub /usr/lib/pki/containers/azurefin-ota.pub
+COPY surface/native-ota/policy.json /etc/containers/policy.json
+COPY surface/native-ota/azurefin.yaml /etc/containers/registries.d/azurefin.yaml
 COPY surface/installer_fix_fstab.py /usr/libexec/azurefin-installer-fix-fstab.py
 COPY surface/build/19-check-firmware-free.sh /usr/libexec/azurefin-check-firmware-free
 COPY surface/postinstall_firmware.py /usr/libexec/azurefin/postinstall_firmware.py

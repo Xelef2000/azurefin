@@ -1,6 +1,12 @@
 # Signed OS updates
 
-Implementation status: development/testing. Signed tag-only candidates have
+Implementation status: development/testing. The current branch adds native
+registry trust to new images; automatic OS updates remain disabled. The fresh
+test installation has not yet booted this trust configuration. See
+[current updater and firmware-store status](UBLUE-UPDATES.md).
+
+The older private-image workflow below is retained for reference, not the
+intended standard update interface. Signed tag-only candidates have
 been tested on hardware with the private-image updater. Alpha 3 predates this updater and cannot use
 these commands without a reviewed bootstrap migration. Do not unmask the stock
 bootc update timer or switch a firmware-enabled installation to the public base.
@@ -12,7 +18,7 @@ each immutable digest with Cosign 3 / Sigstore keyless signing, using GitHub's
 OIDC issuer. This keyless path does not require a long-lived private key.
 Signing and verification failures fail the release job.
 
-### Native bootc signature integration (not yet deployed)
+### Native bootc signature integration
 
 The native verifier cannot currently match GitHub Actions' Fulcio URI identity.
 The proposed release workflow therefore adds a second, public-key signature to
@@ -43,8 +49,20 @@ and removal of the compromised key, not merely generating another key.
 `scripts/test-native-signatures.py` passes offline acceptance and rejection
 tests. The manual registry test uses disposable keys and anonymous reads;
 it must pass before production signing is enabled in a merged workflow.
-No native policy or public-key trust has been installed on the Surface, and
-automatic bootc updates remain disabled pending end-to-end migration tests.
+The current branch installs `surface/native-ota/policy.json` and the public key
+at `/usr/lib/pki/containers/azurefin-ota.pub`. The exact
+`ghcr.io/xelef2000/azurefin` repository requires a signature from that key, with
+the same repository identity. The registry configuration enables legacy Sigstore
+attachment lookup. Other registry repositories and explicit local transports
+remain usable for development, following Bluefin's policy structure. This is
+not a blanket requirement that all containers be signed.
+
+The Surface's existing host policy is unchanged. Its isolated native verifier
+tests do not install trust or authorize an OS switch. A rebuilt image must still
+be tested with real signed registry pulls, rejection cases, firmware compatibility
+and rollback before enabling automatic updates. `/etc` is administrator-managed;
+upgrades must verify the effective policy rather than assume an image default
+has overwritten local configuration.
 
 `azurefin-update` accepts only `ghcr.io/xelef2000/azurefin`, the exact
 `release-romulus.yml@refs/tags/VERSION` certificate identity, GitHub's OIDC
@@ -150,3 +168,16 @@ candidate tag to different code: corrections need a new version.
 
 References: [Cosign verification](https://github.com/sigstore/cosign/blob/main/doc/cosign_verify.md)
 and [bootc security model](https://bootc.dev/bootc/bootc-security.7.html).
+
+### Native policy validation (2026-10-28)
+
+The shipped repository rule passed isolated tests with disposable keys on the
+development host and the ARM64 Surface: a valid signature was accepted; unsigned,
+wrong-key, wrong-repository and modified-manifest fixtures were rejected. Tests
+use temporary local images, not production signing keys, registry publications,
+host policy changes or bootable deployments. The public trust-anchor fingerprint
+and image wiring are also covered by the Surface unit suite (158 tests passing).
+
+Policy structure follows [Bluefin's container policy](https://github.com/projectbluefin/common/blob/main/system_files/shared/etc/containers/policy.json).
+Repository identity and signature-attachment behavior follow
+[containers/image policy documentation](https://github.com/containers/image/blob/main/docs/containers-policy.json.5.md).
