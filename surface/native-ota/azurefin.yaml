@@ -1,0 +1,3 @@
+docker:
+  ghcr.io/xelef2000/azurefin:
+    use-sigstore-attachments: true

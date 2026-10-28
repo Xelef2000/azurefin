@@ -1,0 +1,18 @@
+[Unit]
+Description=Prepare the Bazaar application store
+Documentation=man:flatpak-preinstall(1)
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=/usr/bin/flatpak
+ConditionKernelCommandLine=!rd.live.image
+ConditionKernelCommandLine=!azurefin.live=1
+
+[Service]
+Type=oneshot
+# Preserve an existing remote and its administrator-selected configuration.
+ExecStartPre=/usr/bin/flatpak remote-add --system --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+ExecStart=/usr/bin/flatpak preinstall --system --noninteractive -y
+TimeoutStartSec=30min
+# Flatpak may return success after skipping an unavailable remote. Leave this
+# inactive so the timer retries even that case. Preinstall respects user removal
+# and does not reinstall refs it already recorded as preinstalled.

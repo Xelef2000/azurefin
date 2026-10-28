@@ -48,7 +48,8 @@ def main():
                        "digest": f"sha256:{digest}", "size": len(config)}, "layers": []})
         allow = root / "fixture-only.json"
         write_json(allow, {"default": [{"type": "insecureAcceptAnything"}]})
-        identity = "example.invalid/azurefin/release:test"
+        repository = 'ghcr.io/xelef2000/azurefin'
+        identity = repository + ':test'
         for name, key, signed_identity in (
             ("valid", "trusted", identity),
             ("wrong-key", "wrong", identity),
@@ -59,10 +60,15 @@ def main():
                 "--sign-passphrase-file", str(password), "--sign-identity", signed_identity,
                 f"dir:{source}", f"dir:{root / name}")
         policy = root / "verify.json"
+        # Exercise the shipped signature requirement using disposable keys and
+        # local fixtures. No production private key or host policy is touched.
+        shipped = json.loads((pathlib.Path(__file__).resolve().parent.parent /
+                              'surface/native-ota/policy.json').read_text())
+        requirements = shipped['transports']['docker'][repository]
+        for requirement in requirements:
+            requirement['keyPath'] = str(root / 'trusted.pub')
         write_json(policy, {"default": [{"type": "reject"}], "transports": {
-            "dir": {str(root): [{"type": "sigstoreSigned", "keyPath": str(root / "trusted.pub"),
-                "signedIdentity": {"type": "exactRepository",
-                                   "dockerRepository": "example.invalid/azurefin/release"}}]}}})
+            "dir": {str(root): requirements}}})
         for name in ("valid", "unsigned", "wrong-key", "wrong-repository"):
             run("skopeo", "--policy", str(policy), "copy", f"dir:{root / name}",
                 f"dir:{root / ('result-' + name)}", rejection=name != "valid")

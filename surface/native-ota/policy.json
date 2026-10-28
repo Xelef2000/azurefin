@@ -1,0 +1,24 @@
+{
+  "default": [{"type": "reject"}],
+  "transports": {
+    "docker": {
+      "ghcr.io/xelef2000/azurefin": [{
+        "type": "sigstoreSigned",
+        "keyPath": "/usr/lib/pki/containers/azurefin-ota.pub",
+        "signedIdentity": {
+          "type": "exactRepository",
+          "dockerRepository": "ghcr.io/xelef2000/azurefin"
+        }
+      }],
+      "": [{"type": "insecureAcceptAnything"}]
+    },
+    "docker-daemon": {"": [{"type": "insecureAcceptAnything"}]},
+    "atomic": {"": [{"type": "insecureAcceptAnything"}]},
+    "containers-storage": {"": [{"type": "insecureAcceptAnything"}]},
+    "dir": {"": [{"type": "insecureAcceptAnything"}]},
+    "oci": {"": [{"type": "insecureAcceptAnything"}]},
+    "oci-archive": {"": [{"type": "insecureAcceptAnything"}]},
+    "docker-archive": {"": [{"type": "insecureAcceptAnything"}]},
+    "tarball": {"": [{"type": "insecureAcceptAnything"}]}
+  }
+}

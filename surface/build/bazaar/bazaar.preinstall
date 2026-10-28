@@ -1,0 +1,5 @@
+# Based on projectbluefin/common's Bazaar preinstall definition.
+# Removing this definition can uninstall a previously preinstalled Bazaar.
+[Flatpak Preinstall io.github.kolunmi.Bazaar]
+Branch=stable
+IsRuntime=false
