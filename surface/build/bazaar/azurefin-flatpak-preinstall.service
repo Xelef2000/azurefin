@@ -13,5 +13,6 @@ Type=oneshot
 ExecStartPre=/usr/bin/flatpak remote-add --system --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 ExecStart=/usr/bin/flatpak preinstall --system --noninteractive -y
 TimeoutStartSec=30min
-# A successful run remains active so the retry timer is idle until next boot.
-RemainAfterExit=true
+# Flatpak may return success after skipping an unavailable remote. Leave this
+# inactive so the timer retries even that case. Preinstall respects user removal
+# and does not reinstall refs it already recorded as preinstalled.

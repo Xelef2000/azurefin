@@ -39,13 +39,15 @@ class UpdaterPreviewTests(unittest.TestCase):
         manifest.read(ROOT / "build/bazaar/bazaar.preinstall")
         app = manifest["Flatpak Preinstall io.github.kolunmi.Bazaar"]
         self.assertEqual(app["Branch"], "stable")
-        self.assertEqual(app["CollectionID"], "org.flathub.Stable")
+        # A newly added Flathub remote has no collection ID in its config.
+        # Restricting it here silently prevents Flatpak from selecting it.
+        self.assertNotIn("CollectionID", app)
         self.assertFalse(app.getboolean("IsRuntime"))
 
     def test_bazaar_offline_retry_and_live_exclusion(self):
         service = (ROOT / "build/bazaar/azurefin-flatpak-preinstall.service").read_text()
         timer = (ROOT / "build/bazaar/azurefin-flatpak-preinstall.timer").read_text()
-        self.assertIn("RemainAfterExit=true", service)
+        self.assertNotIn("RemainAfterExit=true", service)
         self.assertIn("TimeoutStartSec=30min", service)
         self.assertIn("OnUnitInactiveSec=15min", timer)
         self.assertIn("OnBootSec=2min", timer)

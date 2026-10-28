@@ -10,8 +10,9 @@ The image schedules Bazaar setup shortly after boot. It configures Flathub
 and runs the upstream `flatpak preinstall` command. Downloads happen on the
 installed system, not during image construction. If the machine is offline,
 setup retries every 15 minutes without blocking boot or firmware preparation.
-After a successful run, it stays idle until the next boot. User removal of a
-preinstalled app is respected by Flatpak's preinstall mechanism.
+The check repeats even after a successful exit: Flatpak can return success
+after skipping an unreachable remote. Already-preinstalled apps are skipped,
+and user removal is respected by Flatpak's preinstall mechanism.
 
 The automatic setup is skipped in the nonpersistent live session to avoid
 downloading runtimes that would disappear at reboot. GNOME Software remains
@@ -80,3 +81,23 @@ are disabled, Flatpak preinstallation uses a delayed retry timer for firmware-fr
 offline boots (and skips the live session), and GNOME Software is retained.
 No Microsoft firmware, device identifiers or credentials belong
 in this integration.
+
+## Validation (2026-10-28)
+
+An isolated installation on the ARM64 Surface (Flatpak 1.18.4) reproduced a
+silent skip when the preinstall definition specified `CollectionID`: a newly
+added Flathub remote did not have that ID in its local configuration. The
+definition now matches Bluefin's unrestricted preinstall definition.
+
+With the corrected definition and retry behavior, the hardware test passed:
+
+- Offline attempt, then automatic retry and successful Bazaar installation.
+- A subsequent periodic preinstall completed without reinstalling the app.
+- Removing Bazaar was respected by the next preinstall run.
+
+The test used an isolated user installation, redirected Flatpak configuration
+and data directories, temporary user systemd units, a 20-second retry interval,
+and a deliberately unreachable proxy to simulate network failure. The normal
+user's apps and network settings were not modified. This validates Flatpak and
+timer behavior, not a complete fresh-install/system-service test or a new ISO.
+All 145 local Surface tests pass. Automatic OS updates remain disabled.
