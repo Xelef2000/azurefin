@@ -106,6 +106,32 @@ publisher and channel publication remain trusted parts of this design.
 
 ## Persistent firmware
 
+### Fresh-install update source
+
+The next installer retains `ostreecontainer` with the local OCI payload, then
+runs `bootc switch --mutate-in-place --transport registry
+--enforce-container-sigpolicy ghcr.io/xelef2000/azurefin:testing` in its chrooted
+Anaconda `%post` hook. This changes only the deployment's future update origin:
+no registry access, replacement deployment or reboot is needed. A failed hook
+fails the installation. Both installer configurations are tested against the
+channel in `surface/update-contract.json` to prevent drift.
+
+This uses bootc 1.17.1's installer-specific
+[in-place switch implementation](https://github.com/bootc-dev/bootc/blob/v1.17.1/crates/lib/src/deploy.rs#L1423),
+not a manual origin-file editor. It configures signature enforcement for future
+registry pulls; it does not retroactively authenticate the offline installation
+payload, which remains covered by the media audit and checksum verification.
+Firmware preflight still prevents updates before provisioning is complete.
+
+A disposable ARM64 container with networking disabled confirmed that bootc
+1.17.1 writes `ostree-image-signed:docker://ghcr.io/xelef2000/azurefin:testing`.
+This used a synthetic deployment directory, not the Surface's disk. Full
+Anaconda installation, first-boot origin verification and offline firmware
+setup still need testing on rebuilt media. Do not run this installer-only
+command manually on an existing multi-deployment installation.
+
+### Provisioning
+
 `azurefin-setup-firmware` provisions the independent firmware store on the
 separate ext4 `/boot` filesystem. Use `--download` for online setup or
 `--msi PATH` for offline extraction; `--bluetooth-address MAC` is optional.

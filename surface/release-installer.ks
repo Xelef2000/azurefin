@@ -15,3 +15,9 @@ chmod 0700 "$destination"
 set -eu
 python3 /usr/libexec/azurefin-installer-fix-fstab.py
 %end
+%post --erroronfail --log=/var/log/azurefin-update-channel-post.log
+set -eu
+# Installer-only origin rewrite: retain the offline payload without pulling or rebooting.
+# Keep this target in sync with surface/update-contract.json.
+bootc switch --mutate-in-place --transport registry --enforce-container-sigpolicy ghcr.io/xelef2000/azurefin:testing
+%end
