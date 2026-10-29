@@ -1,8 +1,8 @@
 # Azurefin tagged releases
 
-## Prepared v0.0.13-alpha: signed-update live installer
+## Published v0.0.13-alpha: signed-update live installer
 
-The next media release is prepared from the exact Surface-tested ISO, without
+The media release was published from the exact Surface-tested ISO, without
 rebuilding it: 7,109,869,568 bytes, SHA-256
 `5d31aa9f991f2bd65328293c0ffeb73baee2dd31944b35b65238f1a64c6930a4`.
 It installs the audited `v0.0.12-alpha` OS and adds the offline signed-channel
@@ -21,12 +21,17 @@ Flash read-back matched the full ISO. On 2026-10-29 the user confirmed OS
 installation with networking disconnected, followed by online firmware setup.
 SSH verification confirmed the signed registry origin, all 11 firmware files,
 connected Wi-Fi, successful update preflight and enabled scheduling, with no
-failed system services. This fresh-install test did not repeat offline MSI setup
-or a new-version OTA deployment. No new FDE-specific result was recorded.
+failed system services. Subsequent OTA from v0.0.12-alpha to v0.0.14-alpha and
+reboot passed on that fresh installation, with all 11 firmware files verified.
+Offline MSI setup was not repeated. No new FDE-specific result was recorded.
 
 Publication must use the prebuilt marker described below to avoid an automatic
 rebuild, and attach only the full SourceForge ISO link and `ISO-SHA256SUM`.
-This section records preparation, not confirmation of publication.
+The SourceForge upload was compared with the local files using a checksum-based
+rsync dry run; no differences were reported. The public download returned the
+expected size and checksum file. GitHub retains only the link and checksum
+attachment. The older v0.0.3-alpha SourceForge files were removed after
+verification; its historical GitHub release remains.
 
 ## Alpha 3: hardware-tested live ISO
 

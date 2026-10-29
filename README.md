@@ -99,10 +99,10 @@ remove the installer drive and connect the MSI drive instead.
    the internal SSD. Unlock encryption and finish account setup.
 5. Install Surface firmware as described below, then reboot.
 
-The newly tested installer configures the signed `:testing` update channel while keeping
+The v0.0.13-alpha installer configures the signed `:testing` update channel while keeping
 the bundled offline OS payload. It does not download an OS update during
 installation. Firmware setup must be completed before the updater will run.
-Existing release media do not include this installer change.
+Older v0.0.3-alpha media do not include this installer change.
 
 ## Install Surface firmware
 

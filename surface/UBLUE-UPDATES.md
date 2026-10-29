@@ -8,7 +8,8 @@ The signed `v0.0.12-alpha` testing image enables scheduled updates and has
 passed OTA and resume testing on the development Surface. Images through
 `v0.0.11-alpha` default to disabled scheduled updates. The rebuilt installer
 also passed a fresh offline OS installation and subsequent online firmware
-setup on 2026-10-29; release preparation is tracked in [RELEASING.md](RELEASING.md).
+setup on 2026-10-29, followed by a successful signed OTA to v0.0.14-alpha.
+Published media are tracked in [RELEASING.md](RELEASING.md).
 
 ## Bazaar on fresh installations
 
@@ -200,7 +201,34 @@ catch-up were exercised, but a production six-hour calendar event has not yet
 been observed. A new-version update and timer triggering were tested separately.
 This is not a suspend power-consumption measurement or a cold-boot missed-timer
 test. Fresh installation of the rebuilt media passed on 2026-10-29 as described
-above; no separate new-version OTA was run on that newly installed system.
+above. The later fresh-install OTA test is recorded below.
+
+### Fresh-install OTA: v0.0.12-alpha to v0.0.14-alpha (2026-10-29)
+
+- The normal update service completed checks at 00:10 and 07:30 CET on the
+  fresh installation, with the production timer enabled. No new OS deployment
+  was available during those runs.
+- [Candidate build](https://github.com/Xelef2000/azurefin/actions/runs/40830574884)
+  passed the 92-layer base and 104-layer installer audits and signature checks.
+  [Channel promotion](https://github.com/Xelef2000/azurefin/actions/runs/40915667413)
+  reverified both signatures and the supported firmware contract.
+- The promoted base digest was
+  `sha256:bb16069b7bf7cee046f0176ff82178d724656ac3fd23dbe06f5df8306ba52094`.
+  This was a tag-only OTA candidate, not a new ISO release.
+- Manually starting the normal `uupd.service` staged the new version in
+  1 minute 56 seconds. OS, Homebrew and Flatpak steps completed successfully.
+  No custom update driver, forced origin switch or automatic reboot was used.
+- After the approved reboot, bootc reported v0.0.14-alpha with
+  `containerPolicy` signature enforcement, no staged deployment, and
+  v0.0.12-alpha available as rollback.
+- The early-boot loader verified and exposed all 11 firmware files and exited
+  successfully. Wi-Fi and Ethernet were connected, there were no failed
+  system services, and the update preflight passed. The update timer remained
+  enabled and active.
+
+This validates offline OS installation, online firmware provisioning, normal
+signed OTA and reboot on the same fresh installation. It does not add an
+offline MSI test, a new rollback boot test, or a suspend power measurement.
 
 ## Upstream provenance
 
