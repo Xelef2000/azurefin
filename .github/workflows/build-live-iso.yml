@@ -1,0 +1,97 @@
+name: Build audited live ISO candidate
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Audited versioned base/installer inputs (for example v0.0.14-alpha)
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: azurefin-live-iso-candidate
+  cancel-in-progress: false
+jobs:
+  live:
+    # Dedicated native ARM64 runner, 150 GiB free AFTER pulling the inputs.
+    runs-on: ${{ fromJSON(vars.AZUREFIN_ISO_RUNNER || '["ubuntu-24.04-arm"]') }}
+    timeout-minutes: 180
+    container:
+      image: registry.fedoraproject.org/fedora:44
+      options: --privileged
+    env:
+      RELEASE_TAG: ${{ inputs.release_tag }}
+    steps:
+      - name: Install tools
+        run: dnf5 install -y git gh podman skopeo python3 xorriso mtools grub2-tools isomd5sum squashfs-tools dracut util-linux findutils coreutils libselinux
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - uses: sigstore/cosign-installer@b9c35392b7c1401bcc77d30c9b07cf4b1c7a7b07
+        with:
+          cosign-release: v3.1.4
+      - name: Verify immutable inputs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ $(uname -m) == aarch64 ]]
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-alpha)?$ ]]
+          available=$(df --output=avail -k "$RUNNER_TEMP" | tail -n 1 | tr -d ' ')
+          (( available >= 165 * 1024 * 1024 )) || {
+            echo 'At least 165 GiB free required before pulling inputs; configure AZUREFIN_ISO_RUNNER.' >&2
+            exit 1
+          }
+          revision=$(gh api "repos/$GITHUB_REPOSITORY/commits/$RELEASE_TAG" --jq .sha)
+          [[ $revision =~ ^[a-f0-9]{40}$ ]]
+          mkdir metadata
+          for kind in base installer; do
+            ref="ghcr.io/xelef2000/azurefin:$RELEASE_TAG-$kind"
+            digest=$(skopeo inspect --no-creds --format '{{.Digest}}' "docker://$ref")
+            [[ $digest =~ ^sha256:[a-f0-9]{64}$ ]]
+            immutable="ghcr.io/xelef2000/azurefin@$digest"
+            cosign verify --certificate-identity "https://github.com/Xelef2000/azurefin/.github/workflows/release-romulus.yml@refs/tags/$RELEASE_TAG" \
+              --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+              -a "release=$RELEASE_TAG" -a "component=$kind" "$immutable" > "metadata/$kind-keyless.json"
+            if [[ $kind == base ]]; then
+              cosign verify --key surface/ota-signing.pub --new-bundle-format=false \
+                -a "release=$RELEASE_TAG" -a component=base "$immutable" > metadata/base-native.json
+            fi
+            podman pull --platform linux/arm64 "$immutable"
+            [[ $(podman inspect --format '{{.Architecture}}' "$immutable") == arm64 ]]
+            [[ $(podman inspect --format '{{ index .Labels "org.opencontainers.image.revision" }}' "$immutable") == "$revision" ]]
+            printf '%s_REF=%s\n' "${kind^^}" "$immutable" >> "$GITHUB_ENV"
+          done
+          printf 'RELEASE_REVISION=%s\n' "$revision" >> "$GITHUB_ENV"
+      - name: Compose and audit live candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash surface/65-compose-release-live-iso.sh "$BASE_REF" "$INSTALLER_REF" "$RUNNER_TEMP/live-iso" "$RELEASE_REVISION" | tee metadata/live-audit.log
+      - name: Prepare local-test download
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -qx LIVE_ISO_CANDIDATE_AUDIT_PASSED metadata/live-audit.log
+          mkdir candidate
+          name="azurefin-live-$RELEASE_TAG-$GITHUB_RUN_ID-aarch64.iso"
+          split -b 1900M -d -a 3 "$RUNNER_TEMP/live-iso/azurefin-aarch64.iso" "candidate/$name.part-"
+          (cd candidate && sha256sum ./*.part-* > SHA256SUMS)
+          sha256sum "$RUNNER_TEMP/live-iso/azurefin-aarch64.iso" | sed "s|  .*|  $name|" > candidate/ISO-SHA256SUM
+          printf 'Input tag: %s\nInput revision: %s\nComposer revision: %s\nBase: %s\nInstaller: %s\nHardware boot/install test: NOT YET RUN\n' \
+            "$RELEASE_TAG" "$RELEASE_REVISION" "$GITHUB_SHA" "$BASE_REF" "$INSTALLER_REF" > candidate/BUILD-INFO.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: live-iso-candidate-${{ github.run_id }}
+          path: candidate/
+          compression-level: 0
+          retention-days: 7
+          if-no-files-found: error
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: live-iso-metadata-${{ github.run_id }}
+          path: metadata/
+          retention-days: 14
+          if-no-files-found: warn

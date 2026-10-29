@@ -1,5 +1,49 @@
 # Azurefin tagged releases
 
+## Manual live-ISO candidate CI
+
+`Build audited live ISO candidate` (`build-live-iso.yml`) automates the local
+combined GNOME desktop and Anaconda composition path. It is manual-only and
+uploads short-lived Actions artifacts, never GitHub release assets or
+SourceForge downloads. It does not change the existing release workflows.
+The first CI-built candidate still needs boot and installation testing before
+this path can replace public release composition.
+
+Supply an existing audited image tag, such as `v0.0.14-alpha`. The workflow
+resolves immutable base and installer digests, verifies their keyless release
+signatures plus the base's native OTA signature, and checks both source labels
+against the tag. The selected workflow revision supplies the live composition
+code; both input and composer revisions are recorded in `BUILD-INFO.txt`.
+
+Configure `AZUREFIN_ISO_RUNNER` with a JSON runner-label list for a dedicated
+native ARM64 runner. It needs privileged nested Podman/loop mounts and at least
+165 GiB free before pulling inputs (150 GiB afterward). The standard hosted
+runner fallback is not guaranteed to have this space; the build fails early
+without deleting runner data. Do not use a runner with unrelated workloads or
+credentials. No signing or SourceForge upload secret is needed.
+
+The composer creates a fresh EFI seed from the audited OCI inputs instead of
+depending on an old local ISO. It builds the live desktop without network
+access, audits all its layers, tests the temporary live account in a disposable
+container, exports SELinux-labelled SquashFS, and composes the single-entry
+live ISO with a separate clean installation payload. The final audit inspects
+the actual live filesystem, EFI, initramfs and bundled payload. Passing these
+checks is not a hardware boot result. Compression and boot configuration remain
+the tested local settings for this first candidate.
+
+Download the `live-iso-candidate-RUN_ID` Actions artifact and extract it into an
+empty directory. With only that candidate's parts present:
+
+```sh
+sha256sum -c SHA256SUMS
+cat azurefin-live-*.iso.part-* > "$(awk '{print $2}' ISO-SHA256SUM)"
+sha256sum -c ISO-SHA256SUM
+```
+
+Artifacts expire after seven days; metadata and logs after fourteen. Verify the
+full checksum before flashing. Test the live desktop, offline OS installation,
+firmware provisioning and signed update origin before proposing publication.
+
 ## Published v0.0.13-alpha: signed-update live installer
 
 The media release was published from the exact Surface-tested ISO, without
