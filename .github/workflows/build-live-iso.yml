@@ -100,7 +100,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          bash surface/65-compose-release-live-iso.sh "$BASE_REF" "$INSTALLER_REF" "$RUNNER_TEMP/live-iso" "$RELEASE_REVISION" | tee metadata/live-audit.log
+          bash surface/65-compose-release-live-iso.sh "$BASE_REF" "$INSTALLER_REF" "$RUNNER_TEMP/live-iso" "$RELEASE_REVISION" 2>&1 | tee metadata/live-audit.log
       - name: Prepare local-test download
         shell: bash
         run: |

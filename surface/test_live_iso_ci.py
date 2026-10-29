@@ -8,6 +8,17 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class LiveIsoCITests(unittest.TestCase):
+    def test_failed_dtb_audit_reports_inventory_without_bypassing_check(self):
+        text = (ROOT / 'surface/51-audit-release-iso.sh').read_text()
+        self.assertIn('if [[ ${#romulus_dtbs[@]} != 1 ]]; then', text)
+        diagnostic = text.split('if [[ ${#romulus_dtbs[@]} != 1 ]]; then', 1)[1].split('\nfi', 1)[0]
+        self.assertIn('Kernel directories and symlinks:', diagnostic)
+        self.assertIn('-exec sha256sum {} +', diagnostic)
+        self.assertIn('exit 1', diagnostic)
+        self.assertIn('cmp "$work/iso/images/dtbs/qcom/x1e80100-microsoft-romulus13.dtb" "${romulus_dtbs[0]}"', text)
+        workflow = (ROOT / '.github/workflows/build-live-iso.yml').read_text()
+        self.assertIn('2>&1 | tee metadata/live-audit.log', workflow)
+
     def test_public_runner_probe_is_default_and_read_only(self):
         text = (ROOT / '.github/workflows/build-live-iso.yml').read_text()
         self.assertIn('capacity_only:', text)

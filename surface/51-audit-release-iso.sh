@@ -65,7 +65,20 @@ if [[ -f $root/LiveOS/rootfs.img ]]; then
 fi
 test -d "$root/usr/lib/modules"
 mapfile -t romulus_dtbs < <(find "$root/usr/lib/modules" -type f -path '*/dtb/qcom/x1e80100-microsoft-romulus13.dtb')
-[[ ${#romulus_dtbs[@]} == 1 ]]
+if [[ ${#romulus_dtbs[@]} != 1 ]]; then
+    printf 'Expected exactly one regular Romulus13 DTB; found %s (mode=%s).\n' "${#romulus_dtbs[@]}" "$mode" >&2
+    echo 'Kernel directories and symlinks:' >&2
+    find "$root/usr/lib/modules" -maxdepth 2 -printf '%y %p -> %l\n' >&2
+    echo 'Romulus DTB and kernel/initramfs inventory (without following symlinks):' >&2
+    find "$root/usr/lib/modules" "$root/boot" \
+        \( -name '*romulus*' -o -name 'vmlinuz*' -o -name 'initramfs*' -o -name 'dtb' \) \
+        -printf '%y %s %p -> %l\n' >&2
+    echo 'Regular Romulus13 DTB checksums:' >&2
+    find "$root/usr/lib/modules" "$root/boot" -type f \
+        -name x1e80100-microsoft-romulus13.dtb -exec sha256sum {} + >&2
+    sha256sum "$work/iso/images/dtbs/qcom/x1e80100-microsoft-romulus13.dtb" >&2
+    exit 1
+fi
 cmp "$work/iso/images/dtbs/qcom/x1e80100-microsoft-romulus13.dtb" "${romulus_dtbs[0]}"
 audit_initrd "$work/iso/images/pxeboot/initrd.img" "$work/boot-initrd"
 index=0
