@@ -64,9 +64,8 @@ if [[ -f $root/LiveOS/rootfs.img ]]; then
     audit_tree "$root"
 fi
 test -d "$root/usr/lib/modules"
-mapfile -t romulus_dtbs < <(find "$root/usr/lib/modules" -type f -path '*/dtb/qcom/x1e80100-microsoft-romulus13.dtb')
-if [[ ${#romulus_dtbs[@]} != 1 ]]; then
-    printf 'Expected exactly one regular Romulus13 DTB; found %s (mode=%s).\n' "${#romulus_dtbs[@]}" "$mode" >&2
+if ! python3 "$repo/surface/verify_iso_kernel.py" "$root" "$work/iso" "$mode"; then
+    printf 'Boot kernel/DTB verification failed (mode=%s).\n' "$mode" >&2
     echo 'Kernel directories and symlinks:' >&2
     find "$root/usr/lib/modules" -maxdepth 2 -printf '%y %p -> %l\n' >&2
     echo 'Romulus DTB and kernel/initramfs inventory (without following symlinks):' >&2
@@ -79,7 +78,6 @@ if [[ ${#romulus_dtbs[@]} != 1 ]]; then
     sha256sum "$work/iso/images/dtbs/qcom/x1e80100-microsoft-romulus13.dtb" >&2
     exit 1
 fi
-cmp "$work/iso/images/dtbs/qcom/x1e80100-microsoft-romulus13.dtb" "${romulus_dtbs[0]}"
 audit_initrd "$work/iso/images/pxeboot/initrd.img" "$work/boot-initrd"
 index=0
 while IFS= read -r -d '' initrd; do
