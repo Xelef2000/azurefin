@@ -9,6 +9,15 @@ SourceForge downloads. It does not change the existing release workflows.
 The first CI-built candidate still needs boot and installation testing before
 this path can replace public release composition.
 
+Manual dispatch defaults to `capacity_only=true`: a lightweight job on the
+public `ubuntu-24.04-arm` runner reports CPU, RAM, filesystems, available bytes
+and installed tools, without pulling images or composing an ISO. Its report is
+retained as an Actions artifact for seven days. Measure actual capacity before
+attempting the full pipeline; GitHub's documented standard runner storage does
+not meet the current full-build safety threshold. Set `capacity_only=false`
+only when a suitable runner or a validated lower-space composition path is
+available. The probe does not delete preinstalled software to reclaim space.
+
 Supply an existing audited image tag, such as `v0.0.14-alpha`. The workflow
 resolves immutable base and installer digests, verifies their keyless release
 signatures plus the base's native OTA signature, and checks both source labels

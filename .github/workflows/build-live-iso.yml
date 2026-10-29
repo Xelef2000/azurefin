@@ -2,6 +2,11 @@ name: Build audited live ISO candidate
 on:
   workflow_dispatch:
     inputs:
+      capacity_only:
+        description: Measure the public ARM64 runner without pulling images or building
+        required: true
+        default: true
+        type: boolean
       release_tag:
         description: Audited versioned base/installer inputs (for example v0.0.14-alpha)
         required: true
@@ -12,7 +17,34 @@ concurrency:
   group: azurefin-live-iso-candidate
   cancel-in-progress: false
 jobs:
+  capacity:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 5
+    steps:
+      - name: Report public runner capacity
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            printf 'Architecture: '; uname -m
+            printf 'CPU count: '; nproc
+            free -h
+            df -hT / "$RUNNER_TEMP" "$GITHUB_WORKSPACE"
+            df -B1 --output=target,size,used,avail / "$RUNNER_TEMP" "$GITHUB_WORKSPACE"
+            lsblk -o NAME,TYPE,SIZE,FSTYPE,MOUNTPOINTS
+            for tool in podman docker xorriso mksquashfs; do
+              command -v "$tool" || true
+            done
+          } | tee "$RUNNER_TEMP/live-iso-capacity.txt"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: live-iso-capacity-${{ github.run_id }}
+          path: ${{ runner.temp }}/live-iso-capacity.txt
+          retention-days: 7
+          if-no-files-found: error
   live:
+    needs: capacity
+    if: ${{ !inputs.capacity_only }}
     # Dedicated native ARM64 runner, 150 GiB free AFTER pulling the inputs.
     runs-on: ${{ fromJSON(vars.AZUREFIN_ISO_RUNNER || '["ubuntu-24.04-arm"]') }}
     timeout-minutes: 180

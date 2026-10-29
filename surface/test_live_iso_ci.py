@@ -8,6 +8,17 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class LiveIsoCITests(unittest.TestCase):
+    def test_public_runner_probe_is_default_and_read_only(self):
+        text = (ROOT / '.github/workflows/build-live-iso.yml').read_text()
+        self.assertIn('capacity_only:', text)
+        self.assertIn('default: true', text)
+        self.assertIn('if: ${{ !inputs.capacity_only }}', text)
+        probe = text.split('  capacity:\n', 1)[1].split('  live:\n', 1)[0]
+        self.assertIn('runs-on: ubuntu-24.04-arm', probe)
+        self.assertIn('df -B1', probe)
+        for forbidden in ('sudo ', 'rm ', 'podman pull', 'docker pull', 'mkfs', 'mount '):
+            self.assertNotIn(forbidden, probe)
+
     def test_invalid_invocation_fails_before_creating_output(self):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / 'must-not-exist'
