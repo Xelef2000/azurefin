@@ -48,14 +48,14 @@ class LiveIsoCITests(unittest.TestCase):
         self.assertIn('org.opencontainers.image.revision', text)
         self.assertLess(text.index('cosign verify'), text.index('podman pull'))
         self.assertIn('"docker://$ref"', text)
-        self.assertIn('165 * 1024 * 1024', text)
+        self.assertIn('100 * 1024 * 1024', text)
 
     def test_live_audit_follows_composition(self):
         text = (ROOT / 'surface/65-compose-release-live-iso.sh').read_text()
         self.assertIn('--network=none', text)
         self.assertIn('audit-release.py" oci "$output/live-oci"', text)
         self.assertIn('30-test-container.sh" "$live"', text)
-        self.assertIn('150 * 1024 * 1024', text)
+        self.assertIn('80 * 1024 * 1024', text)
         self.assertLess(text.index('50-compose-release-iso.sh'), text.index('podman build'))
         self.assertLess(text.index('60-compose-local-iso.sh'), text.index('51-audit-release-iso.sh'))
         self.assertIn('"$output/final-audit" live', text)
