@@ -10,9 +10,10 @@ base=$1 installer=$2 output=$(realpath -m "$3") revision=$4
 repo=$(cd -- "$(dirname -- "$0")/.." && pwd)
 bash "$repo/surface/52-check-iso-tools.sh"
 mkdir "$output"
+printf 'azurefin-iso-workspace-v1\n' > "$output/.azurefin-iso-workspace"
 available=$(df --output=avail -k "$output" | tail -n 1 | tr -d ' ')
-(( available >= 90 * 1024 * 1024 )) || {
-    echo 'ISO composition needs at least 90 GiB free. Configure AZUREFIN_ISO_RUNNER for a larger ARM64 runner.' >&2
+(( available >= 80 * 1024 * 1024 )) || {
+    echo 'ISO composition needs at least 80 GiB free after input pulls.' >&2
     exit 1
 }
 for image in "$base" "$installer"; do
@@ -27,6 +28,7 @@ podman save --format oci-dir -o "$bundle/base-oci" "$base"
 podman save --format oci-dir -o "$output/installer-oci" "$installer"
 python3 "$repo/scripts/audit-release.py" oci "$bundle/base-oci" "$repo/surface/firmware-policy.json"
 python3 "$repo/scripts/audit-release.py" oci "$output/installer-oci" "$repo/surface/firmware-policy.json"
+python3 "$repo/surface/iso_workspace.py" "$output" installer-oci
 podman inspect --format '{{.Id}}' "$base" | sed 's/^sha256://' > "$bundle/base-image-id"
 cp -a "$repo/surface/build" "$bundle/support/"
 for name in 28-prepare-installer-payload.sh Containerfile.provision installer_fix_fstab.py; do
@@ -70,6 +72,7 @@ echo 'Preparing Surface boot configuration...'
 # auditing both firmware-free OCI inputs, and audits the final ISO below.
 GITHUB_ACTIONS=false bash "$repo/surface/40-prepare-romulus-iso.sh" \
     "${sources[0]}" "${dtbs[0]}" "$output/surface.iso" --diagnostic
+python3 "$repo/surface/iso_workspace.py" "$output" compose modules
 mkdir "$output/boot"
 xorriso -osirrox on -indev "$output/surface.iso" \
     -extract /EFI/BOOT/grub.cfg "$output/boot/grub.cfg" \
@@ -88,4 +91,6 @@ xorriso -indev "$output/surface.iso" -outdev "$output/azurefin-aarch64.iso" \
     -boot_image any appended_part_as=gpt -commit -end
 implantisomd5 --force "$output/azurefin-aarch64.iso"
 checkisomd5 "$output/azurefin-aarch64.iso"
+python3 "$repo/surface/iso_workspace.py" "$output" surface.iso bundle
 bash "$repo/surface/51-audit-release-iso.sh" "$output/azurefin-aarch64.iso" "$output/audit"
+python3 "$repo/surface/iso_workspace.py" "$output" audit

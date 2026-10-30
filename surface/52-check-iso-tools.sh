@@ -10,3 +10,14 @@ for tool in podman python3 xorriso mcopy grub2-script-check implantisomd5 \
     fi
 done
 (( missing == 0 ))
+if [[ -e /var/lib/containers/storage/overlay/.has-mount-program ]]; then
+    python3 - <<'PY'
+import os
+try:
+    fd = os.open('/dev/fuse', os.O_RDWR)
+except OSError as error:
+    raise SystemExit(f'ISO builder requires accessible /dev/fuse for its FUSE image store: {error}')
+else:
+    os.close(fd)
+PY
+fi

@@ -45,7 +45,7 @@ jobs:
   live:
     needs: capacity
     if: ${{ !inputs.capacity_only }}
-    # Dedicated native ARM64 runner, 150 GiB free AFTER pulling the inputs.
+    # Public native ARM64 runner; check actual free space on every run.
     runs-on: ${{ fromJSON(vars.AZUREFIN_ISO_RUNNER || '["ubuntu-24.04-arm"]') }}
     timeout-minutes: 180
     container:
@@ -71,8 +71,8 @@ jobs:
           [[ $(uname -m) == aarch64 ]]
           [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-alpha)?$ ]]
           available=$(df --output=avail -k "$RUNNER_TEMP" | tail -n 1 | tr -d ' ')
-          (( available >= 165 * 1024 * 1024 )) || {
-            echo 'At least 165 GiB free required before pulling inputs; configure AZUREFIN_ISO_RUNNER.' >&2
+          (( available >= 100 * 1024 * 1024 )) || {
+            echo 'At least 100 GiB free required before pulling inputs.' >&2
             exit 1
           }
           revision=$(gh api "repos/$GITHUB_REPOSITORY/commits/$RELEASE_TAG" --jq .sha)
@@ -100,7 +100,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          bash surface/65-compose-release-live-iso.sh "$BASE_REF" "$INSTALLER_REF" "$RUNNER_TEMP/live-iso" "$RELEASE_REVISION" | tee metadata/live-audit.log
+          bash surface/65-compose-release-live-iso.sh "$BASE_REF" "$INSTALLER_REF" "$RUNNER_TEMP/live-iso" "$RELEASE_REVISION" 2>&1 | tee metadata/live-audit.log
       - name: Prepare local-test download
         shell: bash
         run: |
@@ -120,6 +120,15 @@ jobs:
           compression-level: 0
           retention-days: 7
           if-no-files-found: error
+      - name: Record final workspace usage
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p metadata
+          {
+            df -hT / "$RUNNER_TEMP"
+            du -h -d 2 "$RUNNER_TEMP/live-iso" /var/lib/containers/storage 2>/dev/null || true
+          } > metadata/disk-usage.txt
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:

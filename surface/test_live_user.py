@@ -43,11 +43,12 @@ class LiveUserTests(unittest.TestCase):
         self.run.assert_not_called()
 
     def test_installed_root_rejected(self):
-        for fs in ('ext4', 'btrfs', 'xfs', 'erofs'):
+        for fs in ('ext4', 'btrfs', 'xfs', 'erofs', 'fuse.fuse-overlayfs'):
             self.run.return_value.stdout = fs
             with self.assertRaisesRegex(RuntimeError, 'non-ephemeral'):
                 module.configure(self.root)
         self.assertFalse((self.root / 'etc/sudoers.d').exists())
+        self.assertFalse(any(call.args[0] == 'useradd' for call in self.run.call_args_list))
 
     def test_existing_user_not_unlocked(self):
         (self.root / 'etc/passwd').write_text('liveuser:x:1000:1000::/home/liveuser:/bin/bash\n')

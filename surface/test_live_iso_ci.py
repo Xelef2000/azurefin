@@ -8,6 +8,17 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class LiveIsoCITests(unittest.TestCase):
+    def test_failed_dtb_audit_reports_inventory_without_bypassing_check(self):
+        text = (ROOT / 'surface/51-audit-release-iso.sh').read_text()
+        check = 'if ! python3 "$repo/surface/verify_iso_kernel.py" "$root" "$work/iso" "$mode"; then'
+        self.assertIn(check, text)
+        diagnostic = text.split(check, 1)[1].split('\nfi', 1)[0]
+        self.assertIn('Kernel directories and symlinks:', diagnostic)
+        self.assertIn('-exec sha256sum {} +', diagnostic)
+        self.assertIn('exit 1', diagnostic)
+        workflow = (ROOT / '.github/workflows/build-live-iso.yml').read_text()
+        self.assertIn('2>&1 | tee metadata/live-audit.log', workflow)
+
     def test_public_runner_probe_is_default_and_read_only(self):
         text = (ROOT / '.github/workflows/build-live-iso.yml').read_text()
         self.assertIn('capacity_only:', text)
@@ -48,14 +59,14 @@ class LiveIsoCITests(unittest.TestCase):
         self.assertIn('org.opencontainers.image.revision', text)
         self.assertLess(text.index('cosign verify'), text.index('podman pull'))
         self.assertIn('"docker://$ref"', text)
-        self.assertIn('165 * 1024 * 1024', text)
+        self.assertIn('100 * 1024 * 1024', text)
 
     def test_live_audit_follows_composition(self):
         text = (ROOT / 'surface/65-compose-release-live-iso.sh').read_text()
         self.assertIn('--network=none', text)
         self.assertIn('audit-release.py" oci "$output/live-oci"', text)
         self.assertIn('30-test-container.sh" "$live"', text)
-        self.assertIn('150 * 1024 * 1024', text)
+        self.assertIn('80 * 1024 * 1024', text)
         self.assertLess(text.index('50-compose-release-iso.sh'), text.index('podman build'))
         self.assertLess(text.index('60-compose-local-iso.sh'), text.index('51-audit-release-iso.sh'))
         self.assertIn('"$output/final-audit" live', text)
