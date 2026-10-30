@@ -16,6 +16,13 @@ Run `python3 -m unittest discover -s surface -p 'test_live_user.py'`.
 These tests use temporary files and mocked account/service commands, not host
 accounts. They do not demonstrate that GNOME boots successfully.
 
+The disposable container account test accepts Podman's `fuse.fuse-overlayfs`
+and simulates a native overlay for the setup script. It checks the actual
+filesystem type and Podman marker first and rejects ordinary disk filesystems.
+This test does not validate live-root safety or RAM backing: those require the
+unit and boot tests. Production `setup.py` remains unchanged and rejects FUSE
+roots; no container-test exception is enabled in the live-boot service.
+
 Container checks (network disabled, read-only test mount, no host devices):
 
 ```sh
