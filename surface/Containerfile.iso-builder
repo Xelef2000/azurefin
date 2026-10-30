@@ -6,9 +6,11 @@
 ARG BUILDER_BASE=quay.io/centos-bootc/bootc-image-builder@sha256:afeffdb5a7ab6bb9d0593b5765412c4d821a9492dbaf26bb5a494e27181d2019
 FROM ${BUILDER_BASE}
 COPY surface/reset_installer_machine_id.py /usr/libexec/azurefin-reset-installer-machine-id.py
+COPY surface/patch_builder_storage.py /usr/libexec/azurefin-patch-builder-storage.py
 RUN python3 - <<'PY'
 from pathlib import Path
 import osbuild.util.containers as containers
+import runpy
 
 path = Path(containers.__file__)
 source = path.read_text()
@@ -20,6 +22,7 @@ for old, new in (
 ):
     assert source.count(old) == 1, f"Unexpected osbuild source: {old}"
     source = source.replace(old, new)
+source = runpy.run_path('/usr/libexec/azurefin-patch-builder-storage.py')['patch_storage'](source)
 compile(source, str(path), "exec")
 path.write_text(source)
 

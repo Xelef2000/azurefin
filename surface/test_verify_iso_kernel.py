@@ -26,6 +26,13 @@ class KernelBindingTests(unittest.TestCase):
     def test_single_live_kernel(self):
         self.assertEqual(verify(self.root, self.iso, 'live'), 'azurefin')
 
+    def test_unapplied_whiteout_and_stale_kernel_rejected(self):
+        self.kernel('stock', b'stock-kernel', b'stock-dtb')
+        self.put(self.root / 'usr/lib/modules/.wh.stock', b'')
+        for mode in ('installer', 'live'):
+            with self.subTest(mode=mode), self.assertRaisesRegex(ValueError, 'directory layout'):
+                verify(self.root, self.iso, mode)
+
     def test_installer_selects_byte_matching_kernel_not_first_dtb(self):
         self.kernel('aaa-stock', b'stock-kernel', b'stock-dtb')
         self.assertEqual(verify(self.root, self.iso, 'installer'), 'azurefin')
