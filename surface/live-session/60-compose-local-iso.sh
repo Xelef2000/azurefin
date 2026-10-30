@@ -34,14 +34,10 @@ else
     python3 "$script_dir/../verify_installer_support.py" "$script_dir/.." "$work/support"
     payload_args=(-rm_r /azurefin/support -- -map "$work/support" /azurefin/support)
 fi
-# Accept both the original installer and a previously composed live ISO.
-# The latter has already had these Anaconda-only files removed.
-remove_args=()
-for name in /osbuild.ks /osbuild-base.ks /images/install.img; do
-    if xorriso -return_with WARNING 1 -indev "$source_iso" -ls "$name" >/dev/null 2>&1; then
-        remove_args+=(-rm "$name" --)
-    fi
-done
+# Delete exact matches in the loaded ISO tree. A warning while loading an ISO
+# must not be mistaken for a missing file; no matches is safe for live seeds.
+remove_args=(-find / -wholename /osbuild.ks -or -wholename /osbuild-base.ks
+    -or -wholename /images/install.img -exec rm --)
 xorriso -indev "$source_iso" -outdev "$output" -boot_image any replay \
     "${payload_args[@]}" "${remove_args[@]}" \
     -map "$artifacts/root.squashfs" /LiveOS/squashfs.img \

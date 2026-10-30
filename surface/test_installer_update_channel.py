@@ -42,7 +42,7 @@ class InstallerChannelTests(unittest.TestCase):
 
     def test_live_installer_uses_updated_kickstart(self):
         recipe = (ROOT / 'surface/live-session/Containerfile.live').read_text()
-        self.assertIn('COPY surface/release-installer.ks /usr/share/anaconda/interactive-defaults.ks', recipe)
+        self.assertIn('install -Dm644 /run/azurefin-source/release-installer.ks /usr/share/anaconda/interactive-defaults.ks', recipe)
 
 
 if __name__ == '__main__':
