@@ -10,6 +10,7 @@ COPY surface/patch_builder_storage.py /usr/libexec/azurefin-patch-builder-storag
 RUN python3 - <<'PY'
 from pathlib import Path
 import osbuild.util.containers as containers
+import osbuild.buildroot as buildroot
 import runpy
 
 path = Path(containers.__file__)
@@ -24,6 +25,13 @@ for old, new in (
     source = source.replace(old, new)
 source = runpy.run_path('/usr/libexec/azurefin-patch-builder-storage.py')['patch_storage'](source)
 compile(source, str(path), "exec")
+path.write_text(source)
+
+# osbuild creates a private /dev with only basic devices. The shared FUSE
+# store also needs the existing /dev/fuse inside that isolated environment.
+path = Path(buildroot.__file__)
+source = runpy.run_path('/usr/libexec/azurefin-patch-builder-storage.py')['patch_buildroot'](path.read_text())
+compile(source, str(path), 'exec')
 path.write_text(source)
 
 # Lorax cleanup recreates /etc/machine-id with append, which may leave a newline.
