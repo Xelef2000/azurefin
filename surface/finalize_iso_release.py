@@ -48,12 +48,17 @@ def main(repo, tag, project):
         raise ValueError('SourceForge checksum does not match GitHub release')
     headers = subprocess.check_output([*curl, '--head', f'{base}/{filename}'], text=True)
     # Reject an HTML landing/error page masquerading as a successful download.
-    final_headers = headers.strip().split('\n\n')[-1].lower()
-    if 'text/html' in final_headers or not re.search(r'content-length: [1-9][0-9]*', final_headers):
+    final_headers = re.split(r'\n\s*\n', headers.replace('\r\n', '\n').strip())[-1].lower()
+    if (not re.match(r'http/\S+ 200(?:\s|$)', final_headers)
+            or 'text/html' in final_headers
+            or not re.search(r'^content-length: [1-9][0-9]*\s*$', final_headers, re.M)):
         raise ValueError('Full ISO download is not ready; retaining all GitHub assets')
-    body = (f'[Download the ARM64 ISO]({base}/{filename})\n\n'
+    body = (f'[Download the ARM64 live ISO]({base}/{filename})\n\n'
             'Download the attached `ISO-SHA256SUM` and verify with '
             '`sha256sum -c ISO-SHA256SUM` before flashing.\n')
+    marker = '<!-- azurefin:prebuilt-tested-iso -->'
+    if marker in release.get('body', ''):
+        body += f'\n{marker}\n'
     gh('release', 'edit', tag, '--repo', repo, '--notes', body)
     for asset in remove:
         gh('api', '--method', 'DELETE', f'repos/{repo}/releases/assets/{asset["id"]}')

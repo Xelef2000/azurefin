@@ -5,10 +5,11 @@
 `Build audited live ISO candidate` (`build-live-iso.yml`) automates the local
 combined GNOME desktop and Anaconda composition path. It is manual-only and
 uploads short-lived Actions artifacts, never GitHub release assets or
-SourceForge downloads. It does not change the existing release workflows.
+SourceForge downloads. Use it for trials before publishing a release; the release
+workflow uses the same live composer and input-signature checks.
 The first complete CI-built candidate passed Surface installation and post-install
 firmware testing on October 31; see the [validation record](live-session/README.md#october-31-public-runner-candidate-validation).
-Publication remains separate and has not been enabled for this workflow.
+Publication remains separate and has not been enabled for this candidate workflow.
 
 Manual dispatch defaults to `capacity_only=true`: a lightweight job on the
 public `ubuntu-24.04-arm` runner reports CPU, RAM, filesystems, available bytes
@@ -66,7 +67,20 @@ Artifacts expire after seven days; metadata and logs after fourteen. Verify the
 full checksum before flashing. Test the live desktop, offline OS installation,
 firmware provisioning and signed update origin before proposing publication.
 
-## Published v0.0.13-alpha: signed-update live installer
+## Published v0.0.14-alpha: public-runner live installer
+
+The [v0.0.14-alpha release](https://github.com/Xelef2000/azurefin/releases/tag/v0.0.14-alpha)
+publishes the exact Surface-tested candidate from run 41087723797, renamed to
+`azurefin-v0.0.14-alpha-aarch64.iso` without changing its contents. It is
+7,109,738,496 bytes with SHA-256
+`219b1613eed649481e175cd5732f8659987c256ab974ac3094a96017520454eb`.
+The SourceForge upload passed checksum comparison, its public download returned
+the expected size, and GitHub contains only the link and `ISO-SHA256SUM`.
+The prebuilt marker prevented both automatic rebuild stages. The old
+v0.0.13-alpha ISO was subsequently removed from SourceForge; its small metadata
+files and historical GitHub release remain. Old download links are retired.
+
+## Historical v0.0.13-alpha: signed-update live installer
 
 The media release was published from the exact Surface-tested ISO, without
 rebuilding it: 7,109,869,568 bytes, SHA-256
@@ -112,10 +126,9 @@ Firmware preparation can still emit a nonfatal root-cache tmpfiles warning.
 
 This release is marked `<!-- azurefin:prebuilt-tested-iso -->` in its GitHub
 notes. Both image-build and ISO-build workflows honor this marker, including
-manual ISO dispatches, so the legacy installer-only pipeline cannot replace
+manual ISO dispatches, so a later build cannot replace
 the tested artifact. Keep the marker when editing the release notes. Automatic
-live ISO composition remains future work; the workflows documented below still
-apply to unmarked releases. Public release assets are the SourceForge ISO link
+live ISO composition applies to unmarked releases. Public release assets are the SourceForge ISO link
 and `ISO-SHA256SUM`. Retire older downloads only after verifying the replacement.
 
 ## Microsoft-firmware-free live installer (experimental)
@@ -150,11 +163,16 @@ after that workflow succeeds; neither workflow builds a locally finalized payloa
 
 ## ISO release workflow
 
-`Build audited ARM64 installer ISO` runs after successful image publication.
+`Build audited ARM64 live ISO` runs after successful image publication for a
+published release (including prereleases). Tag-only OTA builds do not trigger it.
 It can also be started manually with an existing `release_tag`, including
 `v0.0.1-alpha`, once the workflow has been merged into the default branch.
-It resolves both image references to immutable digests and checks their source
-revision against the release commit. The ISO-builder source is independently
+It resolves both image references to immutable digests, verifies their keyless
+release signatures and the base's native OTA signature before pulling, and checks
+ARM64 architecture and source revision against the release commit. It invokes
+the same `65-compose-release-live-iso.sh` used by the manual candidate workflow:
+temporary passwordless GNOME live session, desktop Anaconda launcher, and a
+separate clean OS payload. The ISO-builder source is independently
 pinned by ARM64 digest in `surface/50-compose-release-iso.sh`. Both the upstream
 builder and patched builder must report ARM64 before composition. The Containerfile
 retains its separate x86 default for the existing local cross-build helper.
@@ -178,8 +196,11 @@ the separate ext4 `/boot`. It configures the early-boot loader without rebuildin
 or switching the OS image, and never reboots automatically. The retained OCI is
 not required by this setup path. The installer now configures the signed registry
 origin through bootc's offline, in-place Anaconda hook; scheduled updates still
-require a provisioned firmware store. Rebuilt media must pass an offline install
-and first-boot origin check before publication. No Microsoft-extracted firmware or per-device
+require a provisioned firmware store. Automated builds run content and container
+checks, not physical hardware tests; their build information explicitly records
+hardware testing as not yet run. Changes to the installation path should first
+be tried through the manual candidate workflow, including offline installation
+and first-boot origin checks. No Microsoft-extracted firmware or per-device
 address is embedded in public artifacts.
 
 The final ISO removes the composer's unused `/container` payload copy. Its sole
@@ -198,6 +219,13 @@ an audit log as temporary transport assets. After successful SourceForge
 publication, the release retains only the full-ISO link and `ISO-SHA256SUM`.
 It refuses to overwrite existing assets. Firmware-inclusive local ISO helpers
 remain local-only.
+
+When `SOURCEFORGE_PROJECT` is configured, successful composition calls the
+SourceForge publisher automatically. Set `SOURCEFORGE_USERNAME` and the dedicated
+`SOURCEFORGE_SSH_KEY` secret as described below. Metadata and failure diagnostics
+are retained as Actions artifacts for fourteen days. A failed build or audit
+cannot reach the upload step; a failed mirror verification retains the temporary
+GitHub assets for diagnosis. No automatic deletion of older releases is performed.
 
 ## Order of operations
 
@@ -222,11 +250,14 @@ Only the assembled ISO, its checksum, build information and audit log are
 uploaded to `/home/frs/project/PROJECT/TAG/`. Existing release directories cause
 a failure rather than an overwrite. If a transfer fails partway, inspect that
 directory before arranging recovery; do not blindly rerun or delete releases.
+The upload is followed by a read-only, checksum-based rsync comparison.
 Mirrors may take time to make new files available. Finalization checks that the
 full download responds and the mirrored checksum matches GitHub, then replaces
 the release notes with the ISO link and verification instructions and deletes
 only the known temporary assets. Unknown assets cause a refusal. The checksum
-remains attached; build provenance and audit logs remain on SourceForge.
+remains attached; build provenance and audit logs remain on SourceForge. Existing
+prebuilt-release markers are preserved, without marking untested automated
+builds as hardware-tested.
 If upload succeeded but finalization failed, rerun the publisher manually with
 `finalize_only=true`. This does not rebuild or re-upload the ISO. Keep only a
 reasonable number of large releases on
