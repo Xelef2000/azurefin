@@ -12,6 +12,7 @@ import subprocess
 import sys
 from types import SimpleNamespace
 from unittest.mock import patch
+from container_test_support import simulated_live_fstype
 
 assert Path('/run/.containerenv').exists(), 'Disposable Podman container required'
 accounts_only = '--accounts-only' in sys.argv
@@ -36,6 +37,12 @@ def read(path, *args, **kwargs):
 
 
 def run(*args):
+    if args == ('findmnt', '-n', '-o', 'FSTYPE', '/'):
+        actual = real_run(*args).stdout
+        simulated = simulated_live_fstype(
+            actual, podman_container=Path('/run/.containerenv').exists())
+        print(f'ACCOUNT TEST ROOT: {actual.strip()} (simulated live type: {simulated.strip()})', flush=True)
+        return SimpleNamespace(stdout=simulated)
     if accounts_only and args == ('dconf', 'update'):
         return SimpleNamespace(stdout='')
     if args[0] == 'systemctl':
@@ -81,4 +88,4 @@ for schema, key, expected in (() if accounts_only else (
 print('PASS: real liveuser, home ownership, empty password, GDM config and offline SSH masks')
 print('SUDO:', 'policy validation only (emulated)' if emulated else 'real sudo -n elevation passed')
 print('DCONF:', 'skipped in accounts-only test' if accounts_only else 'live lock-screen settings passed')
-print('NOT TESTED: running GDM, PAM login, systemd activation, live boot or reboot persistence')
+print('NOT TESTED: running GDM, PAM login, systemd activation, live-root filesystem guard, live boot or reboot persistence')

@@ -6,17 +6,18 @@
 combined GNOME desktop and Anaconda composition path. It is manual-only and
 uploads short-lived Actions artifacts, never GitHub release assets or
 SourceForge downloads. It does not change the existing release workflows.
-The first CI-built candidate still needs boot and installation testing before
-this path can replace public release composition.
+The first complete CI-built candidate passed Surface installation and post-install
+firmware testing on October 31; see the [validation record](live-session/README.md#october-31-public-runner-candidate-validation).
+Publication remains separate and has not been enabled for this workflow.
 
 Manual dispatch defaults to `capacity_only=true`: a lightweight job on the
 public `ubuntu-24.04-arm` runner reports CPU, RAM, filesystems, available bytes
 and installed tools, without pulling images or composing an ISO. Its report is
 retained as an Actions artifact for seven days. Measure actual capacity before
-attempting the full pipeline; GitHub's documented standard runner storage does
-not meet the current full-build safety threshold. Set `capacity_only=false`
-only when a suitable runner or a validated lower-space composition path is
-available. The probe does not delete preinstalled software to reclaim space.
+attempting the full pipeline. The 2026-10-29 probe measured 4 CPUs, 15 GiB RAM
+and 114,281,193,472 available bytes (about 106 GiB) on a public ARM64 runner.
+This is an observation, not a guaranteed capacity. Set `capacity_only=false`
+for a full candidate build. The probe does not delete preinstalled software.
 
 Supply an existing audited image tag, such as `v0.0.14-alpha`. The workflow
 resolves immutable base and installer digests, verifies their keyless release
@@ -24,12 +25,24 @@ signatures plus the base's native OTA signature, and checks both source labels
 against the tag. The selected workflow revision supplies the live composition
 code; both input and composer revisions are recorded in `BUILD-INFO.txt`.
 
-Configure `AZUREFIN_ISO_RUNNER` with a JSON runner-label list for a dedicated
-native ARM64 runner. It needs privileged nested Podman/loop mounts and at least
-165 GiB free before pulling inputs (150 GiB afterward). The standard hosted
-runner fallback is not guaranteed to have this space; the build fails early
-without deleting runner data. Do not use a runner with unrelated workloads or
-credentials. No signing or SourceForge upload secret is needed.
+The default is the public `ubuntu-24.04-arm` runner. An optional
+`AZUREFIN_ISO_RUNNER` JSON label list overrides it. The candidate needs
+privileged nested Podman/loop mounts and checks for at least 100 GiB free before
+pulling inputs (80 GiB afterward). These are trial admission thresholds, not a
+measured peak-space guarantee. Run 41087723797 completed in about 62 minutes
+with 82 GiB free at the end; peak usage was not measured. Disk-usage diagnostics
+are retained even if composition fails.
+Do not use a runner with unrelated workloads or credentials. No signing or
+SourceForge upload secret is needed.
+
+To reduce peak space, each audited OCI export or superseded ISO is removed
+after its last successful consumer. Seed composition output, extracted seed
+audit files and live SquashFS inputs are also discarded when no longer needed.
+Cleanup accepts only named intermediates beneath a marked, newly created build
+workspace, rejects symlinks and mounted paths, and never prunes shared container
+storage. Audit logs and the final ISO remain; failed stages retain their
+intermediates for diagnosis. Every original audit still runs before cleanup,
+including the unchanged final live-ISO content audit.
 
 The composer creates a fresh EFI seed from the audited OCI inputs instead of
 depending on an old local ISO. It builds the live desktop without network

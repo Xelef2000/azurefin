@@ -41,7 +41,10 @@ class LiveMediaTests(unittest.TestCase):
         self.assertNotIn('Containerfile.vm', recipe)
         self.assertIn('azurefin-live-user.service', recipe)
         self.assertIn('azurefin-install.desktop', recipe)
-        self.assertIn('surface/release-installer.ks /usr/share/anaconda/interactive-defaults.ks', recipe)
+        self.assertIn('/run/azurefin-source/release-installer.ks /usr/share/anaconda/interactive-defaults.ks', recipe)
+        self.assertEqual(sum(line.startswith('RUN ') for line in recipe.splitlines()), 1)
+        self.assertNotIn('\nCOPY ', recipe)
+        self.assertIn('source=surface,target=/run/azurefin-source,ro', recipe)
         self.assertIn("--omit 'anaconda ostree'", recipe)
         self.assertIn('bootloader-update.service', recipe)
 

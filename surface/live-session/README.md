@@ -16,6 +16,13 @@ Run `python3 -m unittest discover -s surface -p 'test_live_user.py'`.
 These tests use temporary files and mocked account/service commands, not host
 accounts. They do not demonstrate that GNOME boots successfully.
 
+The disposable container account test accepts Podman's `fuse.fuse-overlayfs`
+and simulates a native overlay for the setup script. It checks the actual
+filesystem type and Podman marker first and rejects ordinary disk filesystems.
+This test does not validate live-root safety or RAM backing: those require the
+unit and boot tests. Production `setup.py` remains unchanged and rejects FUSE
+roots; no container-test exception is enabled in the live-boot service.
+
 Container checks (network disabled, read-only test mount, no host devices):
 
 ```sh
@@ -460,5 +467,41 @@ Local ISO composition completed as `azurefin-alpha3-live-bootc-fixed-20261026.is
 `835cfe7626ad22c54cd81936579e3e24a4b8496a45e03e879d805ea4facd5043`.
 The ISO checksum and extracted support/source comparison passed. Composition
 now handles a source live ISO whose Anaconda-only files were already removed;
-the file-existence probe treats xorriso's missing-path warning as a nonzero
-status rather than attempting a failing removal.
+the current composer uses an exact-path xorriso find/remove operation, which
+also succeeds when those files are absent. This replaces the earlier existence
+probe, whose `-return_with WARNING 1` used an invalid xorriso exit code.
+
+### October 31 public-runner candidate validation
+
+[Actions run 41087723797](https://github.com/Xelef2000/azurefin/actions/runs/41087723797)
+built and audited the live ISO successfully on the public ARM64 runner using
+composer commit `816b34b55782e38ecbf37d7805c51d70cb02460c` and the signed
+`v0.0.14-alpha` inputs. The live job took approximately 62 minutes; consolidating
+the live container changes into one layer reduced that build stage to about
+12 minutes. Final disk diagnostics showed 82 GiB free (not a peak-use measure).
+
+Candidate: `azurefin-live-v0.0.14-alpha-41087723797-aarch64.iso`
+(7,109,738,496 bytes), SHA-256
+`219b1613eed649481e175cd5732f8659987c256ab974ac3094a96017520454eb`.
+Input signature verification, container firmware-policy audits, live-account
+tests, and the final ISO content and matching kernel/DTB audits passed. Fedora's
+redistributable firmware is permitted; Microsoft-extracted firmware is excluded
+from the distributed candidate.
+
+After a verified flash, the Surface Laptop 7 13-inch completed installation and
+post-install firmware provisioning. Inspection of the installed system confirmed:
+
+- The booted base digest matched the candidate input:
+  `sha256:bb16069b7bf7cee046f0176ff82178d724656ac3fd23dbe06f5df8306ba52094`.
+- All 11 provisioned firmware files passed verification and the runtime loader
+  exited successfully.
+- Wi-Fi and Ethernet were connected, no systemd units were failed, and
+  `uupd.timer` was enabled and active.
+- No `liveuser` account remained in the installed system.
+- The tester confirmed working sound.
+
+The journal still contained driver and audio diagnostics; this is not a claim
+of an error-free journal. Suspend, battery life, and a fresh OTA cycle were not
+retested as part of this candidate check. The build-time `BUILD-INFO.txt` still
+says hardware testing was pending; this follow-up records the subsequent test.
+The candidate has not been published as a release.

@@ -2,23 +2,25 @@
 # Supply an immutable firmware-free installer image ID/digest explicitly.
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
-COPY surface/live-session/setup.py /usr/libexec/azurefin-live-user.py
-COPY surface/live-session/azurefin-live-user.service /usr/lib/systemd/system/
-COPY surface/live-session/gdm-live-user.conf /usr/lib/systemd/system/gdm.service.d/10-live-user.conf
-COPY surface/live-session/launch-installer.py /usr/libexec/azurefin-launch-installer.py
-COPY surface/live-session/azurefin-install.desktop /usr/share/applications/
-COPY surface/live-session/90-azurefin-live.conf /etc/anaconda/conf.d/
-COPY surface/release-installer.ks /usr/share/anaconda/interactive-defaults.ks
-RUN systemctl enable gdm.service azurefin-live-user.service \
+# Copy only the runtime files from a read-only context mount and commit once.
+# Separate COPY layers are very expensive on nested FUSE-backed CI storage.
+# Generic RAM-backed live boot; no test helpers or persistent account included.
+RUN --mount=type=bind,source=surface,target=/run/azurefin-source,ro \
+    --mount=type=tmpfs,target=/var/roothome \
+    install -Dm755 /run/azurefin-source/live-session/setup.py /usr/libexec/azurefin-live-user.py \
+    && install -Dm644 /run/azurefin-source/live-session/azurefin-live-user.service /usr/lib/systemd/system/azurefin-live-user.service \
+    && install -Dm644 /run/azurefin-source/live-session/gdm-live-user.conf /usr/lib/systemd/system/gdm.service.d/10-live-user.conf \
+    && install -Dm755 /run/azurefin-source/live-session/launch-installer.py /usr/libexec/azurefin-launch-installer.py \
+    && install -Dm644 /run/azurefin-source/live-session/azurefin-install.desktop /usr/share/applications/azurefin-install.desktop \
+    && install -Dm644 /run/azurefin-source/live-session/90-azurefin-live.conf /etc/anaconda/conf.d/90-azurefin-live.conf \
+    && install -Dm644 /run/azurefin-source/release-installer.ks /usr/share/anaconda/interactive-defaults.ks \
+    && systemctl enable gdm.service azurefin-live-user.service \
     && systemctl set-default graphical.target \
     && systemctl mask anaconda.service anaconda-direct.service anaconda.target \
        anaconda-sshd.service bootloader-update.service \
     && mkdir -p /var/home /var/roothome \
-    && truncate -s 0 /etc/machine-id
-# Generic RAM-backed live boot; installation is launched from the desktop.
-# No VM validation service or persistent account is included.
-RUN --mount=type=tmpfs,target=/var/roothome \
-    mkdir -p /tmp/azurefin-live-dracut \
+    && truncate -s 0 /etc/machine-id \
+    && mkdir -p /tmp/azurefin-live-dracut \
     && printf 'sysloglvl=0\n' > /tmp/azurefin-live-dracut/99-build-logging.conf \
     && kver=$(basename /usr/lib/modules/*) \
     && DRACUT_NO_XATTR=1 dracut --force --no-hostonly --conf /dev/null --confdir /tmp/azurefin-live-dracut \
