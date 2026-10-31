@@ -76,6 +76,12 @@ jobs:
           # never expose a partially uploaded .iso using --inplace.
           rsync -rtv --chmod=F644,D755 --timeout=120 upload/ \
             "$SOURCEFORGE_USERNAME@frs.sourceforge.net:/home/frs/project/$SOURCEFORGE_PROJECT/$RELEASE_TAG/"
+          differences=$(rsync -rcni --timeout=600 --out-format='%i %n' upload/ \
+            "$SOURCEFORGE_USERNAME@frs.sourceforge.net:/home/frs/project/$SOURCEFORGE_PROJECT/$RELEASE_TAG/")
+          [[ -z "$differences" ]] || {
+            printf 'Remote checksum verification failed:\n%s\n' "$differences" >&2
+            exit 1
+          }
           printf 'Full ISO: https://sourceforge.net/projects/%s/files/%s/azurefin-%s-aarch64.iso/download\n' \
             "$SOURCEFORGE_PROJECT" "$RELEASE_TAG" "$RELEASE_TAG" >> "$GITHUB_STEP_SUMMARY"
       - name: Link the ISO and retain only the release checksum

@@ -57,6 +57,9 @@ jobs:
         run: python3 -m unittest test_patch_installer_grub.py test_installed_boot.py test_installer_fix_fstab.py test_release_workspace.py test_release_iso_grub.py test_iso_tools.py test_reset_installer_machine_id.py test_live_user.py test_live_media_local.py test_verify_installer_support.py test_update.py
       - name: Check release ISO shell scripts
         run: shellcheck surface/40-prepare-romulus-iso.sh surface/50-compose-release-iso.sh surface/51-audit-release-iso.sh surface/52-check-iso-tools.sh surface/live-session/*.sh surface/build/16-ota-tools.sh scripts/test-ota-signatures.sh scripts/test-native-registry-signatures.sh scripts/sign-native-ota.sh
+      - name: Test automatic live ISO publication contracts
+        working-directory: surface
+        run: python3 -m unittest test_release_live_iso_ci.py test_live_iso_ci.py test_assemble_release_iso.py test_finalize_iso_release.py
       - name: Test firmware store and generic loader
         working-directory: surface
         run: python3 -m unittest test_firmware_bundle.py test_firmware_store_probe.py test_firmware_loader.py test_firmware_store_build.py test_firmware_preflight.py test_setup_firmware_store.py test_native_ota_policy.py test_ublue_updates.py test_system_update_preflight.py

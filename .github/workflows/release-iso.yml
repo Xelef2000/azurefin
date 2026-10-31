@@ -1,4 +1,4 @@
-name: Build audited ARM64 installer ISO
+name: Build audited ARM64 live ISO
 on:
   workflow_run:
     workflows: [Release audited Romulus base and installer]
@@ -42,7 +42,7 @@ jobs:
   iso:
     needs: policy
     if: needs.policy.outputs.build == 'true'
-    # A native ARM64 runner with at least 90 GiB free is required. Override with
+    # A native ARM64 runner with at least 100 GiB free is required. Override with
     # a JSON runner label list, e.g. ["self-hosted","Linux","ARM64","azurefin-iso"].
     runs-on: ${{ fromJSON(vars.AZUREFIN_ISO_RUNNER || '["ubuntu-24.04-arm"]') }}
     timeout-minutes: 180
@@ -54,14 +54,18 @@ jobs:
       options: --privileged
     env:
       RELEASE_TAG: ${{ inputs.release_tag || github.event.workflow_run.head_branch }}
-      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Install composition and inspection tools
-        run: dnf5 install -y git gh podman python3 xorriso mtools grub2-tools isomd5sum squashfs-tools dracut util-linux findutils coreutils
+        run: dnf5 install -y git gh podman skopeo python3 xorriso mtools grub2-tools isomd5sum squashfs-tools dracut util-linux findutils coreutils libselinux
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
           persist-credentials: false
-      - name: Resolve release inputs to immutable digests
+      - uses: sigstore/cosign-installer@b9c35392b7c1401bcc77d30c9b07cf4b1c7a7b07
+        with:
+          cosign-release: v3.1.4
+      - name: Verify immutable release inputs
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
@@ -74,39 +78,68 @@ jobs:
             exit 1
           }
           gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json isDraft --jq '.isDraft == false' | grep -qx true
-          REVISION=$(gh api "repos/$GITHUB_REPOSITORY/commits/$RELEASE_TAG" --jq .sha)
-          owner=${GITHUB_REPOSITORY_OWNER,,}
-          printf '%s' "$GH_TOKEN" | podman login ghcr.io -u "$owner" --password-stdin
+          revision=$(gh api "repos/$GITHUB_REPOSITORY/commits/$RELEASE_TAG" --jq .sha)
+          [[ $revision =~ ^[a-f0-9]{40}$ ]]
+          mkdir metadata
           for kind in base installer; do
-            ref="ghcr.io/$owner/azurefin:$RELEASE_TAG-$kind"
-            podman pull --platform linux/arm64 "$ref"
-            digest=$(podman inspect --format '{{.Digest}}' "$ref")
+            ref="ghcr.io/xelef2000/azurefin:$RELEASE_TAG-$kind"
+            digest=$(skopeo inspect --no-creds --format '{{.Digest}}' "docker://$ref")
             [[ $digest =~ ^sha256:[a-f0-9]{64}$ ]]
-            printf '%s_REF=ghcr.io/%s/azurefin@%s\n' "${kind^^}" "$owner" "$digest" >> "$GITHUB_ENV"
+            immutable="ghcr.io/xelef2000/azurefin@$digest"
+            cosign verify --certificate-identity "https://github.com/Xelef2000/azurefin/.github/workflows/release-romulus.yml@refs/tags/$RELEASE_TAG" \
+              --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+              -a "release=$RELEASE_TAG" -a "component=$kind" "$immutable" > "metadata/$kind-keyless.json"
+            if [[ $kind == base ]]; then
+              cosign verify --key surface/ota-signing.pub --new-bundle-format=false \
+                -a "release=$RELEASE_TAG" -a component=base "$immutable" > metadata/base-native.json
+            fi
+            podman pull --platform linux/arm64 "$immutable"
+            [[ $(podman inspect --format '{{.Architecture}}' "$immutable") == arm64 ]]
+            [[ $(podman inspect --format '{{ index .Labels "org.opencontainers.image.revision" }}' "$immutable") == "$revision" ]]
+            printf '%s_REF=%s\n' "${kind^^}" "$immutable" >> "$GITHUB_ENV"
           done
-          podman logout ghcr.io
-          printf 'RELEASE_REVISION=%s\n' "$REVISION" >> "$GITHUB_ENV"
-      - name: Compose and audit Microsoft-firmware-free ISO
+          printf 'RELEASE_REVISION=%s\n' "$revision" >> "$GITHUB_ENV"
+      - name: Compose and audit Microsoft-firmware-free live ISO
         shell: bash
         run: |
           set -euo pipefail
-          unset GH_TOKEN
-          bash surface/50-compose-release-iso.sh "$BASE_REF" "$INSTALLER_REF" "$RUNNER_TEMP/iso-release" "$RELEASE_REVISION" | tee iso-audit.log
+          bash surface/65-compose-release-live-iso.sh "$BASE_REF" "$INSTALLER_REF" "$RUNNER_TEMP/iso-release" "$RELEASE_REVISION" 2>&1 | tee metadata/iso-audit.log
       - name: Prepare checksummed release assets
         shell: bash
         run: |
           set -euo pipefail
-          grep -qx FINAL_ISO_CONTENT_AUDIT_PASSED iso-audit.log
+          grep -qx FINAL_ISO_CONTENT_AUDIT_PASSED metadata/iso-audit.log
+          grep -qx LIVE_ISO_CANDIDATE_AUDIT_PASSED metadata/iso-audit.log
+          size=$(stat -c %s "$RUNNER_TEMP/iso-release/azurefin-aarch64.iso")
+          (( size > 0 && size < 10000000000 ))
           mkdir assets
           # GitHub release assets are capped at 2 GiB each. These are plain byte
           # chunks; concatenate in filename order to recover the bootable ISO.
           split -b 1900M -d -a 3 "$RUNNER_TEMP/iso-release/azurefin-aarch64.iso" "assets/azurefin-$RELEASE_TAG-aarch64.iso.part-"
           (cd assets && sha256sum ./*.part-* > SHA256SUMS)
           sha256sum "$RUNNER_TEMP/iso-release/azurefin-aarch64.iso" | sed "s|  .*|  azurefin-$RELEASE_TAG-aarch64.iso|" > assets/ISO-SHA256SUM
-          printf 'Release: %s\nRelease commit: %s\nISO workflow commit: %s\nBase: %s\nInstaller: %s\n' "$RELEASE_TAG" "$RELEASE_REVISION" "$GITHUB_SHA" "$BASE_REF" "$INSTALLER_REF" > assets/BUILD-INFO.txt
-          cp iso-audit.log assets/
+          printf 'Release: %s\nRelease commit: %s\nISO workflow commit: %s\nBase: %s\nInstaller: %s\nMedia: live desktop with Anaconda\nHardware boot/install test: NOT YET RUN\n' "$RELEASE_TAG" "$RELEASE_REVISION" "$GITHUB_SHA" "$BASE_REF" "$INSTALLER_REF" > assets/BUILD-INFO.txt
+          cp metadata/iso-audit.log assets/
       - name: Publish audited assets without replacing existing files
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: gh release upload "$RELEASE_TAG" assets/* --repo "$GITHUB_REPOSITORY"
+      - name: Record final workspace usage
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p metadata
+          {
+            df -hT / "$RUNNER_TEMP"
+            du -h -d 2 "$RUNNER_TEMP/iso-release" /var/lib/containers/storage 2>/dev/null || true
+          } > metadata/disk-usage.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: live-iso-release-metadata-${{ github.run_id }}
+          path: metadata/
+          retention-days: 14
+          if-no-files-found: warn
   sourceforge:
     needs: iso
     permissions:

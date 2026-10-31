@@ -12,9 +12,9 @@ class FinalizeTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             removable_assets([{'name': 'unrelated.zip'}], 'v0.0.1-alpha')
 
-    def run_case(self, mirrored_checksum=None, headers=None):
+    def run_case(self, mirrored_checksum=None, headers=None, body=''):
         checksum = 'a' * 64 + '  azurefin-v0.0.1-alpha-aarch64.iso\n'
-        release = {'assets': [{'id': 1, 'name': 'ISO-SHA256SUM'},
+        release = {'body': body, 'assets': [{'id': 1, 'name': 'ISO-SHA256SUM'},
                               {'id': 2, 'name': 'SHA256SUMS'}]}
         mutations = []
         def fake_gh(*args):
@@ -47,3 +47,20 @@ class FinalizeTests(unittest.TestCase):
     def test_html_response_retains_assets(self):
         with self.assertRaises(ValueError):
             self.run_case(headers='HTTP/2 200\ncontent-type: text/html\ncontent-length: 1234\n')
+
+    def test_html_redirect_to_iso_is_allowed(self):
+        self.run_case(headers='HTTP/2 302\r\ncontent-type: text/html\r\n\r\n'
+                      'HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: 1234\r\n')
+
+    def test_non_success_response_retains_assets(self):
+        with self.assertRaises(ValueError):
+            self.run_case(headers='HTTP/2 404\ncontent-type: application/octet-stream\ncontent-length: 1234\n')
+
+    def test_missing_length_retains_assets(self):
+        with self.assertRaises(ValueError):
+            self.run_case(headers='HTTP/2 200\ncontent-type: application/octet-stream\n')
+
+    def test_preserves_prebuilt_marker_without_claiming_untested_builds_tested(self):
+        marker = '<!-- azurefin:prebuilt-tested-iso -->'
+        self.assertIn(marker, self.run_case(body=marker)[0][-1])
+        self.assertNotIn(marker, self.run_case()[0][-1])
