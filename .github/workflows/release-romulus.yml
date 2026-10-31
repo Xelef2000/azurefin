@@ -33,6 +33,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          mkdir -p release-metadata
+          printf 'Release: %s\nRevision: %s\nRun: %s/%s/actions/runs/%s\n' \
+            "$RELEASE_TAG" "$GITHUB_SHA" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" \
+            > release-metadata/build-inputs.txt
           [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-alpha)?$ ]] || {
             echo "Expected vMAJOR.MINOR.PATCH or vMAJOR.MINOR.PATCH-alpha" >&2; exit 1;
           }
@@ -56,7 +60,6 @@ jobs:
             --label "org.opencontainers.image.version=$RELEASE_TAG" \
             --label "org.azurefin.firmware=post-install-provisioning" \
             -f Containerfile.romulus -t "$IMAGE" .
-          mkdir -p release-metadata
           podman run --rm --entrypoint rpm "$IMAGE" -qa | sort > release-metadata/packages.txt
       - name: Audit every base layer before building the installer
         shell: bash

@@ -49,7 +49,7 @@ class UpdaterTests(unittest.TestCase):
         self.assertIn("systemctl disable brew-update.timer brew-upgrade.timer", script)
         self.assertNotIn("systemctl disable brew-setup.service", script)
         self.assertNotIn("systemctl mask uupd.timer", script)
-        self.assertIn("uupd-1.5.0-1.fc44.aarch64", script)
+        self.assertIn("uupd-1.5.2-1.fc44.aarch64", script)
         self.assertLess(script.index("dnf5 copr disable"), script.index("dnf5 install"))
         self.assertNotIn("gnome-software", script)
 

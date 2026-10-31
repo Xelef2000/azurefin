@@ -19,6 +19,13 @@ class ReleaseLiveIsoTests(unittest.TestCase):
                          '.isDraft == false', 'cancel-in-progress: false'):
             self.assertIn(contract, self.release)
 
+    def test_image_failure_still_has_input_metadata(self):
+        workflow = (ROOT / '.github/workflows/release-romulus.yml').read_text()
+        self.assertLess(workflow.index('mkdir -p release-metadata'),
+                        workflow.index('podman build'))
+        self.assertLess(workflow.index('> release-metadata/build-inputs.txt'),
+                        workflow.index('podman build'))
+
     def test_candidate_and_release_have_identical_signature_checks(self):
         def verification(text):
             return text.split('          for kind in base installer; do\n', 1)[1].split('          done\n', 1)[0]
