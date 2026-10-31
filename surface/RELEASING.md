@@ -6,8 +6,9 @@
 combined GNOME desktop and Anaconda composition path. It is manual-only and
 uploads short-lived Actions artifacts, never GitHub release assets or
 SourceForge downloads. It does not change the existing release workflows.
-The first CI-built candidate still needs boot and installation testing before
-this path can replace public release composition.
+The first complete CI-built candidate passed Surface installation and post-install
+firmware testing on October 31; see the [validation record](live-session/README.md#october-31-public-runner-candidate-validation).
+Publication remains separate and has not been enabled for this workflow.
 
 Manual dispatch defaults to `capacity_only=true`: a lightweight job on the
 public `ubuntu-24.04-arm` runner reports CPU, RAM, filesystems, available bytes
@@ -28,8 +29,9 @@ The default is the public `ubuntu-24.04-arm` runner. An optional
 `AZUREFIN_ISO_RUNNER` JSON label list overrides it. The candidate needs
 privileged nested Podman/loop mounts and checks for at least 100 GiB free before
 pulling inputs (80 GiB afterward). These are trial admission thresholds, not a
-measured peak-space guarantee; the first complete hosted composition is still
-pending. Disk-usage diagnostics are retained even if composition fails.
+measured peak-space guarantee. Run 41087723797 completed in about 62 minutes
+with 82 GiB free at the end; peak usage was not measured. Disk-usage diagnostics
+are retained even if composition fails.
 Do not use a runner with unrelated workloads or credentials. No signing or
 SourceForge upload secret is needed.
 
