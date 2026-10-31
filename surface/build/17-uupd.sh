@@ -7,7 +7,7 @@ dnf5 copr enable -y ublue-os/packages
 dnf5 copr disable -y ublue-os/packages
 dnf5 install -y --setopt=install_weak_deps=False \
     --enablerepo=copr:copr.fedorainfracloud.org:ublue-os:packages \
-    uupd-1.5.0-1.fc44.aarch64 just
+    uupd-1.5.2-1.fc44.aarch64 just
 dnf5 clean all
 
 install -Dm644 /ctx/build/uupd/config.json /etc/uupd/config.json
