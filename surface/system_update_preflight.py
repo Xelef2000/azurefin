@@ -3,6 +3,7 @@
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -28,6 +29,20 @@ def validate_target(config, contract):
     if (labels.get('org.azurefin.firmware-bundle') != contract['firmware_bundle']
             or labels.get('org.azurefin.firmware-loader-abi') != contract['firmware_loader_abi']):
         raise ValueError('Channel image lacks the supported firmware contract; refusing update')
+
+
+def validate_version(state, config):
+    """Fail closed on stale channels; explicit rollback is a separate operation."""
+    def version(value):
+        match = re.fullmatch(r'v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-alpha)?', value or '')
+        if not match:
+            raise ValueError('Unrecognized OS version; refusing automatic update')
+        return (*map(int, match.group(1, 2, 3)), 0 if match.group(4) else 1)
+
+    current = state['status']['booted']['image'].get('version')
+    target = config.get('config', {}).get('Labels', {}).get('org.opencontainers.image.version')
+    if version(target) < version(current):
+        raise ValueError(f'Update channel offers older version {target} than {current}; refusing downgrade')
 
 
 def main():
@@ -56,6 +71,7 @@ def main():
         ['skopeo', 'inspect', '--no-creds', '--config', 'docker://' + contract['channel']],
         text=True, timeout=120))
     validate_target(config, contract)
+    validate_version(state, config)
     print('Update prerequisites passed. bootc will enforce signatures during the update.')
 
 

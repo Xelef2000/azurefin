@@ -10,7 +10,8 @@ It is an independent community project, not an official Fedora or Microsoft prod
 - Surface keyboard, touchpad and touchscreen support, including input during
   encrypted boot.
 - This development branch tests the ELLX 7.3.0-rc3 kernel with Azurefin's
-  Surface fixes. Hardware validation is pending; released images remain on 7.2.
+  Surface fixes. Encrypted boot and multitouch after a fresh boot were tested;
+  an intermittent gesture failure remains under investigation.
 - Wi-Fi, USB, Bluetooth configuration, conservative speaker profiles and
   experimental camera support.
 - Full-disk encryption through the graphical Anaconda installer.
@@ -24,6 +25,7 @@ It is an independent community project, not an official Fedora or Microsoft prod
 - Signed system updates with persistent Surface firmware. From `v0.0.12-alpha`,
   Universal Blue's updater runs on a six-hour schedule while connected to AC power;
   it stages updates but leaves rebooting to you.
+- Update preflight rejects older OS versions offered by an outdated channel.
 - A **System Update** launcher (`ujust update`) follows Bluefin's manual workflow:
   bootc for the OS, then Flatpak and Homebrew. Firmware and space checks run
   before OS staging; reboot separately when convenient.

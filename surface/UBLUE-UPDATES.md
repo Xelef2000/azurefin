@@ -64,6 +64,10 @@ and 10 GiB on `/var`, and matching target firmware contract metadata. It never
 deletes pinned deployments to recover space. After staging an OS update, reboot
 before running another update. Bazaar can still update apps independently.
 
+The preflight also rejects a channel version older than the running OS and
+unrecognized version labels. Explicit recovery/rollback remains a separate
+operation; an outdated channel must not silently downgrade an installation.
+
 This is not a replacement update engine: bootc still performs downloads,
 signature enforcement and deployment. The target-metadata check is an early
 compatibility check, not a substitute for signature verification.
