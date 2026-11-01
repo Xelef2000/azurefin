@@ -7,6 +7,11 @@ It is an independent community project, not an official Fedora or Microsoft prod
 
 ## What Makes this Raptor Different?
 
+This testing branch includes an opt-in, read-only SCM storage module for
+investigating factory Bluetooth address discovery on Surface Laptop 7 13-inch.
+The module does not probe automatically and cannot write or erase storage.
+Hardware compatibility is unproven; this candidate is not a normal channel update.
+
 - Surface keyboard, touchpad and touchscreen support, including input during
   encrypted boot.
 - ELLX 7.3.0-rc3 kernel with Azurefin's
