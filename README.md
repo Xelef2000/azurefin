@@ -7,6 +7,12 @@ It is an independent community project, not an official Fedora or Microsoft prod
 
 ## What Makes this Raptor Different?
 
+This testing branch includes an opt-in, read-only SCM storage module for
+factory Bluetooth address discovery on Surface Laptop 7 13-inch. Firmware setup
+loads the read-only module on demand; it does not probe during normal boot.
+The storage read was verified on a Romulus13; this candidate is not a normal
+channel update.
+
 - Surface keyboard, touchpad and touchscreen support, including input during
   encrypted boot.
 - ELLX 7.3.0-rc3 kernel with Azurefin's
@@ -124,9 +130,16 @@ sudo azurefin-setup-firmware --msi /path/to/SurfaceLaptop7_ARM_Win11.msi
 ```
 
 Use the actual path to a supported MSI. Both methods verify the MSI and extracted
-firmware against the packaged policy. Optionally append
-`--bluetooth-address AA:BB:CC:DD:EE:FF`, using your device's **Bluetooth public
-address from Windows**, not its Wi-Fi MAC.
+firmware against the packaged policy. If no Bluetooth address is already
+configured, setup attempts to read the factory address using the read-only
+kernel storage module. It verifies that the two provisioning copies agree.
+An existing address is preserved.
+
+On kernels without the module, firmware installation still succeeds and setup
+explains the manual fallback. Append `--bluetooth-address AA:BB:CC:DD:EE:FF`
+to supply your device's **Bluetooth public address from Windows**, not its
+Wi-Fi MAC. An explicit address overrides automatic detection. Use
+`--skip-bluetooth` to skip Bluetooth configuration entirely.
 
 The tool verifies and stores firmware on the separate `/boot` filesystem, then
 configures the early-boot loader. It does not rebuild or switch the OS image,
@@ -141,7 +154,19 @@ use private-image provisioning; use the documentation matching your release.
 
 ## Bluetooth configuration
 
-If you skipped the address during installation, run:
+To detect and save the factory address without reinstalling firmware:
+
+```sh
+sudo azurefin-setup-bluetooth
+```
+
+Existing configuration is kept. To read the factory address without saving or
+applying it, use `sudo azurefin-setup-bluetooth --detect-only`.
+Detection requires the Azurefin read-only SCM storage kernel module. It reads
+provisioning storage but never writes to it; a module loaded by this command
+is unloaded afterward.
+
+The manual method remains available, including with older or custom kernels:
 
 ```sh
 sudo azurefin-extract-firmware --bluetooth-address AA:BB:CC:DD:EE:FF

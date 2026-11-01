@@ -23,7 +23,8 @@ mapfile -t stock < <(rpm -qa --qf '%{NAME}\n' |
 if [[ ${#stock[@]} -gt 0 ]]; then
     dnf5 remove -y "${stock[@]}"
 fi
-copr_install_isolated xelef2000/azurefin-kernel "$KERNEL_PACKAGE"
+# Isolated experiment; never promote this image to the normal update channel.
+copr_install_isolated xelef2000/azurefin-kernel:custom:scm-readonly "$KERNEL_PACKAGE"
 # Install IPTSD first so the integration package dependency resolves with its
 # repo disabled afterwards.
 copr_install_isolated xelef2000/azurefin-iptsd "$IPTSD_PACKAGE"
