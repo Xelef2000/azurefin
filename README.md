@@ -9,6 +9,8 @@ It is an independent community project, not an official Fedora or Microsoft prod
 
 - Surface keyboard, touchpad and touchscreen support, including input during
   encrypted boot.
+- This development branch tests the ELLX 7.3.0-rc3 kernel with Azurefin's
+  Surface fixes. Hardware validation is pending; released images remain on 7.2.
 - Wi-Fi, USB, Bluetooth configuration, conservative speaker profiles and
   experimental camera support.
 - Full-disk encryption through the graphical Anaconda installer.
@@ -30,7 +32,7 @@ It is an independent community project, not an official Fedora or Microsoft prod
   automatically download an app store.
   See [update status and instructions](surface/UBLUE-UPDATES.md).
 
-*Last updated: 2026-10-28*
+*Last updated: 2026-11-01*
 
 Installation and online post-install firmware setup have been tested on the
 13-inch model. Alpha 3 boots into a live GNOME desktop with a passwordless
