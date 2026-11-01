@@ -23,6 +23,27 @@ class SystemUpdateTests(unittest.TestCase):
     def test_signed_channel_is_accepted(self):
         preflight.validate_status(self.state, self.contract)
 
+    def test_version_guard(self):
+        for current, target, accepted in (
+            ('v0.0.16-alpha', 'v0.0.14-alpha', False),
+            ('v0.0.16-alpha', 'v0.0.17-alpha', True),
+            ('v0.0.17-alpha', 'v0.0.17-alpha', True),
+            ('v0.0.9-alpha', 'v0.0.10-alpha', True),
+            ('v0.0.17', 'v0.0.17-alpha', False),
+            ('v0.0.17-alpha', 'v0.0.17', True),
+            (None, 'v0.0.17-alpha', False),
+            ('v0.0.17-alpha', None, False),
+        ):
+            with self.subTest(current=current, target=target):
+                state = copy.deepcopy(self.state)
+                state['status']['booted']['image']['version'] = current
+                config = {'config': {'Labels': {'org.opencontainers.image.version': target}}}
+                if accepted:
+                    preflight.validate_version(state, config)
+                else:
+                    with self.assertRaises(ValueError):
+                        preflight.validate_version(state, config)
+
     def test_unsafe_states_rejected(self):
         for field in ('staged', 'rollbackQueued', 'usrOverlay'):
             state = copy.deepcopy(self.state)
