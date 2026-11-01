@@ -14,6 +14,7 @@ sys.path.insert(0, '/usr/libexec/azurefin')
 from firmware_bundle import manifest, provision
 from firmware_preflight import check_bundle, check_space, trusted_directory, validate_mount
 from postinstall_firmware import address
+from bluetooth_address import configure as configure_bluetooth
 
 POLICY = Path('/usr/share/azurefin/firmware-policy.json')
 MANIFEST = Path('/usr/share/azurefin/boot-firmware.sha256')
@@ -82,7 +83,11 @@ def main():
     source.add_argument('--msi', type=Path)
     source.add_argument('--from-installed', action='store_true',
                         help='reuse and verify firmware from the currently booted private image')
-    parser.add_argument('--bluetooth-address', type=address)
+    bluetooth = parser.add_mutually_exclusive_group()
+    bluetooth.add_argument('--bluetooth-address', type=address,
+                           help='manual factory address; bypass automatic detection')
+    bluetooth.add_argument('--skip-bluetooth', action='store_true',
+                           help='skip optional Bluetooth address detection/configuration')
     args = parser.parse_args()
     if os.geteuid() != 0:
         parser.error('Run with sudo')
@@ -116,8 +121,7 @@ def main():
             run('azurefin-extract-firmware', '--config', str(POLICY), msi, str(root),
                 env={**os.environ, 'TMPDIR': str(workspace)})
             destination = install_store(root / 'usr/lib/firmware', policy, expected, uuid)
-        if args.bluetooth_address:
-            run('azurefin-extract-firmware', '--bluetooth-address', args.bluetooth_address)
+        configure_bluetooth(args.bluetooth_address, skip=args.skip_bluetooth)
         print(f'Verified persistent firmware store: {destination}')
         print('Reboot when ready to test the loader. No OS image was changed; automatic updates remain unchanged.')
 
