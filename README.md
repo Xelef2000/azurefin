@@ -9,7 +9,7 @@ It is an independent community project, not an official Fedora or Microsoft prod
 
 - Surface keyboard, touchpad and touchscreen support, including input during
   encrypted boot.
-- This development branch tests the ELLX 7.3.0-rc3 kernel with Azurefin's
+- ELLX 7.3.0-rc3 kernel with Azurefin's
   Surface fixes. Encrypted boot and multitouch after a fresh boot were tested;
   an intermittent gesture failure remains under investigation.
 - Wi-Fi, USB, Bluetooth configuration, conservative speaker profiles and

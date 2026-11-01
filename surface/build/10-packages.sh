@@ -23,9 +23,7 @@ mapfile -t stock < <(rpm -qa --qf '%{NAME}\n' |
 if [[ ${#stock[@]} -gt 0 ]]; then
     dnf5 remove -y "${stock[@]}"
 fi
-# Hardware-test candidate from successful COPR build 11240203. Keep the
-# production kernel repository unchanged until the ELLX rebase is validated.
-copr_install_isolated xelef2000/azurefin-kernel:custom:ellx-73-rc3 "$KERNEL_PACKAGE"
+copr_install_isolated xelef2000/azurefin-kernel "$KERNEL_PACKAGE"
 # Install IPTSD first so the integration package dependency resolves with its
 # repo disabled afterwards.
 copr_install_isolated xelef2000/azurefin-iptsd "$IPTSD_PACKAGE"
