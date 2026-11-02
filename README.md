@@ -10,14 +10,14 @@ It is an independent community project, not an official Fedora or Microsoft prod
 This testing branch includes an opt-in, read-only SCM storage module for
 factory Bluetooth address discovery on Surface Laptop 7 13-inch. Firmware setup
 loads the read-only module on demand; it does not probe during normal boot.
-The storage read was verified on a Romulus13; this candidate is not a normal
-channel update.
+The storage read was verified on a Romulus13 with the 7.3 candidate; validation
+on this Linux 7.2 candidate is pending. This is not a normal channel update.
 
 - Surface keyboard, touchpad and touchscreen support, including input during
   encrypted boot.
-- ELLX 7.3.0-rc3 kernel with Azurefin's
-  Surface fixes. Encrypted boot and multitouch after a fresh boot were tested;
-  an intermittent gesture failure remains under investigation.
+- Pre-ELLX Linux 7.2 kernel with Azurefin's Surface fixes and the opt-in
+  read-only Bluetooth-address discovery module. This candidate restores the
+  earlier graphics and touchpad implementation after issues with the rebase.
 - Wi-Fi, USB, Bluetooth configuration, conservative speaker profiles and
   experimental camera support.
 - Full-disk encryption through the graphical Anaconda installer.
