@@ -11,23 +11,16 @@ This testing branch includes an opt-in, read-only SCM storage module for
 factory Bluetooth address discovery on Surface Laptop 7 13-inch. Firmware setup
 loads the read-only module on demand; it does not probe during normal boot.
 The storage read was verified on a Romulus13 with the Linux 7.2 baseline.
-This candidate adds upstream GPIO wake-controller routing fixes, including
-the edge-interrupt acknowledgement needed for repeated wake events. Reliable
-keyboard wake still needs hardware testing and is not enabled automatically.
-The previous candidate exposed a pending wake interrupt before sleep. This
-experimental candidate reports SAM interrupts to power management when wake
-is explicitly enabled, so an early interrupt can abort suspend instead of
-being consumed silently. It retains temporary wake-routing diagnostics, not
-keyboard input logging. Battery events may also abort sleep; repeated wake
-and sleep-residency tests are required. Wake remains disabled by default.
-This is not a normal channel update and must not be promoted with diagnostics.
+This candidate uses the tested Linux 7.2 Bluetooth-detection kernel without
+the experimental keyboard-wake patches or diagnostic logging. Use the power
+button to wake from deep sleep; waking with ordinary keyboard keys remains
+unsupported. This candidate is undergoing final validation before promotion.
 
 - Surface keyboard, touchpad and touchscreen support, including input during
   encrypted boot.
 - Pre-ELLX Linux 7.2 kernel with Azurefin's Surface fixes and the opt-in
   read-only Bluetooth-address discovery module. This candidate restores the
-  earlier graphics and touchpad implementation after issues with the rebase,
-  with a focused backport for deep-sleep GPIO wake routing.
+  earlier graphics and touchpad implementation after issues with the rebase.
 - Wi-Fi, USB, Bluetooth configuration, conservative speaker profiles and
   experimental camera support.
 - Full-disk encryption through the graphical Anaconda installer.
