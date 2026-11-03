@@ -44,6 +44,9 @@ COPY surface/native-ota/azurefin.yaml /etc/containers/registries.d/azurefin.yaml
 COPY surface/installer_fix_fstab.py /usr/libexec/azurefin-installer-fix-fstab.py
 COPY surface/build/19-check-firmware-free.sh /usr/libexec/azurefin-check-firmware-free
 COPY surface/postinstall_firmware.py /usr/libexec/azurefin/postinstall_firmware.py
+COPY surface/bluetooth_address.py /usr/libexec/azurefin/bluetooth_address.py
+RUN chmod 0755 /usr/libexec/azurefin/bluetooth_address.py \
+    && ln -s /usr/libexec/azurefin/bluetooth_address.py /usr/bin/azurefin-setup-bluetooth
 COPY surface/update.py /usr/libexec/azurefin/update.py
 COPY surface/firmware_bundle.py surface/firmware_store_probe.py /usr/libexec/azurefin/
 COPY surface/firmware_preflight.py surface/setup_firmware_store.py /usr/libexec/azurefin/

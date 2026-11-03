@@ -14,6 +14,8 @@ class StoreSetupTests(unittest.TestCase):
         for name in ('azurefin-setup-firmware', 'azurefin-setup-firmware-store'):
             self.assertIn('ln -s /usr/libexec/azurefin/setup_firmware_store.py /usr/bin/' + name, recipe)
         self.assertNotIn('COPY surface/postinstall_firmware.py /usr/bin/azurefin-setup-firmware', recipe)
+        self.assertIn('COPY surface/bluetooth_address.py /usr/libexec/azurefin/bluetooth_address.py', recipe)
+        self.assertIn('/usr/bin/azurefin-setup-bluetooth', recipe)
 
     def test_extraction_space_floor(self):
         for free in (setup.MIN_EXTRACTION_FREE - 1, setup.MIN_EXTRACTION_FREE):
