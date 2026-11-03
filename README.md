@@ -11,9 +11,10 @@ This testing branch includes an opt-in, read-only SCM storage module for
 factory Bluetooth address discovery on Surface Laptop 7 13-inch. Firmware setup
 loads the read-only module on demand; it does not probe during normal boot.
 The storage read was verified on a Romulus13 with the Linux 7.2 baseline.
-This candidate adds upstream GPIO wake-controller routing fixes; keyboard wake
-still needs hardware testing and is not enabled automatically. This is not a
-normal channel update.
+This candidate adds upstream GPIO wake-controller routing fixes, including
+the edge-interrupt acknowledgement needed for repeated wake events. Reliable
+keyboard wake still needs hardware testing and is not enabled automatically.
+This is not a normal channel update.
 
 - Surface keyboard, touchpad and touchscreen support, including input during
   encrypted boot.
@@ -43,7 +44,7 @@ normal channel update.
   automatically download an app store.
   See [update status and instructions](surface/UBLUE-UPDATES.md).
 
-*Last updated: 2026-11-01*
+*Last updated: 2026-11-03*
 
 Installation and online post-install firmware setup have been tested on the
 13-inch model. Alpha 3 boots into a live GNOME desktop with a passwordless
