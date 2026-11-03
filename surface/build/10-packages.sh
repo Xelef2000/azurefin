@@ -23,7 +23,7 @@ mapfile -t stock < <(rpm -qa --qf '%{NAME}\n' |
 if [[ ${#stock[@]} -gt 0 ]]; then
     dnf5 remove -y "${stock[@]}"
 fi
-# Isolated experiment; never promote this image to the normal update channel.
+# Reuse the hardware-tested read-only SCM kernel binary; keep its repo isolated.
 copr_install_isolated xelef2000/azurefin-kernel:custom:scm-readonly-linux72 "$KERNEL_PACKAGE"
 # Install IPTSD first so the integration package dependency resolves with its
 # repo disabled afterwards.

@@ -7,19 +7,20 @@ It is an independent community project, not an official Fedora or Microsoft prod
 
 ## What Makes this Raptor Different?
 
-This testing branch includes an opt-in, read-only SCM storage module for
+Azurefin includes an opt-in, read-only SCM storage module for
 factory Bluetooth address discovery on Surface Laptop 7 13-inch. Firmware setup
 loads the read-only module on demand; it does not probe during normal boot.
 The storage read was verified on a Romulus13 with the Linux 7.2 baseline.
-This candidate uses the tested Linux 7.2 Bluetooth-detection kernel without
+The system uses the tested Linux 7.2 Bluetooth-detection kernel without
 the experimental keyboard-wake patches or diagnostic logging. Use the power
 button to wake from deep sleep; waking with ordinary keyboard keys remains
-unsupported. This candidate is undergoing final validation before promotion.
+unsupported. Automatic factory-address detection and existing-address
+preservation were verified on the signed v0.0.26-alpha image.
 
 - Surface keyboard, touchpad and touchscreen support, including input during
   encrypted boot.
 - Pre-ELLX Linux 7.2 kernel with Azurefin's Surface fixes and the opt-in
-  read-only Bluetooth-address discovery module. This candidate restores the
+  read-only Bluetooth-address discovery module. This restores the
   earlier graphics and touchpad implementation after issues with the rebase.
 - Wi-Fi, USB, Bluetooth configuration, conservative speaker profiles and
   experimental camera support.
