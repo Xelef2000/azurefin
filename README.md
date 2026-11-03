@@ -14,10 +14,13 @@ The storage read was verified on a Romulus13 with the Linux 7.2 baseline.
 This candidate adds upstream GPIO wake-controller routing fixes, including
 the edge-interrupt acknowledgement needed for repeated wake events. Reliable
 keyboard wake still needs hardware testing and is not enabled automatically.
-The previous candidate still failed keyboard wake. This diagnostic candidate
-adds temporary, read-only wake-routing logs for Romulus13; it does not change
-wake policy or record keyboard input. It is not a normal channel update and
-must not be promoted with the diagnostic logging enabled.
+The previous candidate exposed a pending wake interrupt before sleep. This
+experimental candidate reports SAM interrupts to power management when wake
+is explicitly enabled, so an early interrupt can abort suspend instead of
+being consumed silently. It retains temporary wake-routing diagnostics, not
+keyboard input logging. Battery events may also abort sleep; repeated wake
+and sleep-residency tests are required. Wake remains disabled by default.
+This is not a normal channel update and must not be promoted with diagnostics.
 
 - Surface keyboard, touchpad and touchscreen support, including input during
   encrypted boot.
