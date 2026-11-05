@@ -11,17 +11,21 @@ Azurefin includes an opt-in, read-only SCM storage module for
 factory Bluetooth address discovery on Surface Laptop 7 13-inch. Firmware setup
 loads the read-only module on demand; it does not probe during normal boot.
 The storage read was verified on a Romulus13 with the Linux 7.2 baseline.
-The system uses the tested Linux 7.2 Bluetooth-detection kernel without
-the experimental keyboard-wake patches or diagnostic logging. Use the power
-button to wake from deep sleep; waking with ordinary keyboard keys remains
-unsupported. Automatic factory-address detection and existing-address
-preservation were verified on the signed v0.0.26-alpha image.
+This testing branch uses upstream Linux 7.4-rc1 with the Surface patch stack
+ported from the working 7.2 baseline, not the ELLX rebase. The full Fedora
+ARM64 kernel build passed. The first candidate booted and provided working
+input, networking, camera and speakers, but speakers stopped after deep sleep.
+This candidate tests an upstream WSA clock-management/sleep patch; the fix
+still needs hardware validation. Speaker gain caps remain unchanged.
+The read-only Bluetooth module and manual fallback are retained, but detection
+was hardware-tested on 7.2 only. Separate keyboard-wake experiments are excluded.
+Keep a known-working 7.2 deployment available; do not promote this candidate
+to the normal channel before graphics, input, camera and suspend tests pass.
 
 - Surface keyboard, touchpad and touchscreen support, including input during
   encrypted boot.
-- Pre-ELLX Linux 7.2 kernel with Azurefin's Surface fixes and the opt-in
-  read-only Bluetooth-address discovery module. This restores the
-  earlier graphics and touchpad implementation after issues with the rebase.
+- Experimental upstream Linux 7.4-rc1 kernel with Azurefin's Surface fixes
+  and the opt-in read-only Bluetooth-address discovery module.
 - Wi-Fi, USB, Bluetooth configuration, conservative speaker profiles and
   experimental camera support.
 - Full-disk encryption through the graphical Anaconda installer.
@@ -44,7 +48,7 @@ preservation were verified on the signed v0.0.26-alpha image.
   automatically download an app store.
   See [update status and instructions](surface/UBLUE-UPDATES.md).
 
-*Last updated: 2026-11-03*
+*Last updated: 2026-11-04*
 
 Installation and online post-install firmware setup have been tested on the
 13-inch model. Alpha 3 boots into a live GNOME desktop with a passwordless
