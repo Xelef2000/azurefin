@@ -126,3 +126,11 @@ filenames), full project sources, vendored crates, native sources, patches and
 recipes into a checksummed distribution bundle; validate completeness against
 both runtime and static-installer inputs. No upstream response is needed for
 that work.
+
+A local intermediate collection now preserves the runtime sources, full pinned
+flake inputs/build recipes, native sources and vendored crates (about 1.1 GiB
+compressed). Content-addressed notice copies occupy about 4.1 MiB and have
+indexes retaining original paths/hashes: 530 runtime-source entries and 343
+additional entries. Duplicate text is deduplicated within each collection.
+This demonstrates local source/notice assembly; final coverage review and
+release-quality rebuild instructions remain, without requiring upstream contact.
