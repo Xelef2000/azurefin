@@ -1,0 +1,13 @@
+[Unit]
+Description=Disposable Nix VM persistent store
+DefaultDependencies=no
+Requires=azurefin-nix-vm-directory.service
+After=local-fs.target azurefin-nix-vm-directory.service
+Before=umount.target
+Conflicts=umount.target
+
+[Mount]
+What=/var/lib/nix
+Where=/nix
+Type=none
+Options=bind

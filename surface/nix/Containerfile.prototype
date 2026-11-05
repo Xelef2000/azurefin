@@ -1,0 +1,16 @@
+# Local disposable VM only; never a release build target.
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+COPY surface/nix /usr/share/azurefin/nix-prototype
+COPY --from=nix-payload /nix-installer-aarch64-linux /usr/libexec/azurefin-nix-installer
+RUN python3 /usr/share/azurefin/nix-prototype/verify_artifact.py aarch64-linux /usr/libexec/azurefin-nix-installer \
+    && chmod 0755 /usr/libexec/azurefin-nix-installer \
+    && mkdir -p /nix \
+    && test ! -L /nix \
+    && install -m644 /usr/share/azurefin/nix-prototype/vm-directory.service /usr/lib/systemd/system/azurefin-nix-vm-directory.service \
+    && install -m644 /usr/share/azurefin/nix-prototype/vm-nix.mount /usr/lib/systemd/system/nix.mount \
+    && install -m644 /usr/share/azurefin/nix-prototype/vm-test.service /usr/lib/systemd/system/azurefin-nix-vm-test.service \
+    && systemctl enable azurefin-nix-vm-test.service \
+    && systemctl mask bootc-fetch-apply-updates.service bootc-fetch-apply-updates.timer uupd.timer \
+    && systemctl set-default multi-user.target \
+    && bootc container lint

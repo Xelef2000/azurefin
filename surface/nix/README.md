@@ -59,6 +59,39 @@ python3 surface/nix/verify_artifact.py aarch64-linux /path/to/nix-installer-aarc
 shellcheck surface/nix/prototype.sh
 ```
 
+### Local full-system VM image
+
+`Containerfile.prototype` adds a diagnostic service to an existing ARM64 bootc
+image. It is not referenced by release workflows. Supply a verified installer
+as a named build context:
+
+```sh
+podman build --pull=never --platform linux/arm64 \
+  --build-context nix-payload=/path/to/verified-artifacts \
+  --build-arg BASE_IMAGE=localhost/azurefin:test-base \
+  -f surface/nix/Containerfile.prototype -t localhost/azurefin:nix-prototype .
+```
+
+Deploy that image only to a new disposable VM disk. Do not attach host physical
+disks. Boot with SELinux enforcing and no network device. The diagnostic checks
+read-only root and mount identity before invoking the installer. Serial/journal
+marker `AZUREFIN_NIX_VM_BOOTSTRAP_COMPLETE` means only bootstrap succeeded, not
+that multi-user operation, sandboxing or upgrade safety has passed. These VM
+units intentionally have no production recovery or daemon integration.
+
+For virtio test-disk safety checks, use a short serial identifier and compare it
+exactly before installation: the original long identifier was truncated in the
+guest, correctly causing our first deployment attempt to stop without writing.
+
+### Full-system validation status — 2026-11-05
+
+- Prototype ARM64 image builds; `bootc container lint` reports 14 passes and
+  one skipped check.
+- Prototype systemd unit verification passes.
+- Full-system offline installation and enforcing-SELinux bootstrap are still
+  pending. Installer-environment success is not evidence that the installed
+  system's SELinux or Nix sandbox works.
+
 ## Results — 2026-11-04
 
 - Both upstream release asset hashes and ELF architectures verified.
