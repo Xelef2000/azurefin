@@ -1,6 +1,6 @@
 import stat
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from directory import prepare
 
@@ -50,6 +50,31 @@ class DirectoryTests(unittest.TestCase):
         backing.lstat.return_value.st_mode = stat.S_IFLNK | 0o777
         with self.assertRaises(RuntimeError):
             prepare(parent, mount)
+
+    def test_foreign_mountpoint_contents_not_hidden(self):
+        parent, mount, backing = self.paths()
+        mount.iterdir.return_value = iter(['existing-store'])
+        backing.exists.return_value = False
+        with self.assertRaisesRegex(RuntimeError, 'refusing to hide'):
+            prepare(parent, mount)
+        backing.mkdir.assert_not_called()
+
+    def test_other_backing_does_not_authorize_hiding_contents(self):
+        parent, mount, backing = self.paths()
+        mount.iterdir.return_value = iter(['existing-store'])
+        backing.exists.return_value = True
+        with patch('directory.os.path.samefile', return_value=False), self.assertRaises(RuntimeError):
+            prepare(parent, mount)
+        backing.mkdir.assert_not_called()
+
+    def test_existing_correct_bind_mount_allowed(self):
+        parent, mount, backing = self.paths()
+        mount.iterdir.return_value = iter(['owned-store'])
+        backing.exists.return_value = True
+        backing.mkdir.side_effect = FileExistsError
+        with patch('directory.os.path.samefile', return_value=True):
+            prepare(parent, mount)
+        backing.chmod.assert_not_called()
 
 
 if __name__ == '__main__':

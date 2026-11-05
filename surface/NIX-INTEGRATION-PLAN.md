@@ -181,7 +181,7 @@ Do not alter Azurefin's firmware provisioning, signing, or OTA channel policies.
 
 ## Acceptance checklist
 
-- [ ] Offline fresh boot initializes Nix and serves two ordinary users.
+- [x] Offline fresh boot initializes Nix and serves two ordinary users (disposable ARM64 VM; newer-base repeat pending).
 - [x] Initialization requires no composefs disablement, transient root, or manual initramfs edit.
 - [x] `/nix` is the expected persistent bind mount after reboot.
 - [x] Sandbox builds and daemon access work with SELinux enforcing; relevant AVCs are reviewed.

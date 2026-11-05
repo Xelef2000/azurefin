@@ -238,8 +238,18 @@ Surface.
 `Containerfile.systemd-prototype` builds a local-only image with the proposed
 files under immutable `/usr`, explicit disposable-test environment overrides,
 and a first-boot diagnostic. Its `bootc container lint` passed 14 checks with one
-skip. Fresh-image deployment and first-boot testing are pending. Do not publish
-this diagnostic image or use it on a user device.
+skip. Fresh-image deployment and first boot passed offline on the cached base:
+the image-owned initializer completed under enforcing SELinux and read-only
+composefs, then both ordinary users built sandboxed outputs. A subsequent
+foreign-store overlay test removed only Azurefin's ownership metadata from the
+test view: initialization refused, login targets remained available, the daemon
+stayed inactive, and configuration/account/store checksums remained unchanged.
+The original disk and ownership metadata were retained. Directory preparation
+also refuses to hide nonempty foreign `/nix` contents behind its bind mount.
+
+Validation against the newer signature-verified `v0.0.29-alpha-base` is in
+progress. The prototype built on that base and passed the same container lint
+checks. Do not publish this diagnostic image or use it on a user device.
 
 `vm-preferences.sh` evaluates the pinned Nixpkgs revision
 `cd4ea8d57de16f4810bc5f14207bac45fbf19f67` in a separate overlay. It checks
@@ -277,11 +287,25 @@ and vendor archives remain local, outside the Git repository. All 63 embedded
 runtime output paths were matched to the pinned installer's derivation graph.
 Collecting the complete applicable notices/source bundle is still outstanding.
 
+`inventory_sources.py` turns a verified payload inventory and the pinned
+schema-4 recursive derivation graph into a reproducible direct-source manifest:
+
+```sh
+python3 surface/nix/inventory_sources.py payload-inventory.json installer-derivations.json > runtime-source-inventory.json
+```
+
+It fails if any payload output cannot be matched and retains multiple providers,
+structured attributes, source/patch roots, and hashes of both input reports.
+The pinned run matches 63 outputs to 64 provider records and 120 direct source
+roots. This does not replace the full recipes, parent project sources, native
+installer dependencies or license review.
+
 ### Before production integration
 
 1. Offline installation, two-user sandbox builds, reboot persistence and
    backing-path relabel checks passed on the enforcing ARM64 VM. Validate the
-   image-owned integration on a fresh installation and the current image base.
+   image-owned integration against the current image base; fresh installation
+   has passed on the earlier cached base.
 2. Validate remaining shell/profile behavior and administrator configuration
    preservation across retries and image updates.
 3. Finish validating the proposed image-owned units and initializer together,

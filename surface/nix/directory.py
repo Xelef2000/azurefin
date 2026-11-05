@@ -11,6 +11,10 @@ def prepare(parent=Path('/var/lib'), mountpoint=Path('/nix')):
         if not stat.S_ISDIR(info.st_mode) or info.st_uid != 0 or info.st_mode & 0o022:
             raise RuntimeError(f"Unsafe Nix directory: {path}")
     backing = parent / 'nix'
+    if any(mountpoint.iterdir()) and not (
+        backing.exists() and os.path.samefile(mountpoint, backing)
+    ):
+        raise RuntimeError("Existing /nix contents require administrator review; refusing to hide them")
     try:
         backing.mkdir(mode=0o755)
     except FileExistsError:
