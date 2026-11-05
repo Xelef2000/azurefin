@@ -26,6 +26,17 @@ class ReleaseLiveIsoTests(unittest.TestCase):
         self.assertLess(workflow.index('> release-metadata/build-inputs.txt'),
                         workflow.index('podman build'))
 
+    def test_source_only_releases_skip_image_and_iso_jobs(self):
+        workflow = (ROOT / '.github/workflows/release-romulus.yml').read_text()
+        image_condition = next(line for line in workflow.splitlines() if line.startswith('    if:'))
+        iso_condition = next(line for line in self.release.splitlines() if line.startswith('    if:'))
+        self.assertIn("startsWith(github.event.release.tag_name, 'v')", image_condition)
+        self.assertIn("startsWith(github.ref_name, 'v')", image_condition)
+        self.assertIn("startsWith(github.event.workflow_run.head_branch, 'v')", iso_condition)
+        # Keep strict version validation before any build or release lookup.
+        for text in (workflow, self.release):
+            self.assertIn('^v[0-9]+\\.[0-9]+\\.[0-9]+(-alpha)?$', text)
+
     def test_candidate_and_release_have_identical_signature_checks(self):
         def verification(text):
             return text.split('          for kind in base installer; do\n', 1)[1].split('          done\n', 1)[0]
