@@ -3,7 +3,9 @@
 Status: offline bootstrap, two-user sandbox builds, reboot persistence and
 backing-path SELinux relabel validation passed in a disposable ARM64 VM.
 Guarded initialization, full-store and forced-kill fault tests also passed.
-Asynchronous systemd and fresh-image tests are in progress under `surface/nix/`.
+Asynchronous systemd, repeat-boot, failure-isolated console login and per-user
+preference tests passed. Fresh-image tests and local source/license packaging
+are in progress under `surface/nix/`; no upstream issue is required.
 No production image integration or Surface deployment performed.
 Date: 2026-11-05.
 
@@ -187,8 +189,8 @@ Do not alter Azurefin's firmware provisioning, signing, or OTA channel policies.
 - [ ] Interrupted installation, full disk, and repeated retry preserve recoverable state.
 - [ ] Existing healthy and foreign Nix installations are not overwritten.
 - [ ] Administrator configuration survives initialization retry, image upgrade, and reboot.
-- [ ] Two users can select different Nix and Nixpkgs preferences without elevated privileges.
-- [ ] Unfree policy is opt-in; channel/import and pure-flake examples behave as documented.
+- [x] Two users can select different Nix and Nixpkgs preferences without elevated privileges.
+- [x] Unfree policy is opt-in; channel/import and pure-flake examples behave as documented.
 - [ ] Nix profiles/packages survive reboot, image upgrade, and supported image rollback.
 - [ ] Rollback to a pre-integration image preserves data and has documented recovery.
 - [ ] Supported shells find Nix without breaking Homebrew or duplicating PATH entries.

@@ -97,3 +97,32 @@ Nix 2.34.8 exports schema 4: derivations are under `derivations`, paths in
 `structuredAttrs` rather than `env`. Preserve both forms when collecting source
 inputs. The graph is not itself the corresponding-source archive: those source
 inputs and notices still need to be collected and checked.
+
+All 120 unique direct runtime source/patch store roots were collected locally
+from the signed Nix cache or were already materialized by evaluation. The local
+`runtime-direct-sources.tar.zst` is approximately 404 MiB, SHA256
+`0ab9139e848e80829e7cce46de1761ea395dc5a19583e24d0b33716b7f1c674d`.
+It is an intermediate archive, not the finished redistribution bundle.
+
+Read-only discovery in the 60 distinct runtime source inputs found 530
+separately named notice files. The ten inputs without such filenames were
+accounted for as follows:
+
+- Eight are filtered Nix component trees; retain the pinned full Nix source
+  archive and its root `COPYING`, plus component-specific source notices.
+- NSS `certdata.txt` carries an MPL-2.0 notice in its header; include the matching
+  license text as well as that original source file.
+- Boehm GC carries its copyright and permission notices in `README.md`,
+  `README.QUICK` and source headers, rather than a file named LICENSE.
+
+The pinned static-installer graph also identifies musl 1.2.5 (with patches) and
+Rust 1.95.0 sources; these have been fetched locally. Musl provides `COPYRIGHT`;
+Rust provides `COPYRIGHT`, `LICENSE-MIT`, `LICENSE-APACHE`, and `LICENSES/`.
+The installer source includes its compiled SELinux policy together with
+`nix.te`, `nix.fc` and `build.sh`. Preserve these sources and their provenance.
+
+Next packaging work: assemble the retained notices (including nonstandard
+filenames), full project sources, vendored crates, native sources, patches and
+recipes into a checksummed distribution bundle; validate completeness against
+both runtime and static-installer inputs. No upstream response is needed for
+that work.
