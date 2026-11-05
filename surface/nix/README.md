@@ -99,7 +99,7 @@ guest, correctly causing our first deployment attempt to stop without writing.
   read-only composefs root and `/nix` backed by persistent `/var/lib/nix`.
   Nix 2.35.4 executed successfully by its absolute path.
 - Upstream shell self-tests reported missing PATH integration. The new profile
-  fragment addresses this; full-system validation of shell startup is pending.
+  fragment addresses this; login-shell PATH passed for both ordinary test users.
 - The bootstrap VM remained at its login prompt until the harness timeout.
   The bootstrap completion marker preceded that timeout; it is not a daemon
   or sandbox validation result.
@@ -109,18 +109,30 @@ guest, correctly causing our first deployment attempt to stop without writing.
   under a build-user UID and cannot see a host-only marker. The test powers off
   after success or a trapped command failure. These units are not enabled by
   the prototype Containerfile or release workflows; the script is staged under
-  `/var/tmp` in the stopped test VM. Results are still pending.
+  `/var/tmp` in the stopped test VM. Both users completed offline builds with
+  non-root sandbox UID 1000, the host-only marker was hidden, SELinux remained
+  enforcing, and no AVC denials appeared in the successful run's serial log.
 - First multi-user run confirmed login-shell PATH and an ordinary user's daemon
   connection. The build failed because the bundled minimal BusyBox has no `id`
   applet. The revised test reads `/proc/self/status` using shell builtins and
   checks a non-root effective UID (a user namespace may map the host build UID).
-  It also prints the successful build output; no sandbox success is claimed yet.
+  It also prints the successful build output. The revised test passed.
 - The pinned upstream `nix.fc` labels executable/library subtrees but does not
   label the store root, and `nix.te` does not define a confined daemon domain.
   Thus `default_t` on the store directory and `unconfined_service_t` on the daemon
   alone do not demonstrate a failed policy install. The retry checks the resolved
   daemon executable against policy and lists the loaded module. This upstream
   compatibility policy must not be described as dedicated daemon confinement.
+- The module-list check initially assumed a trailing version field. This
+  libsemanage prints names alone; accepting end-of-line fixed the diagnostic.
+  The loaded module and executable label both verified on the successful run.
+- `vm-persistence.sh` is a separate two-boot test using the same disposable
+  service entry point. It creates user profiles, records checksums of build
+  outputs, administrator-customized configuration, receipt and accounts, then
+  verifies them after a new boot and exercises both users through the daemon.
+  It also checks that the fresh-only prototype refuses an existing store
+  without changing those checksums. Results are pending. This does **not**
+  validate image upgrades, rollback or interrupted-install recovery.
 
 ## Results — 2026-11-04
 
@@ -139,9 +151,11 @@ guest, correctly causing our first deployment attempt to stop without writing.
 
 ## Remaining implementation gates
 
-1. Prove offline installation and policy loading on the enforcing ARM64 VM.
-2. Prove sandbox builds and daemon access for two ordinary users; review AVCs,
-   including labels through both `/nix` and `/var/lib/nix`.
+1. Offline installation and two-user sandbox builds passed on the enforcing
+   ARM64 VM. Validate persistence and labels through the backing-store path,
+   including behavior after a full filesystem relabel.
+2. Validate remaining shell/profile behavior and administrator configuration
+   preservation across retries and image updates.
 3. Add the image-owned mount/daemon units and locked initializer with durable
    ownership metadata, schema validation, explicit status/retry and interruption
    handling. Completion must follow successful daemon checks, not just a receipt.
