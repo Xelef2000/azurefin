@@ -224,7 +224,10 @@ ownership and symlinks without silently changing them.
 The first systemd run initialized and validated the runtime successfully while
 the login target became available. Its subsequent package assertion had a test
 fixture error (`--rebuild` before creating the output); the corrected fixture
-builds first, then rebuilds. Repeat-boot checks remain in progress.
+builds first, then rebuilds. The corrected run and a subsequent reboot passed;
+both users built/rebuilt sandboxed outputs and remained untrusted daemon clients.
+Offline checksums of the receipt, passwd and group files matched the initial
+initialized disk after both boots.
 
 The separate interrupted-installation boot test passed: login/user-session
 targets became active, initialization refused with manual-repair guidance,
@@ -237,6 +240,13 @@ files under immutable `/usr`, explicit disposable-test environment overrides,
 and a first-boot diagnostic. Its `bootc container lint` passed 14 checks with one
 skip. Fresh-image deployment and first-boot testing are pending. Do not publish
 this diagnostic image or use it on a user device.
+
+`vm-preferences.sh` evaluates the pinned Nixpkgs revision
+`cd4ea8d57de16f4810bc5f14207bac45fbf19f67` in a separate overlay. It checks
+independent user configuration, unfree opt-in and the pure-flake boundary without
+downloading or building unfree software. Results are pending; the first fixture
+attempt needed correction because `nix store info` prints its status to stderr.
+The source tree is test input only, not part of the bootstrap payload.
 
 ### Before production integration
 
