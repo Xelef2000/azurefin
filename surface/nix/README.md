@@ -80,10 +80,12 @@ that multi-user operation, sandboxing or upgrade safety has passed. These VM
 units intentionally have no production recovery or daemon integration.
 
 The prototype installs `/etc/profile.d/azurefin-nix.sh` for Fedora's Bash and
-POSIX login-shell startup. New shells automatically append existing user Nix
-profiles and the system Nix profile to PATH, preserving system/Homebrew
-precedence. Re-sourcing does not duplicate entries; an absent store is a no-op.
-No user dotfiles are changed. This is currently prototype-only; Fish and other
+POSIX login-shell startup. New shells automatically append user Nix profile
+locations and the system Nix profile to PATH, preserving system/Homebrew
+precedence. Re-sourcing does not duplicate entries. Paths are included even
+before they exist so shells started during asynchronous initialization can find
+Nix when it becomes ready, without a logout. No directories or user dotfiles
+are created by this hook. This is currently prototype-only; Fish and other
 shell-specific startup integration remain to be validated before release.
 
 For virtio test-disk safety checks, use a short serial identifier and compare it
