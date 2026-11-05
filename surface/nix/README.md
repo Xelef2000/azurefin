@@ -169,8 +169,30 @@ It must never run on a user installation.
 
 `vm-fault.sh` runs in separate marked overlays with an 8 MiB temporary store or
 a killed initializer process group. It checks that retries retain partial state
-and configuration instead of replaying installation. Both VM results are still
-pending; host-side lifecycle tests alone are not sufficient evidence.
+and configuration instead of replaying installation. Both VM runs passed on
+2026-11-05 (`AZUREFIN_NIX_FAULT_COMPLETE mode=full` and `mode=killed`).
+These are isolated fault tests, not a claim of power-loss recovery support.
+
+### First-release interrupted-installation policy
+
+An uncertain partial installation requires guided manual repair. Automatic
+retry must preserve the store, build accounts, configuration, receipt (if any),
+and Azurefin ownership metadata. It must not replay installer actions, uninstall
+Nix, or delete partial data. This policy was selected on 2026-11-05.
+
+When `needs-reconciliation` is reported:
+
+1. Stop retrying installation; do not run the upstream uninstaller or remove
+   `/nix`, `/var/lib/nix`, or `/var/lib/azurefin/nix`.
+2. Preserve the installation logs and back up the partial store and ownership
+   metadata before making any repair changes. Keep `/etc/nix` and the relevant
+   build-account information with that backup; review logs before sharing them.
+3. Ask for guided repair with the reported state, image version, installer/plan
+   hashes and failure log. Repair must inspect the actual store, accounts and
+   receipt against the pinned plan before deciding which steps are safe.
+
+Freeing disk space or rebooting does not by itself make replay safe. A generic
+automatic repair/reset command is deliberately not part of the first release.
 
 ## Results — 2026-11-04
 

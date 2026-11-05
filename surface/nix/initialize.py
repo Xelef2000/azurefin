@@ -144,7 +144,12 @@ def main():
             # A separate finalizer checks the daemon after systemd starts it.
             return
         if disposition not in {"fresh", "start"}:
-            raise RuntimeError(f"Refusing automatic changes: {disposition}")
+            raise RuntimeError(
+                f"Refusing automatic changes: {disposition}. "
+                "Partial data and configuration have been retained. "
+                "Guided manual repair is required; do not delete the store or "
+                "ownership metadata, uninstall, or replay the installer."
+            )
         architecture = {"aarch64": "aarch64-linux", "x86_64": "x86_64-linux"}[os.uname().machine]
         manifest = json.loads((RESOURCES / "artifacts.json").read_text())
         verify(INSTALLER, manifest["artifacts"][architecture])

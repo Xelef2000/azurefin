@@ -100,8 +100,11 @@ mount `/nix` -> initialize if needed -> expose/start the daemon and shell tools.
   healthy installation, and foreign/conflicting installation.
 - Write completion metadata atomically only after validating the store, accounts,
   configuration, SELinux setup, mount, and daemon operation.
-- On interruption, use the pinned installer's supported receipt/recovery behavior
-  where possible. Do not blindly rerun installation over an unknown partial store.
+- First-release decision (2026-11-05): an interrupted installation without a
+  reliable receipt retains all partial data and requires guided manual repair.
+  Do not automatically resume, replay actions, uninstall, or reset the store.
+  Preserve ownership metadata, logs, accounts and administrator configuration
+  for diagnosis; a receipt alone is not proof that the runtime is healthy.
 - Retain stable build-user IDs and ownership across upgrades and rollbacks. Detect
   account collisions before modifying users or files.
 - Provide shell integration for supported shells without modifying each user's
