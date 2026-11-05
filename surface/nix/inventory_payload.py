@@ -47,7 +47,7 @@ def inventory(stream):
                 if not re.fullmatch(r"[0-9a-z]{32}-.+", parts[2]):
                     raise ValueError("Unexpected store output name")
                 outputs.add("/nix/store/" + parts[2])
-            if re.match(r"(?i)^(licen[cs]e|copying|copyright|notice)([._-]|$)", path.name):
+            if re.match(r"(?i)^(licen[cs]es?|copying|copyrights?|notices?)([._-]|$)", path.name):
                 notices.append(member.name)
             if path.name == ".reginfo":
                 if registration is not None or not member.isfile() or member.size > 4 * 1024 * 1024:

@@ -64,7 +64,7 @@ python3 surface/nix/inventory_notices.py \
 The overrides are pinned source paths and exact notice filenames. Update and
 review them when changing the installer pin; a missing explicit notice fails
 collection. Discovery also retains notices from build/test sources, so counts
-are not counts of linked libraries. This run retained 4,417 indexed entries
+are not counts of linked libraries. Including plural notice filenames, the run retained 4,428 indexed entries
 (about 8.3 MiB including indexes), without extracting archive member paths.
 
 Two independent source-collection runs produced identical source archive hashes:
@@ -73,6 +73,13 @@ Two independent source-collection runs produced identical source archive hashes:
 - `cargo-vendor.tar.zst`: `a717164b0a8827c1802e74bfc76a964f245c6742c9801b703e78c4028ffb17df`
 
 These are local intermediate archive checksums, not published download promises.
+
+To assemble a combined local collection, repeat `collect_sources.py` with
+`--notices /path/to/new-notice-collection` and a new output directory. It verifies
+the notice text hashes and the source-root set, and requires runtime coverage
+using `notice-parents.json`. All ten Nix outputs retain the full parent project
+notices, including components that also contain third-party licenses. The
+combined collection includes the generator sources and their Apache-2.0 license.
 
 Run `sha256sum --check SHA256SUMS` at the collection root. Extract into a new
 scratch directory, not `/`: some archives preserve `nix/store/...` relative

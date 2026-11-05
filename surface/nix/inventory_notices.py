@@ -15,7 +15,7 @@ import zipfile
 
 from inventory_sources import STORE
 
-NOTICE = re.compile(r'(?i)^(licen[cs]e|copying|copyright|notice)([._-]|$)')
+NOTICE = re.compile(r'(?i)^(licen[cs]es?|copying|copyrights?|notices?)([._-]|$)')
 LIMIT = 16 * 1024 * 1024
 
 

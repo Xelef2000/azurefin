@@ -257,6 +257,12 @@ Administrator configuration, account files, ownership state and receipt hashes
 were unchanged. The fixture's automatic test key is confined to that disposable
 guest; it is not a proposed key-storage policy for real installations.
 
+`vm-live-guard.sh` passed on an installed disposable overlay booted with the live
+kernel flags. Every Nix unit refused activation through its real systemd
+condition, even after an explicit start request; `/nix` stayed unmounted and
+store/configuration/account hashes were unchanged. This validates the unit
+guard, not yet a newly built Nix-enabled live ISO.
+
 Validation against the newer signature-verified `v0.0.29-alpha-base` is in
 progress. The prototype built on that base and passed the same container lint
 checks. Do not publish this diagnostic image or use it on a user device.
@@ -313,7 +319,11 @@ installer dependencies or license review.
 The local `collect_sources.py` and `inventory_notices.py` tools now reproduce
 source and notice collection, with explicit pinned exceptions in
 `notice-overrides.json`. See [source/rebuild instructions](SOURCE-REBUILD.md).
-The source archives matched across two runs; nothing was published.
+The source archives matched across two runs. A combined local collection now
+includes 4,428 notice entries, checked text hashes, parent-project mappings for
+all ten Nix outputs, and notice coverage for all 63 runtime outputs. It includes
+the collector sources and their license. Publication and build integration of
+the paired artifacts remain; nothing was published.
 
 ### Before production integration
 

@@ -140,3 +140,12 @@ than relying only on one-off exploration. [Rebuild notes](SOURCE-REBUILD.md)
 record the pinned recipe, source-level license distinctions and the successful
 embedded SELinux policy reproduction (including its final-newline difference).
 The whole installer has not been rebuilt bit-for-bit.
+
+Repeatable collection now assembles 139 source/recipe roots, all 183 crates and
+4,428 indexed notice entries into a checksummed local bundle. Runtime notice
+coverage passes for all 63 outputs, with explicit parent-project mappings for
+filtered Nix components and its generated aggregate output. Original source
+archives retain source-header notices; the discovery index does not replace
+them. The remaining packaging step is to publish immutable paired source/notice
+artifacts and wire their verification into image builds, after release review.
+No upstream response is needed. The local bundle is not a published artifact.

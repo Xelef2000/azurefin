@@ -38,7 +38,7 @@ def inventory(lock_path, vendor):
                 raise ValueError("Unsafe vendor path")
             if hashlib.sha256(path.read_bytes()).hexdigest() != digest:
                 raise ValueError(f"Modified vendor file: {path}")
-            if re.match(r"(?i)^(licen[cs]e|copying|copyright|notice)([._-]|$)", path.name):
+            if re.match(r"(?i)^(licen[cs]es?|copying|copyrights?|notices?)([._-]|$)", path.name):
                 notices.append({"path": name, "sha256": digest})
         records.append({
             "name": key[0], "version": key[1], "crate_sha256": expected[key],

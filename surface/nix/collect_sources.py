@@ -14,6 +14,7 @@ import subprocess
 
 from inventory_sources import STORE, inventory, store_roots
 from inventory_vendor import inventory as inventory_vendor
+from audit_notice_coverage import coverage, verify_texts
 
 
 def flake_paths(tree):
@@ -48,6 +49,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('payload', 'derivations', 'flakes', 'native', 'vendor', 'output'):
         parser.add_argument('--' + name, type=Path, required=True)
+    parser.add_argument('--notices', type=Path, help='Optional reviewed notice collection to include')
     args = parser.parse_args()
     args.output = args.output.absolute()
     raw = {name: getattr(args, name).read_bytes()
@@ -65,6 +67,14 @@ def main():
             raise ValueError(f'Missing or unexpected source root: {path}')
     installer = Path(reports['flakes']['path'])
     vendor = inventory_vendor(installer / 'Cargo.lock', args.vendor)
+    notices = None
+    if args.notices:
+        notices = json.loads((args.notices / 'index.json').read_text())
+        if {r['source'] for r in notices['sources']} != roots | {'cargo-vendor'}:
+            raise ValueError('Notice collection does not match the collected source roots')
+        verify_texts(notices, args.notices / 'texts')
+        notice_coverage = coverage(runtime, notices, json.loads(
+            Path(__file__).with_name('notice-parents.json').read_text()))
     # No overwrite, including partial previous runs. Retain them for inspection.
     args.output.mkdir()
     evidence = args.output / 'evidence'
@@ -87,14 +97,30 @@ def main():
     recipes = args.output / 'collector'
     recipes.mkdir()
     for name in ('collect_sources.py', 'inventory_sources.py', 'inventory_vendor.py',
-                 'SOURCE-REBUILD.md', 'artifacts.json'):
+                 'inventory_notices.py', 'audit_notice_coverage.py',
+                 'notice-overrides.json', 'notice-parents.json', 'SOURCE-REBUILD.md', 'artifacts.json'):
         shutil.copyfile(Path(__file__).with_name(name), recipes / name)
+    own_license = Path(__file__).with_name('LICENSE')
+    if not own_license.exists():
+        own_license = Path(__file__).resolve().parents[2] / 'LICENSE'
+    shutil.copyfile(own_license, recipes / 'LICENSE')
+    if notices is not None:
+        destination = args.output / 'notices'
+        destination.mkdir()
+        (destination / 'texts').mkdir()
+        (destination / 'index.json').write_text(json.dumps(notices, indent=2, sort_keys=True) + '\n')
+        for digest in {n['sha256'] for r in notices['sources'] for n in r['notices']}:
+            name = digest + '.txt'
+            shutil.copyfile(args.notices / 'texts' / name, destination / 'texts' / name)
+        (evidence / 'runtime-notice-coverage.json').write_text(
+            json.dumps(notice_coverage, indent=2, sort_keys=True) + '\n')
     manifest = {'schema': 1, 'complete_license_inventory': False,
                 'installer_sha256': runtime['installer_sha256'],
                 'source_revision': runtime['source_revision'],
                 'source_root_count': len(roots), 'runtime_output_count': len(runtime['runtime_outputs']),
                 'vendor_crate_count': len(vendor['crates']),
-                'scope': 'Local intermediate sources; separate reviewed notice index required'}
+                'notice_entries': sum(len(r['notices']) for r in notices['sources']) if notices else 0,
+                'scope': 'Local source/notice collection; release review required before publication'}
     (args.output / 'manifest.json').write_text(json.dumps(manifest, indent=2, sort_keys=True) + '\n')
     files = sorted(path for path in args.output.rglob('*') if path.is_file())
     (args.output / 'SHA256SUMS').write_text(''.join(

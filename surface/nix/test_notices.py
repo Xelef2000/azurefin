@@ -9,7 +9,8 @@ from inventory_notices import retain, selected
 
 class NoticeTests(unittest.TestCase):
     def test_filename_rules_and_explicit_exception(self):
-        for name in ('COPYING.RUNTIME', 'LICENSES/LLVM-exception.txt', 'nested/NOTICE.md'):
+        for name in ('COPYING.RUNTIME', 'LICENSES/LLVM-exception.txt', 'nested/NOTICE.md',
+                     'COPYRIGHTS', 'LICENCES.txt', 'NOTICES'):
             self.assertTrue(selected(name, []))
         self.assertFalse(selected('README.md', []))
         self.assertTrue(selected('README.md', ['README.md']))
