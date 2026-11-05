@@ -1,3 +1,4 @@
+# shellcheck shell=sh
 # System-wide POSIX shell integration. No user dotfiles are modified.
 # Append rather than prepend: existing system/Homebrew choices keep precedence.
 for _azurefin_nix_bin in \
