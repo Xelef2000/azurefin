@@ -7,6 +7,7 @@ RUN python3 /usr/share/azurefin/nix-prototype/verify_artifact.py aarch64-linux /
     && chmod 0755 /usr/libexec/azurefin-nix-installer \
     && mkdir -p /nix \
     && test ! -L /nix \
+    && install -Dm644 /usr/share/azurefin/nix-prototype/azurefin-nix.sh /etc/profile.d/azurefin-nix.sh \
     && install -m644 /usr/share/azurefin/nix-prototype/vm-directory.service /usr/lib/systemd/system/azurefin-nix-vm-directory.service \
     && install -m644 /usr/share/azurefin/nix-prototype/vm-nix.mount /usr/lib/systemd/system/nix.mount \
     && install -m644 /usr/share/azurefin/nix-prototype/vm-test.service /usr/lib/systemd/system/azurefin-nix-vm-test.service \

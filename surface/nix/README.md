@@ -79,6 +79,13 @@ marker `AZUREFIN_NIX_VM_BOOTSTRAP_COMPLETE` means only bootstrap succeeded, not
 that multi-user operation, sandboxing or upgrade safety has passed. These VM
 units intentionally have no production recovery or daemon integration.
 
+The prototype installs `/etc/profile.d/azurefin-nix.sh` for Fedora's Bash and
+POSIX login-shell startup. New shells automatically append existing user Nix
+profiles and the system Nix profile to PATH, preserving system/Homebrew
+precedence. Re-sourcing does not duplicate entries; an absent store is a no-op.
+No user dotfiles are changed. This is currently prototype-only; Fish and other
+shell-specific startup integration remain to be validated before release.
+
 For virtio test-disk safety checks, use a short serial identifier and compare it
 exactly before installation: the original long identifier was truncated in the
 guest, correctly causing our first deployment attempt to stop without writing.
