@@ -8,8 +8,10 @@ preference tests passed. Fresh image, foreign-store refusal and encrypted-store
 reboot tests passed on the earlier cached base. A newer-base repeat and
 upgrade/rollback tests are in progress. Source/notice collection is reproducible
 locally under `surface/nix/`; no upstream issue is required.
+Live-session unit exclusion passed in a disposable overlay; a new live ISO is
+not yet validated. The local source bundle passed archive/checksum validation.
 No production image integration or Surface deployment performed.
-Date: 2026-11-05.
+Date: 2026-11-06.
 
 ## Outcome
 

@@ -301,7 +301,8 @@ tree against the lockfile and its file checksums, reporting original license
 expressions and notice paths. The local pinned run covered 183 crates; source
 and vendor archives remain local, outside the Git repository. All 63 embedded
 runtime output paths were matched to the pinned installer's derivation graph.
-Collecting the complete applicable notices/source bundle is still outstanding.
+The combined source/notice collection described below is now available locally;
+publication and production packaging remain outstanding.
 
 `inventory_sources.py` turns a verified payload inventory and the pinned
 schema-4 recursive derivation graph into a reproducible direct-source manifest:
@@ -324,6 +325,16 @@ includes 4,428 notice entries, checked text hashes, parent-project mappings for
 all ten Nix outputs, and notice coverage for all 63 runtime outputs. It includes
 the collector sources and their license. Publication and build integration of
 the paired artifacts remain; nothing was published.
+
+On 2026-11-06 the outer local archive passed `zstd -t` and its collected files
+passed `sha256sum --check`. Source-only release tags are now excluded from the
+OS image and downstream ISO workflows. This does not itself publish artifacts
+or authorize enabling Nix in production images.
+
+The live-session unit guard also passed in a disposable installed-image overlay
+booted with `rd.live.image`: explicit starts were skipped, `/nix` remained
+unmounted, and persistent store/configuration/account/state checksums remained
+unchanged. This is a unit-condition test, not a newly composed live-ISO test.
 
 ### Before production integration
 
