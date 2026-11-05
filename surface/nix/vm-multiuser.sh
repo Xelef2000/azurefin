@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Disposable full-system guest only; never a production initialization helper.
 set -euo pipefail
-trap 'echo AZUREFIN_NIX_MULTIUSER_FAILED; journalctl -b -u nix-daemon --no-pager; journalctl -b -k --no-pager | grep -i avc || true; systemctl poweroff --no-block' ERR
+trap 'printf "AZUREFIN_NIX_MULTIUSER_FAILED line=%s status=%s command=%s\n" "$LINENO" "$?" "$BASH_COMMAND"; journalctl -b -u nix-daemon --no-pager; journalctl -b -k --no-pager | grep -i avc || true; systemctl poweroff --no-block' ERR
 [[ ${AZUREFIN_NIX_DISPOSABLE_GUEST:-} == yes ]]
 [[ $(getenforce) == Enforcing ]]
 [[ /nix -ef /var/lib/nix ]]
@@ -18,7 +18,8 @@ ls -Zd /nix /var/lib/nix /nix/store
 daemon=$(readlink -f /nix/var/nix/profiles/default/bin/nix-daemon)
 ls -Z "$daemon"
 matchpathcon -V "$daemon"
-semodule -l | grep '^nix[[:space:]]'
+semodule -l > /var/tmp/azurefin-nix-policy-modules.txt
+grep -E '^nix([[:space:]]|$)' /var/tmp/azurefin-nix-policy-modules.txt
 ps -Z -p "$(pgrep -x nix-daemon | head -n1)"
 touch /etc/azurefin-nix-host-only
 busybox=(/nix/store/*-busybox-*/bin/busybox)
