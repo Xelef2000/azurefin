@@ -1,8 +1,10 @@
 # Nix integration for Azurefin
 
-Status: phase 1 prototype implemented under `surface/nix/`; compatibility
-validation in progress. No production image integration or deployment performed.
-Date: 2026-11-04.
+Status: offline bootstrap, two-user sandbox builds, reboot persistence and
+backing-path SELinux relabel validation passed in a disposable ARM64 VM.
+Guarded initializer and lifecycle fault testing are in progress under
+`surface/nix/`. No production image integration or Surface deployment performed.
+Date: 2026-11-05.
 
 ## Outcome
 
@@ -174,10 +176,10 @@ Do not alter Azurefin's firmware provisioning, signing, or OTA channel policies.
 ## Acceptance checklist
 
 - [ ] Offline fresh boot initializes Nix and serves two ordinary users.
-- [ ] Initialization requires no composefs disablement, transient root, or manual initramfs edit.
-- [ ] `/nix` is the expected persistent bind mount after reboot.
-- [ ] Sandbox builds and daemon access work with SELinux enforcing; relevant AVCs are reviewed.
-- [ ] Network-disabled initialization makes no required downloads or channel updates.
+- [x] Initialization requires no composefs disablement, transient root, or manual initramfs edit.
+- [x] `/nix` is the expected persistent bind mount after reboot.
+- [x] Sandbox builds and daemon access work with SELinux enforcing; relevant AVCs are reviewed.
+- [x] Network-disabled initialization makes no required downloads or channel updates.
 - [ ] Interrupted installation, full disk, and repeated retry preserve recoverable state.
 - [ ] Existing healthy and foreign Nix installations are not overwritten.
 - [ ] Administrator configuration survives initialization retry, image upgrade, and reboot.

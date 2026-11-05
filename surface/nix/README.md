@@ -131,8 +131,46 @@ guest, correctly causing our first deployment attempt to stop without writing.
   outputs, administrator-customized configuration, receipt and accounts, then
   verifies them after a new boot and exercises both users through the daemon.
   It also checks that the fresh-only prototype refuses an existing store
-  without changing those checksums. Results are pending. This does **not**
+  without changing those checksums. Both boots passed, including daemon access
+  with `Trusted: 0` for ordinary users and unchanged account/configuration/receipt
+  checksums after the refusal test. This does **not**
   validate image upgrades, rollback or interrupted-install recovery.
+- `vm-relabel.sh` proved the backing path needs a file-context equivalence:
+  `/var/lib/nix` maps to `/nix`. After applying it and relabeling through the
+  backing path, both executable-path label checks and both forced sandbox
+  rebuilds passed. One pre-existing boot-time systemd/netlink AVC appeared
+  before the test; no Nix build AVC was reported.
+
+### Guarded initializer work
+
+`lifecycle.py` and `initialize.py` are still disposable-VM prototypes, not
+production services. Initialization and final validation are separate so the
+initializer never synchronously starts a daemon ordered after itself. Versioned
+ownership metadata records pinned installer/plan hashes and progress, uses a
+non-blocking lock and atomic, fsynced updates, and never treats a receipt alone
+as proof of runtime health. Defaults are published atomically only when no
+administrator configuration exists.
+
+An unowned store/account collision is classified as foreign. A hard-interrupted
+installation is retained as needing reconciliation; it is not erased or blindly
+replayed. Unknown schema versions and changed action arguments are rejected.
+Completed runtimes are validated rather than reinstalled when the bundled
+installer changes. Unit tests cover lock exclusion, an abruptly exiting process,
+full-disk checkpoint/config writes, symlink refusal and configuration retention.
+These are fault-injection tests, not yet full power-loss or image-upgrade tests.
+
+`vm-initializer.sh` resets only an explicitly marked copy-on-write test overlay,
+preserving the original store under another directory inside that overlay. It
+tests initialization, administrator configuration preservation and repeated
+validation; those checks passed on the second overlay. The first fixture reset
+stopped its own required mount unit and was discarded; the corrected fixture
+keeps the mount unit active while replacing only the overlay's backing store.
+It must never run on a user installation.
+
+`vm-fault.sh` runs in separate marked overlays with an 8 MiB temporary store or
+a killed initializer process group. It checks that retries retain partial state
+and configuration instead of replaying installation. Both VM results are still
+pending; host-side lifecycle tests alone are not sufficient evidence.
 
 ## Results — 2026-11-04
 
