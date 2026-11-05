@@ -3,7 +3,7 @@
   "installer_version": "2.35.4",
   "source_revision": "b19d98670014a6e8d3e328d91388db3eae8ccce8",
   "source_repository": "https://github.com/NixOS/nix-installer",
-  "license": "LGPL-2.1-or-later",
+  "license": "LGPL-2.1",
   "payload": "Embedded Nix bootstrap closure and SELinux policy; no separate runtime download",
   "artifacts": {
     "aarch64-linux": {

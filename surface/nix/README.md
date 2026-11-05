@@ -244,9 +244,38 @@ this diagnostic image or use it on a user device.
 `vm-preferences.sh` evaluates the pinned Nixpkgs revision
 `cd4ea8d57de16f4810bc5f14207bac45fbf19f67` in a separate overlay. It checks
 independent user configuration, unfree opt-in and the pure-flake boundary without
-downloading or building unfree software. Results are pending; the first fixture
-attempt needed correction because `nix store info` prints its status to stderr.
+downloading or building unfree software. The corrected run passed with
+`AZUREFIN_NIX_PREFERENCES_COMPLETE`: independent user settings, untrusted daemon
+access, default unfree denial, explicit per-user opt-in, and pure-flake denial
+were verified. The first fixture attempt needed correction because
+`nix store info` prints its status to stderr.
 The source tree is test input only, not part of the bootstrap payload.
+
+### Local source/license inventory
+
+`inventory_payload.py` verifies the complete installer against `artifacts.json`,
+reads the upstream Linux trailer, and inventories the embedded tar without
+executing the installer or extracting archive paths:
+
+```sh
+python3 surface/nix/inventory_payload.py aarch64-linux /path/to/nix-installer-aarch64-linux > payload-inventory.json
+```
+
+The pinned ARM64 payload has 63 store outputs. The report includes its closure
+registration, roots, compressed-payload hash and any recognizable notice paths.
+It explicitly does **not** claim complete license coverage: statically linked
+installer dependencies, build inputs, patches and source notices need review
+as well. `runtime-license-candidates.nix` evaluates preliminary metadata from
+the pinned Nixpkgs source without building packages. Version overrides and
+output-specific licensing must be reconciled before using that metadata for
+distribution. See [local packaging investigation](UPSTREAM-PACKAGING-QUESTION.md).
+
+`inventory_vendor.py Cargo.lock /path/to/vendor` verifies a `cargo vendor --locked`
+tree against the lockfile and its file checksums, reporting original license
+expressions and notice paths. The local pinned run covered 183 crates; source
+and vendor archives remain local, outside the Git repository. All 63 embedded
+runtime output paths were matched to the pinned installer's derivation graph.
+Collecting the complete applicable notices/source bundle is still outstanding.
 
 ### Before production integration
 

@@ -1,6 +1,9 @@
-# Draft: source/license bundle for redistribution of the embedded Linux payload
+# Local investigation: source/license bundle for the embedded Linux payload
 
-Not submitted upstream; external-repository permission is pending.
+Not submitted upstream. On 2026-11-05 the user chose to keep this investigation
+local. Do not open an upstream issue. Publication of a Nix-enabled image remains
+blocked until the accompanying source and license material is accounted for;
+private local prototype testing can continue.
 
 We are prototyping offline multi-user Nix initialization for an immutable
 Fedora-derived image. The intent is to bundle the unchanged official
@@ -17,17 +20,80 @@ We did not find files named LICENSE/COPYING in that tarball, or a separate
 source/license bundle among the release assets. This may simply mean we are
 looking in the wrong place; it is not a claim about upstream compliance.
 
-Is there an existing supported process or artifact for downstream distributors
-to obtain:
+Local investigation must identify or assemble:
 
 1. The applicable license notices for the static installer and its embedded
-   runtime dependencies?
+   runtime dependencies.
 2. The matching source bundle/build recipes, including Rust dependencies and
-   the runtime closure, tied to the released binary?
+   the runtime closure, tied to the released binary.
 
 We found the pinned installer source, `Cargo.lock`, `flake.nix` and `flake.lock`.
-Is there an existing generator or documented workflow that derives the above
-from those pins, rather than each downstream maintaining a separate inventory?
+Inspect those inputs for an existing generator or documented workflow, and
+derive a reproducible inventory from the pins where needed. Verify the exact
+license expressions against source notices rather than assuming the installer's
+license covers the embedded runtime.
 
-This question is about redistribution packaging, not changing installer behavior
-or asking upstream to support our boot integration.
+This investigation concerns redistribution packaging, not changing installer
+behavior or asking upstream to support our boot integration.
+
+## Evidence and remaining work
+
+- Whole-artifact verification and `inventory_payload.py` identify 63 ARM64 store
+  outputs; no recognizable license/notice filenames were found inside that
+  runtime tarball. The closure registration is retained in the generated report.
+- The installer's `Cargo.toml` declares `LGPL-2.1`. Preserve that upstream spelling
+  rather than asserting `-or-later` without establishing it from source notices.
+- Installer source and build recipes are pinned at
+  `b19d98670014a6e8d3e328d91388db3eae8ccce8`; Nix source at
+  `21286d605815196c3fff1960550ab08700fc4e6f`; Nixpkgs at
+  `cd4ea8d57de16f4810bc5f14207bac45fbf19f67`.
+- `runtime-license-candidates.nix` supplies preliminary package metadata, not
+  proof of exact binary correspondence. In particular, installer `flake.nix`
+  overrides NSS certificate data to 3.131.1, while Nix's
+  `packaging/dependencies.nix` overrides mimalloc to 3.5.1. Raw Nixpkgs defaults
+  alone therefore do not describe the shipped closure.
+- Preserve complete license expressions and exceptions. Examples needing
+  source-level review include GCC runtime exceptions, libgit2's linking
+  exception, library-versus-command licensing in acl/keyutils, and SQLite's
+  public-domain statement (which has no SPDX ID in this Nixpkgs metadata).
+- Vendor the installer's exact Cargo.lock dependencies, retaining original
+  source notices and checksums; inventory target/build dependencies separately
+  from what is actually linked. Include native/static dependencies and the
+  embedded SELinux policy's source/build instructions.
+- Archive the applicable runtime sources, patches and build definitions and
+  generate checksummed notices/source artifacts. Do not treat source URLs or
+  Nixpkgs `meta.license` alone as the finished redistribution bundle.
+
+The inventory and source assembly remain local. Nothing in this directory
+enables publication of Nix binaries in release workflows.
+
+## Local results (2026-11-05)
+
+`cargo vendor --locked` completed for all 183 registry dependencies.
+`inventory_vendor.py` matches package checksums to Cargo.lock and verifies
+vendored file checksums, preserving the original license expressions and notice
+paths. All crates declare a license. Thirteen have no separately recognized
+notice filename; none occurs in `cargo tree --locked --offline --target
+aarch64-unknown-linux-musl --edges normal,build` with default features. This is
+an over-inclusive source inventory, not a claim that all 183 crates are linked
+into the Linux executable.
+
+Evaluating the pinned Nix flake's `packages.aarch64-linux.nix.outPath` produced
+`/nix/store/yv1zf3y6all4j99aad30cb8i55dw9zmp-nix-2.35.4`, exactly matching the
+embedded runtime root. Use its recursive derivation graph to match individual
+runtime outputs and source inputs; retain the certificate override separately.
+This establishes a useful recipe/output match, not a bit-for-bit rebuild test.
+
+The recursive graph for the pinned installer's `packages.aarch64-linux.default`
+matches **all 63 runtime output paths**, including the certificate bundle.
+It also records static-installer build inputs. Export it locally with:
+
+```sh
+nix derivation show --recursive github:NixOS/nix-installer/b19d98670014a6e8d3e328d91388db3eae8ccce8#packages.aarch64-linux.default > installer-derivations.json
+```
+
+Nix 2.34.8 exports schema 4: derivations are under `derivations`, paths in
+`outputs` are store-relative, and some source/build attributes live under
+`structuredAttrs` rather than `env`. Preserve both forms when collecting source
+inputs. The graph is not itself the corresponding-source archive: those source
+inputs and notices still need to be collected and checked.
