@@ -247,6 +247,14 @@ stayed inactive, and configuration/account/store checksums remained unchanged.
 The original disk and ownership metadata were retained. Directory preparation
 also refuses to hide nonempty foreign `/nix` contents behind its bind mount.
 
+`vm-encrypted-store.sh` passed its two-boot test on a disposable overlay with a
+separate 2 GiB virtual LUKS2 volume. The existing store was copied to it, then
+mounted by the normal crypttab/fstab units on the next boot. Nix started after
+the backing mount; both users could access the daemon and build offline.
+Administrator configuration, account files, ownership state and receipt hashes
+were unchanged. The fixture's automatic test key is confined to that disposable
+guest; it is not a proposed key-storage policy for real installations.
+
 Validation against the newer signature-verified `v0.0.29-alpha-base` is in
 progress. The prototype built on that base and passed the same container lint
 checks. Do not publish this diagnostic image or use it on a user device.
@@ -299,6 +307,11 @@ structured attributes, source/patch roots, and hashes of both input reports.
 The pinned run matches 63 outputs to 64 provider records and 120 direct source
 roots. This does not replace the full recipes, parent project sources, native
 installer dependencies or license review.
+
+The local `collect_sources.py` and `inventory_notices.py` tools now reproduce
+source and notice collection, with explicit pinned exceptions in
+`notice-overrides.json`. See [source/rebuild instructions](SOURCE-REBUILD.md).
+The source archives matched across two runs; nothing was published.
 
 ### Before production integration
 

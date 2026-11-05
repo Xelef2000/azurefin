@@ -134,3 +134,9 @@ indexes retaining original paths/hashes: 530 runtime-source entries and 343
 additional entries. Duplicate text is deduplicated within each collection.
 This demonstrates local source/notice assembly; final coverage review and
 release-quality rebuild instructions remain, without requiring upstream contact.
+
+The direct-source match is now reproducible with `inventory_sources.py` rather
+than relying only on one-off exploration. [Rebuild notes](SOURCE-REBUILD.md)
+record the pinned recipe, source-level license distinctions and the successful
+embedded SELinux policy reproduction (including its final-newline difference).
+The whole installer has not been rebuilt bit-for-bit.

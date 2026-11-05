@@ -4,8 +4,10 @@ Status: offline bootstrap, two-user sandbox builds, reboot persistence and
 backing-path SELinux relabel validation passed in a disposable ARM64 VM.
 Guarded initialization, full-store and forced-kill fault tests also passed.
 Asynchronous systemd, repeat-boot, failure-isolated console login and per-user
-preference tests passed. Fresh-image tests and local source/license packaging
-are in progress under `surface/nix/`; no upstream issue is required.
+preference tests passed. Fresh image, foreign-store refusal and encrypted-store
+reboot tests passed on the earlier cached base. A newer-base repeat and
+upgrade/rollback tests are in progress. Source/notice collection is reproducible
+locally under `surface/nix/`; no upstream issue is required.
 No production image integration or Surface deployment performed.
 Date: 2026-11-05.
 
