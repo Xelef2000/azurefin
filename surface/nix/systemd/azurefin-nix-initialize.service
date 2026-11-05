@@ -1,0 +1,12 @@
+[Unit]
+Description=Initialize the persistent Nix runtime
+Requires=nix.mount
+After=nix.mount
+ConditionKernelCommandLine=!rd.live.image
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/share/azurefin/nix/initialize.py initialize
+RemainAfterExit=yes
+TimeoutStartSec=15min
+UMask=0022

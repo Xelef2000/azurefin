@@ -1,0 +1,9 @@
+[Unit]
+Description=Nix daemon
+Requires=azurefin-nix-initialize.service
+After=azurefin-nix-initialize.service
+ConditionKernelCommandLine=!rd.live.image
+
+[Service]
+ExecStart=/nix/var/nix/profiles/default/bin/nix-daemon --daemon
+KillMode=process

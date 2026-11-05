@@ -10,7 +10,7 @@ case ,$(findmnt -n -o OPTIONS /), in
     *) exit 1 ;;
 esac
 echo AZUREFIN_NIX_MULTIUSER_BEGIN
-restorecon /etc/profile.d/azurefin-nix.sh /etc/systemd/system/nix-daemon.service
+restorecon /etc/profile.d/azurefin-nix.sh "$(systemctl show nix-daemon.service -p FragmentPath --value)"
 systemctl daemon-reload
 systemctl start nix-daemon.service
 systemctl is-active nix-daemon.service

@@ -2,8 +2,9 @@
 
 Status: offline bootstrap, two-user sandbox builds, reboot persistence and
 backing-path SELinux relabel validation passed in a disposable ARM64 VM.
-Guarded initializer and lifecycle fault testing are in progress under
-`surface/nix/`. No production image integration or Surface deployment performed.
+Guarded initialization, full-store and forced-kill fault tests also passed.
+Asynchronous systemd and fresh-image tests are in progress under `surface/nix/`.
+No production image integration or Surface deployment performed.
 Date: 2026-11-05.
 
 ## Outcome

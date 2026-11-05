@@ -211,14 +211,43 @@ automatic repair/reset command is deliberately not part of the first release.
 
 ## Remaining implementation gates
 
-1. Offline installation and two-user sandbox builds passed on the enforcing
-   ARM64 VM. Validate persistence and labels through the backing-store path,
-   including behavior after a full filesystem relabel.
+### Asynchronous systemd prototype — 2026-11-05
+
+`systemd/` contains the proposed directory, mount, initializer, daemon and
+validator units. Only a timer is enabled at boot; it schedules validation after
+30 seconds, pulling in the ordered dependencies without making the desktop
+target depend on Nix. Each unit rejects the live-image kernel command line.
+The initializer retains its disposable-guest guard; these units are not enabled
+in production. Directory preparation refuses unexpected existing permissions,
+ownership and symlinks without silently changing them.
+
+The first systemd run initialized and validated the runtime successfully while
+the login target became available. Its subsequent package assertion had a test
+fixture error (`--rebuild` before creating the output); the corrected fixture
+builds first, then rebuilds. Repeat-boot checks remain in progress.
+
+The separate interrupted-installation boot test passed: login/user-session
+targets became active, initialization refused with manual-repair guidance,
+the daemon stayed inactive, and state/configuration/account checksums matched.
+This proves console login-target availability, not yet graphical login on the
+Surface.
+
+`Containerfile.systemd-prototype` builds a local-only image with the proposed
+files under immutable `/usr`, explicit disposable-test environment overrides,
+and a first-boot diagnostic. Its `bootc container lint` passed 14 checks with one
+skip. Fresh-image deployment and first-boot testing are pending. Do not publish
+this diagnostic image or use it on a user device.
+
+### Before production integration
+
+1. Offline installation, two-user sandbox builds, reboot persistence and
+   backing-path relabel checks passed on the enforcing ARM64 VM. Validate the
+   image-owned integration on a fresh installation and the current image base.
 2. Validate remaining shell/profile behavior and administrator configuration
    preservation across retries and image updates.
-3. Add the image-owned mount/daemon units and locked initializer with durable
-   ownership metadata, schema validation, explicit status/retry and interruption
-   handling. Completion must follow successful daemon checks, not just a receipt.
+3. Finish validating the proposed image-owned units and initializer together,
+   including status/retry and interruption handling. Completion must follow
+   successful daemon checks, not just a receipt.
 4. Package licenses/source, shell integration and all offline resources under
    `/usr`; integrate the shared packages stage and live-only exclusions.
 5. Test upgrades, rollback, existing configuration, foreign installations,

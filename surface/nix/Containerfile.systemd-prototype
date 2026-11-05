@@ -1,0 +1,18 @@
+# Local disposable VM only. No release workflow may use this target.
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+COPY surface/nix /usr/share/azurefin/nix
+COPY --from=nix-payload /nix-installer-aarch64-linux /usr/libexec/azurefin-nix-installer
+RUN python3 /usr/share/azurefin/nix/verify_artifact.py aarch64-linux /usr/libexec/azurefin-nix-installer \
+    && chmod 0755 /usr/libexec/azurefin-nix-installer \
+    && mkdir -p /nix \
+    && test ! -L /nix \
+    && install -Dm644 /usr/share/azurefin/nix/azurefin-nix.sh /etc/profile.d/azurefin-nix.sh \
+    && install -m644 /usr/share/azurefin/nix/systemd/* /usr/lib/systemd/system/ \
+    && install -Dm644 /usr/share/azurefin/nix/vm-disposable.conf /usr/lib/systemd/system/azurefin-nix-initialize.service.d/disposable.conf \
+    && install -Dm644 /usr/share/azurefin/nix/vm-disposable.conf /usr/lib/systemd/system/azurefin-nix-ready.service.d/disposable.conf \
+    && install -m644 /usr/share/azurefin/nix/vm-image.service /usr/lib/systemd/system/azurefin-nix-vm-image.service \
+    && systemctl enable azurefin-nix-ready.timer azurefin-nix-vm-image.service \
+    && systemctl mask bootc-fetch-apply-updates.service bootc-fetch-apply-updates.timer uupd.timer \
+    && systemctl set-default multi-user.target \
+    && bootc container lint
