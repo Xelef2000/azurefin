@@ -95,9 +95,21 @@ guest, correctly causing our first deployment attempt to stop without writing.
 - Prototype ARM64 image builds; `bootc container lint` reports 14 passes and
   one skipped check.
 - Prototype systemd unit verification passes.
-- Full-system offline installation and enforcing-SELinux bootstrap are still
-  pending. Installer-environment success is not evidence that the installed
-  system's SELinux or Nix sandbox works.
+- Full-system offline bootstrap completed on ARM64, with SELinux enforcing,
+  read-only composefs root and `/nix` backed by persistent `/var/lib/nix`.
+  Nix 2.35.4 executed successfully by its absolute path.
+- Upstream shell self-tests reported missing PATH integration. The new profile
+  fragment addresses this; full-system validation of shell startup is pending.
+- The bootstrap VM remained at its login prompt until the harness timeout.
+  The bootstrap completion marker preceded that timeout; it is not a daemon
+  or sandbox validation result.
+- `vm-multiuser.sh` and its diagnostic units test the next stage on that
+  disposable disk: two new ordinary users, login-shell PATH, explicit daemon
+  connections and offline builds using the bundled BusyBox. Builds must run
+  under a build-user UID and cannot see a host-only marker. The test powers off
+  after success or a trapped command failure. These units are not enabled by
+  the prototype Containerfile or release workflows; the script is staged under
+  `/var/tmp` in the stopped test VM. Results are still pending.
 
 ## Results — 2026-11-04
 
