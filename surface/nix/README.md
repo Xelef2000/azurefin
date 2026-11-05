@@ -110,6 +110,17 @@ guest, correctly causing our first deployment attempt to stop without writing.
   after success or a trapped command failure. These units are not enabled by
   the prototype Containerfile or release workflows; the script is staged under
   `/var/tmp` in the stopped test VM. Results are still pending.
+- First multi-user run confirmed login-shell PATH and an ordinary user's daemon
+  connection. The build failed because the bundled minimal BusyBox has no `id`
+  applet. The revised test reads `/proc/self/status` using shell builtins and
+  checks a non-root effective UID (a user namespace may map the host build UID).
+  It also prints the successful build output; no sandbox success is claimed yet.
+- The pinned upstream `nix.fc` labels executable/library subtrees but does not
+  label the store root, and `nix.te` does not define a confined daemon domain.
+  Thus `default_t` on the store directory and `unconfined_service_t` on the daemon
+  alone do not demonstrate a failed policy install. The retry checks the resolved
+  daemon executable against policy and lists the loaded module. This upstream
+  compatibility policy must not be described as dedicated daemon confinement.
 
 ## Results — 2026-11-04
 

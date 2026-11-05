@@ -15,12 +15,16 @@ systemctl daemon-reload
 systemctl start nix-daemon.service
 systemctl is-active nix-daemon.service
 ls -Zd /nix /var/lib/nix /nix/store
+daemon=$(readlink -f /nix/var/nix/profiles/default/bin/nix-daemon)
+ls -Z "$daemon"
+matchpathcon -V "$daemon"
+semodule -l | grep '^nix[[:space:]]'
 ps -Z -p "$(pgrep -x nix-daemon | head -n1)"
 touch /etc/azurefin-nix-host-only
 busybox=(/nix/store/*-busybox-*/bin/busybox)
 [[ ${#busybox[@]} == 1 && -x ${busybox[0]} ]]
 builder=${busybox[0]%/bin/busybox}
-for user in nix-test-one nix-test-two; do
+for user in nix-test-three nix-test-four; do
     if getent passwd "$user"; then
         echo 'Test account already exists; refusing to reuse it.' >&2
         exit 1
@@ -33,14 +37,19 @@ for user in nix-test-one nix-test-two; do
       builder = bb + \"/bin/busybox\";
       args = [ \"sh\" \"-ec\" ''
         test ! -e /etc/azurefin-nix-host-only
-        uid=\$(\${bb}/bin/busybox id -u)
-        test \"\$uid\" -ge 30001
-        test \"\$uid\" -le 30032
+        uid=
+        while read -r key real effective saved fs rest; do
+          if test \"\$key\" = Uid:; then uid=\$effective; break; fi
+        done < /proc/self/status
+        test -n \"\$uid\"
+        test \"\$uid\" -ne 0
         printf 'sandbox uid=%s\\n' \"\$uid\" > \"\$out\"
       '' ];
     }"
     printf '%s\n' "$expression" > "/var/tmp/$user.nix"
-    runuser -l "$user" -c "NIX_REMOTE=daemon nix build --offline --no-link --print-out-paths --file /var/tmp/$user.nix"
+    output=$(runuser -l "$user" -c "NIX_REMOTE=daemon nix build --offline --no-link --print-out-paths --file /var/tmp/$user.nix")
+    [[ $output == /nix/store/* && $output != *$'\n'* ]]
+    cat "$output"
 done
 [[ $(getenforce) == Enforcing ]]
 echo AZUREFIN_NIX_MULTIUSER_COMPLETE
