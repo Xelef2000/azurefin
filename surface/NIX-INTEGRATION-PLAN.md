@@ -5,11 +5,14 @@ backing-path SELinux relabel validation passed in a disposable ARM64 VM.
 Guarded initialization, full-store and forced-kill fault tests also passed.
 Asynchronous systemd, repeat-boot, failure-isolated console login and per-user
 preference tests passed. Fresh image, foreign-store refusal and encrypted-store
-reboot tests passed on the earlier cached base. A newer-base repeat and
-upgrade/rollback tests are in progress. Source/notice collection is reproducible
+reboot tests passed on the earlier cached base. The current-base repeat passed;
+upgrade/rollback needs a corrected deployment-selection test harness.
+Source/notice collection is reproducible
 locally under `surface/nix/`; no upstream issue is required.
 Live-session unit exclusion passed in a disposable overlay; a new live ISO is
 not yet validated. The local source bundle passed archive/checksum validation.
+The source-only `nix-sources-2.35.4-r1` prerelease is published with verified
+asset digests; no installer executable or OS image was included.
 No production image integration or Surface deployment performed.
 Date: 2026-11-06.
 

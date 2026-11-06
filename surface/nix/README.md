@@ -323,13 +323,23 @@ source and notice collection, with explicit pinned exceptions in
 The source archives matched across two runs. A combined local collection now
 includes 4,428 notice entries, checked text hashes, parent-project mappings for
 all ten Nix outputs, and notice coverage for all 63 runtime outputs. It includes
-the collector sources and their license. Publication and build integration of
-the paired artifacts remain; nothing was published.
+the collector sources and their license. The reviewed snapshot is published as
+[Nix sources 2.35.4 r1](https://github.com/Xelef2000/azurefin/releases/tag/nix-sources-2.35.4-r1),
+a source-only prerelease. GitHub asset sizes and SHA256 digests matched the local
+files. No installer executable or OS image was published; build integration of
+the paired artifacts remains.
 
 On 2026-11-06 the outer local archive passed `zstd -t` and its collected files
 passed `sha256sum --check`. Source-only release tags are now excluded from the
 OS image and downstream ISO workflows. This does not itself publish artifacts
 or authorize enabling Nix in production images.
+
+The current-base repeat on signed `v0.0.29-alpha-base` subsequently passed
+offline initialization and both ordinary-user sandbox tests. The upgrade
+test staged its image but its next boot selected the old deployment: the harness
+incorrectly assumed `ostree-1.conf` always identifies the default. The new entry
+was `ostree-2.conf` with version 2 and deployment index 0. Upgrade/rollback and
+pre-integration recovery remain unvalidated pending a corrected harness run.
 
 The live-session unit guard also passed in a disposable installed-image overlay
 booted with `rd.live.image`: explicit starts were skipped, `/nix` remained
