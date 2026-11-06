@@ -373,23 +373,41 @@ available. Configuration, account files, receipt and preserved ownership state
 matched their original checksums. The login screen was visually observed in
 the first run; the automated retry identifies the greeter by session class,
 not the obsolete fixed `gdm` account (current GDM uses dynamic users). This is
-login-screen availability, not a completed interactive sign-in test.
+login-screen availability. A subsequent automatic sign-in test reached the
+ordinary user's GNOME session target with GNOME Shell running. Waiting for
+session readiness and rendering, rather than just process creation, produced a
+screenshot of the working desktop. The initial early screenshot was black;
+the journal showed GNOME completed startup afterward. The test does not cover
+manual password entry, and no production GDM settings were changed.
 
 The live-session unit guard also passed in a disposable installed-image overlay
 booted with `rd.live.image`: explicit starts were skipped, `/nix` remained
 unmounted, and persistent store/configuration/account/state checksums remained
 unchanged. This is a unit-condition test, not a newly composed live-ISO test.
 
+A newly built live root subsequently passed an offline ARM64 boot with a
+read-only squashfs and RAM overlay: SELinux enforcing, passwordless Wayland
+session, sudo and SSH masks all passed. Explicit starts of all six Nix units
+were skipped; `/nix` stayed unmounted and no store, ownership state or Nix
+configuration appeared. The shell hook remained available without a Nix
+executable in the temporary session. The installed payload separately retained
+its enabled timer and contained no live-user setup. A local diagnostic ISO then
+passed its media checksum and booted as a read-only USB device through ARM64
+UEFI; the same live-session and Nix exclusion checks passed. That desktop-only
+ISO deliberately omitted the installed OS payload and is not for publication.
+
+The local live build initially hit a source-bind SELinux denial. Relabeling only
+the frozen temporary source copy as `container_file_t` allowed it to complete;
+neither host nor guest SELinux enforcement was disabled. The Anaconda derivative
+reports four bootc lint warnings for its installer-only `/boot`, runtime paths,
+package logs and mutable package metadata; it is not the installed payload.
+
 ### Remaining release gates
 
-1. Production-style fresh offline boot passed. The clean staging smoke image
-   also passed `bootc container lint` (14 passes, one skip), and inspection
-   confirmed no mutable Nix state, VM scripts or build context in the image.
-2. Validate the current shell hook and live exclusions in a newly composed live
-   image, and confirm installation still enables the timer on the target.
-3. Complete an interactive desktop sign-in on initialization failure; graphical
-   greeter availability now passes. Retain the interruption and ownership guards.
-4. Build a signed hardware candidate and request the Surface reboot test before
+1. Validate the combined release installer and its installed payload together.
+   Live-root/UEFI exclusion checks and a separate fresh installed-payload VM
+   passed, but the diagnostic ISO does not install an OS.
+2. Build a signed hardware candidate and request the Surface reboot test before
    publishing an OS release or changing the normal update channel.
 
 The default reference enables sandboxing with no fallback, trusts only root,

@@ -18,10 +18,19 @@ for unit in nix-daemon.service azurefin-nix-ready.service; do
 done
 sha256sum --check /var/tmp/azurefin-nix-desktop-checksums
 python3 /usr/share/azurefin/nix/initialize.py status | grep -Fx foreign
-greeter_available() {
+desktop_available() {
     local session rest kind
     while read -r session rest; do
-        [[ $(loginctl show-session "$session" -p Class --value) == greeter ]] || continue
+        if [[ -n ${AZUREFIN_NIX_TEST_DESKTOP_USER:-} ]]; then
+            [[ $(loginctl show-session "$session" -p Class --value) == user ]] || continue
+            [[ $(loginctl show-session "$session" -p Name --value) == "$AZUREFIN_NIX_TEST_DESKTOP_USER" ]] || continue
+            pgrep -u "$(id -u "$AZUREFIN_NIX_TEST_DESKTOP_USER")" -x gnome-shell || continue
+            runuser -u "$AZUREFIN_NIX_TEST_DESKTOP_USER" -- \
+                env XDG_RUNTIME_DIR="/run/user/$(id -u "$AZUREFIN_NIX_TEST_DESKTOP_USER")" \
+                systemctl --user is-active --quiet gnome-session.target || continue
+        else
+            [[ $(loginctl show-session "$session" -p Class --value) == greeter ]] || continue
+        fi
         kind=$(loginctl show-session "$session" -p Type --value)
         [[ $kind == wayland || $kind == x11 ]] || continue
         [[ $(loginctl show-session "$session" -p Active --value) == yes ]] || continue
@@ -30,12 +39,15 @@ greeter_available() {
     return 1
 }
 for ((attempt=0; attempt<180; attempt++)); do
-    if greeter_available; then break; fi
+    if desktop_available; then break; fi
     sleep 2
 done
-greeter_available
+desktop_available
 loginctl list-sessions --no-legend
-echo AZUREFIN_NIX_DESKTOP_FAILURE_GREETER_AVAILABLE
+# Software rendering under ARM emulation may lag session registration.
+if [[ -n ${AZUREFIN_NIX_TEST_DESKTOP_USER:-} ]]; then sleep 60; fi
+desktop_available
+echo "AZUREFIN_NIX_DESKTOP_FAILURE_SESSION_AVAILABLE user=${AZUREFIN_NIX_TEST_DESKTOP_USER:-greeter}"
 # Leave a brief window for the host to capture the virtual display.
 sleep 30
 echo AZUREFIN_NIX_DESKTOP_FAILURE_COMPLETE
