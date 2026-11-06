@@ -404,6 +404,22 @@ package logs and mutable package metadata; it is not the installed payload.
 
 ### Remaining release gates
 
+The combined installer test is now running in a network-disabled ARM64 VM.
+Its ISO pairs the live session with the audited clean installed OCI payload;
+Anaconda has reached deployment, but installation and the resulting first boot
+have not yet been marked as passed.
+
+`vm_anaconda_kickstart.py` derives the diagnostic kickstart from
+`surface/release-installer.ks`, retaining the public payload and post-install
+scripts. The added post-install checks require the Nix timer, an uninitialized
+store, the offline firmware-preparation seed, and no live-user or diagnostic
+helper in the installed system. `vm-anaconda-install.sh` checks the disposable
+QEMU guest marker, live command line, enforcing SELinux, RAM overlay and exact
+64 GiB target with serial `NIX_INSTALL_TEST` before invoking Anaconda. The
+generated kickstart erases that VM target automatically and must never be
+included on public installation media. The running test uses a frozen copy;
+repository edits do not alter it mid-installation.
+
 1. Validate the combined release installer and its installed payload together.
    Live-root/UEFI exclusion checks and a separate fresh installed-payload VM
    passed, but the diagnostic ISO does not install an OS.
