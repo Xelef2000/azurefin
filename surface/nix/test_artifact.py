@@ -1,4 +1,5 @@
 import hashlib
+import json
 from pathlib import Path
 import struct
 import tempfile
@@ -8,6 +9,17 @@ from verify_artifact import verify
 
 
 class ArtifactTests(unittest.TestCase):
+    def test_published_sources_match_arm64_installer_pin(self):
+        manifest = json.loads(Path(__file__).with_name('artifacts.json').read_text())
+        release = manifest['source_release']
+        self.assertEqual(release['architecture'], 'aarch64-linux')
+        self.assertEqual(release['installer_sha256'], manifest['artifacts']['aarch64-linux']['sha256'])
+        for kind in ('sources', 'notices'):
+            self.assertGreater(release[kind]['bytes'], 0)
+            self.assertRegex(release[kind]['sha256'], r'^[0-9a-f]{64}$')
+            self.assertTrue(release[kind]['url'].startswith(
+                release['url'].replace('/tag/', '/download/') + '/'))
+
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
