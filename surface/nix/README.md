@@ -404,10 +404,11 @@ package logs and mutable package metadata; it is not the installed payload.
 
 ### Remaining release gates
 
-The combined installer test is now running in a network-disabled ARM64 VM.
-Its ISO pairs the live session with the audited clean installed OCI payload;
-Anaconda has reached deployment, but installation and the resulting first boot
-have not yet been marked as passed.
+The first combined installer test deployed the audited clean installed OCI
+payload successfully, but failed when Anaconda ran `chpasswd` for a locked
+account added only by the test harness. The corrected harness leaves account
+creation to first boot, matching the public installer. Installation completion
+and the resulting first boot remain unverified until the corrected run passes.
 
 `vm_anaconda_kickstart.py` derives the diagnostic kickstart from
 `surface/release-installer.ks`, retaining the public payload and post-install

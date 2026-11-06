@@ -16,8 +16,6 @@ text
 lang en_US.UTF-8
 keyboard us
 timezone UTC
-rootpw --lock
-user --name=nix-installer-test --lock
 eula --agreed
 ignoredisk --only-use=vda
 clearpart --all --initlabel --drives=vda

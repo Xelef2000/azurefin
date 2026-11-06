@@ -15,6 +15,9 @@ class AnacondaTests(unittest.TestCase):
         self.assertIn('clearpart --all --initlabel --drives=vda\n', result)
         self.assertIn('AZUREFIN_NIX_ANACONDA_POST_COMPLETE', result)
         self.assertNotIn('clearpart', public)
+        # Match the public installer: account creation belongs to first boot.
+        self.assertNotIn('\nuser ', result)
+        self.assertNotIn('\nrootpw ', result)
 
     def test_missing_or_ambiguous_mode_refused(self):
         for public in ('', '\ntext\n', '\ngraphical\n\ngraphical\n'):
