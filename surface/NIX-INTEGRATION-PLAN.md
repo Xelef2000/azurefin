@@ -14,8 +14,13 @@ Live-session unit exclusion passed in a disposable overlay; a new live ISO is
 not yet validated. The local source bundle passed archive/checksum validation.
 The source-only `nix-sources-2.35.4-r1` prerelease is published with verified
 asset digests; no installer executable or OS image was included.
-Shared image-build integration is implemented on the testing branch; its
-production-style initialization path is awaiting fresh-VM validation.
+Shared image-build integration is implemented on the testing branch. A fresh
+offline VM passed production-style initialization and two-user sandbox builds
+without disposable overrides on the initializer/finalizer. The clean candidate
+passed the release content audit across all 95 OCI layers, including deleted
+content. Foreign-store failure isolation passed with an active graphical GDM
+greeter; the login screen was also visually observed. Newly composed live media
+remain under validation.
 No Nix-enabled OS release or Surface deployment performed.
 Date: 2026-11-06.
 
@@ -205,7 +210,7 @@ Do not alter Azurefin's firmware provisioning, signing, or OTA channel policies.
 - [x] Rollback to a pre-integration image preserves data and has documented recovery (disposable VM).
 - [ ] Supported shells find Nix without breaking Homebrew or duplicating PATH entries.
 - [ ] Live installer does not initialize Nix; installed payload still does.
-- [ ] Initialization failure does not prevent desktop login.
+- [ ] Initialization failure does not prevent desktop login (active graphical greeter and visible login screen verified; full interactive sign-in remains).
 - [ ] ShellCheck, unit validation, relevant lifecycle tests, and `bootc container lint` pass.
 
 ## References

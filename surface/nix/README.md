@@ -330,8 +330,8 @@ all ten Nix outputs, and notice coverage for all 63 runtime outputs. It includes
 the collector sources and their license. The reviewed snapshot is published as
 [Nix sources 2.35.4 r1](https://github.com/Xelef2000/azurefin/releases/tag/nix-sources-2.35.4-r1),
 a source-only prerelease. GitHub asset sizes and SHA256 digests matched the local
-files. No installer executable or OS image was published; build integration of
-the paired artifacts remains.
+files. No installer executable or OS image was published. The paired artifacts
+are now integrated into the testing branch's image build.
 
 On 2026-11-06 the outer local archive passed `zstd -t` and its collected files
 passed `sha256sum --check`. Source-only release tags are now excluded from the
@@ -359,8 +359,21 @@ It does not populate `/var`, create build users or execute the installer. The
 shared packages stage covers clean and locally provisioned images; derivatives
 inherit support from their release base. Every unit excludes `rd.live.image`.
 Only the asynchronous timer is enabled. Unit guards must still be validated in
-a newly composed live image, and the production-style initialization path must
-be exercised in a fresh disposable VM before a hardware candidate is published.
+a newly composed live image before a hardware candidate is published.
+
+The production-style staged image passed a fresh offline ARM64 VM boot and both
+ordinary-user sandbox builds without disposable overrides on its initializer
+or finalizer. Its clean parent passed the release content audit across all 95
+OCI layers, including deleted content. Diagnostic VM scripts were confined to a
+separate local derivative, not the audited image.
+
+The graphical foreign-store test also passed: initialization refused automatic
+changes while GDM, user sessions and an active graphical greeter remained
+available. Configuration, account files, receipt and preserved ownership state
+matched their original checksums. The login screen was visually observed in
+the first run; the automated retry identifies the greeter by session class,
+not the obsolete fixed `gdm` account (current GDM uses dynamic users). This is
+login-screen availability, not a completed interactive sign-in test.
 
 The live-session unit guard also passed in a disposable installed-image overlay
 booted with `rd.live.image`: explicit starts were skipped, `/nix` remained
@@ -369,14 +382,13 @@ unchanged. This is a unit-condition test, not a newly composed live-ISO test.
 
 ### Remaining release gates
 
-1. Boot the production-style staged image in a fresh offline VM without
-   disposable overrides on its initializer/finalizer. The clean staging smoke
-   image passed `bootc container lint` (14 passes, one skip), and inspection
+1. Production-style fresh offline boot passed. The clean staging smoke image
+   also passed `bootc container lint` (14 passes, one skip), and inspection
    confirmed no mutable Nix state, VM scripts or build context in the image.
 2. Validate the current shell hook and live exclusions in a newly composed live
    image, and confirm installation still enables the timer on the target.
-3. Check desktop availability on initialization failure, not only the console
-   login already tested. Retain the existing interruption and ownership guards.
+3. Complete an interactive desktop sign-in on initialization failure; graphical
+   greeter availability now passes. Retain the interruption and ownership guards.
 4. Build a signed hardware candidate and request the Surface reboot test before
    publishing an OS release or changing the normal update channel.
 
