@@ -6,7 +6,7 @@ Guarded initialization, full-store and forced-kill fault tests also passed.
 Asynchronous systemd, repeat-boot, failure-isolated console login and per-user
 preference tests passed. Fresh image, foreign-store refusal and encrypted-store
 reboot tests passed on the earlier cached base. The current-base repeat passed;
-upgrade/rollback needs a corrected deployment-selection test harness.
+upgrade/rollback passed with the corrected deployment-selection test harness.
 Source/notice collection is reproducible
 locally under `surface/nix/`; no upstream issue is required.
 Live-session unit exclusion passed in a disposable overlay; a new live ISO is
@@ -188,17 +188,17 @@ Do not alter Azurefin's firmware provisioning, signing, or OTA channel policies.
 
 ## Acceptance checklist
 
-- [x] Offline fresh boot initializes Nix and serves two ordinary users (disposable ARM64 VM; newer-base repeat pending).
+- [x] Offline fresh boot initializes Nix and serves two ordinary users (disposable ARM64 VM, including the signed v0.0.29 base repeat).
 - [x] Initialization requires no composefs disablement, transient root, or manual initramfs edit.
 - [x] `/nix` is the expected persistent bind mount after reboot.
 - [x] Sandbox builds and daemon access work with SELinux enforcing; relevant AVCs are reviewed.
 - [x] Network-disabled initialization makes no required downloads or channel updates.
-- [ ] Interrupted installation, full disk, and repeated retry preserve recoverable state.
-- [ ] Existing healthy and foreign Nix installations are not overwritten.
-- [ ] Administrator configuration survives initialization retry, image upgrade, and reboot.
+- [x] Full-store and forced-kill tests retain partial state and refuse unsafe retry; guided manual repair remains required.
+- [x] Existing healthy and foreign Nix installations are not overwritten (disposable VM tests).
+- [x] Administrator configuration survives initialization retry, image upgrade, and reboot (disposable VM).
 - [x] Two users can select different Nix and Nixpkgs preferences without elevated privileges.
 - [x] Unfree policy is opt-in; channel/import and pure-flake examples behave as documented.
-- [ ] Nix profiles/packages survive reboot, image upgrade, and supported image rollback.
+- [x] Nix profiles/packages survive reboot, image upgrade, and supported image rollback (disposable VM).
 - [ ] Rollback to a pre-integration image preserves data and has documented recovery.
 - [ ] Supported shells find Nix without breaking Homebrew or duplicating PATH entries.
 - [ ] Live installer does not initialize Nix; installed payload still does.

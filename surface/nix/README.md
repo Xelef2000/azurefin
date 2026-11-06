@@ -338,8 +338,11 @@ The current-base repeat on signed `v0.0.29-alpha-base` subsequently passed
 offline initialization and both ordinary-user sandbox tests. The upgrade
 test staged its image but its next boot selected the old deployment: the harness
 incorrectly assumed `ostree-1.conf` always identifies the default. The new entry
-was `ostree-2.conf` with version 2 and deployment index 0. Upgrade/rollback and
-pre-integration recovery remain unvalidated pending a corrected harness run.
+was `ostree-2.conf` with version 2 and deployment index 0. The corrected harness
+selects index zero and rejects ambiguous entries. Its retry passed both the
+generation-two upgrade and supported rollback, including both users' daemon
+access/offline builds, profile targets, and unchanged administrator configuration,
+accounts, receipt and ownership state. Pre-integration recovery is still pending.
 
 The live-session unit guard also passed in a disposable installed-image overlay
 booted with `rd.live.image`: explicit starts were skipped, `/nix` remained
