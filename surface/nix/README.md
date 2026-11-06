@@ -1,9 +1,12 @@
-# Nix integration prototype
+# Nix integration testing candidate
 
-This is phase 1 of the agreed Nix integration plan. It is **not enabled in
-Azurefin images** and must not be run on an ordinary workstation or Surface.
-No production Containerfile, firmware policy, signing rule or update channel
-is changed here. See the [integration plan](../NIX-INTEGRATION-PLAN.md).
+This branch now stages Nix in the shared image packages stage. It is **not yet
+released or hardware-validated**. Standalone prototype scripts must only run in
+explicitly marked disposable VMs. The normal initializer additionally accepts
+the root-owned image marker installed by `stage_image.py`, while retaining the
+read-only-root, mount-identity and ownership checks. Firmware policy, signing
+rules and update channels are unchanged. See the
+[integration plan](../NIX-INTEGRATION-PLAN.md) and [candidate user guide](USER-GUIDE.md).
 
 ## Pinned artifacts and code origins
 
@@ -17,8 +20,9 @@ development checks, not a new supported Azurefin target.
 Download the named release asset, then run `verify_artifact.py` before executing
 it. No latest-version URL or runtime network fetch is used. Redistribution must
 retain the upstream LGPL license and provide corresponding source, including
-the payload's dependency licenses. The shipping payload stage still needs this
-license/source packaging; this prototype does not distribute the binaries.
+the payload's dependency licenses. The build stage verifies the pinned installer
+and paired notices and includes the published source link in `artifacts.json`.
+No Nix-enabled OS image has been published.
 
 Upstream's OSTree planner creates `/etc` mount/service overrides and can run
 `chattr`. We instead use its supported editable-plan interface with the Linux
@@ -145,8 +149,8 @@ guest, correctly causing our first deployment attempt to stop without writing.
 
 ### Guarded initializer work
 
-`lifecycle.py` and `initialize.py` are still disposable-VM prototypes, not
-production services. Initialization and final validation are separate so the
+`lifecycle.py` and `initialize.py` are testing-candidate integration, not yet
+released services. Initialization and final validation are separate so the
 initializer never synchronously starts a daemon ordered after itself. Versioned
 ownership metadata records pinned installer/plan hashes and progress, uses a
 non-blocking lock and atomic, fsynced updates, and never treats a receipt alone
@@ -342,30 +346,39 @@ was `ostree-2.conf` with version 2 and deployment index 0. The corrected harness
 selects index zero and rejects ambiguous entries. Its retry passed both the
 generation-two upgrade and supported rollback, including both users' daemon
 access/offline builds, profile targets, and unchanged administrator configuration,
-accounts, receipt and ownership state. Pre-integration recovery is still pending.
+accounts, receipt and ownership state. Pre-integration recovery also passed:
+the original base without `/nix` preserved configuration, accounts, receipt and
+ownership metadata; returning to the integrated image restored both users'
+daemon access and offline builds without reinstalling the runtime.
+
+### Candidate image packaging
+
+`surface/build/15-nix.sh` verifies downloads before `stage_image.py` copies an
+explicit runtime-file list, pinned executable, notices, units and shell hook.
+It does not populate `/var`, create build users or execute the installer. The
+shared packages stage covers clean and locally provisioned images; derivatives
+inherit support from their release base. Every unit excludes `rd.live.image`.
+Only the asynchronous timer is enabled. Unit guards must still be validated in
+a newly composed live image, and the production-style initialization path must
+be exercised in a fresh disposable VM before a hardware candidate is published.
 
 The live-session unit guard also passed in a disposable installed-image overlay
 booted with `rd.live.image`: explicit starts were skipped, `/nix` remained
 unmounted, and persistent store/configuration/account/state checksums remained
 unchanged. This is a unit-condition test, not a newly composed live-ISO test.
 
-### Before production integration
+### Remaining release gates
 
-1. Offline installation, two-user sandbox builds, reboot persistence and
-   backing-path relabel checks passed on the enforcing ARM64 VM. Validate the
-   image-owned integration against the current image base; fresh installation
-   has passed on the earlier cached base.
-2. Validate remaining shell/profile behavior and administrator configuration
-   preservation across retries and image updates.
-3. Finish validating the proposed image-owned units and initializer together,
-   including status/retry and interruption handling. Completion must follow
-   successful daemon checks, not just a receipt.
-4. Package licenses/source, shell integration and all offline resources under
-   `/usr`; integrate the shared packages stage and live-only exclusions.
-5. Test upgrades, rollback, existing configuration, foreign installations,
-   separate/encrypted `/var`, full disk and desktop availability on failure.
-6. Only then enable image integration, update user-facing availability docs,
-   build a signed candidate and request the Surface reboot test.
+1. Boot the production-style staged image in a fresh offline VM without
+   disposable overrides on its initializer/finalizer. The clean staging smoke
+   image passed `bootc container lint` (14 passes, one skip), and inspection
+   confirmed no mutable Nix state, VM scripts or build context in the image.
+2. Validate the current shell hook and live exclusions in a newly composed live
+   image, and confirm installation still enables the timer on the target.
+3. Check desktop availability on initialization failure, not only the console
+   login already tested. Retain the existing interruption and ownership guards.
+4. Build a signed hardware candidate and request the Surface reboot test before
+   publishing an OS release or changing the normal update channel.
 
 The default reference enables sandboxing with no fallback, trusts only root,
 and does not enable unfree software or custom caches. Existing administrator

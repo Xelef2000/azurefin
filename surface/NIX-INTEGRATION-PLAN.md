@@ -7,13 +7,16 @@ Asynchronous systemd, repeat-boot, failure-isolated console login and per-user
 preference tests passed. Fresh image, foreign-store refusal and encrypted-store
 reboot tests passed on the earlier cached base. The current-base repeat passed;
 upgrade/rollback passed with the corrected deployment-selection test harness.
+Rollback to the pre-integration base and return also passed with data preserved.
 Source/notice collection is reproducible
 locally under `surface/nix/`; no upstream issue is required.
 Live-session unit exclusion passed in a disposable overlay; a new live ISO is
 not yet validated. The local source bundle passed archive/checksum validation.
 The source-only `nix-sources-2.35.4-r1` prerelease is published with verified
 asset digests; no installer executable or OS image was included.
-No production image integration or Surface deployment performed.
+Shared image-build integration is implemented on the testing branch; its
+production-style initialization path is awaiting fresh-VM validation.
+No Nix-enabled OS release or Surface deployment performed.
 Date: 2026-11-06.
 
 ## Outcome
@@ -199,7 +202,7 @@ Do not alter Azurefin's firmware provisioning, signing, or OTA channel policies.
 - [x] Two users can select different Nix and Nixpkgs preferences without elevated privileges.
 - [x] Unfree policy is opt-in; channel/import and pure-flake examples behave as documented.
 - [x] Nix profiles/packages survive reboot, image upgrade, and supported image rollback (disposable VM).
-- [ ] Rollback to a pre-integration image preserves data and has documented recovery.
+- [x] Rollback to a pre-integration image preserves data and has documented recovery (disposable VM).
 - [ ] Supported shells find Nix without breaking Homebrew or duplicating PATH entries.
 - [ ] Live installer does not initialize Nix; installed payload still does.
 - [ ] Initialization failure does not prevent desktop login.

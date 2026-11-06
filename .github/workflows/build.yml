@@ -68,6 +68,6 @@ jobs:
       - name: Test guarded Nix integration contracts
         run: python3 -m unittest discover -s surface/nix -p 'test_*.py'
       - name: Check Nix integration and disposable VM scripts
-        run: shellcheck surface/nix/*.sh
+        run: shellcheck surface/nix/*.sh surface/build/15-nix.sh
 # Publication is gated by release-romulus.yml and release-iso.yml. Never run the legacy
 # firmware-inclusive Containerfile automatically on a push or pull request.

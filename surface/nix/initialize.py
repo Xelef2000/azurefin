@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Disposable-VM initializer prototype. Not enabled in production images.
+"""Guarded initializer for image-owned Nix integration.
 
 initialize provisions without starting systemd units. finalize is a separate
 step after daemon startup, avoiding an initializer/daemon ordering cycle.
@@ -34,9 +34,21 @@ def run(*args):
     return result.stdout.strip()
 
 
+def image_owned():
+    marker = RESOURCES / 'installed-image.json'
+    if not marker.exists():
+        return False
+    info = marker.lstat()
+    if not stat.S_ISREG(info.st_mode) or info.st_uid != 0 or info.st_mode & 0o022:
+        raise RuntimeError('Unsafe image integration marker')
+    return json.loads(marker.read_text()) == {'schema': 1}
+
+
 def preflight():
-    if os.environ.get("AZUREFIN_NIX_DISPOSABLE_GUEST") != "yes" or os.geteuid() != 0:
-        raise RuntimeError("Only run this prototype as root in a disposable guest")
+    if os.geteuid() != 0:
+        raise RuntimeError('Nix initialization requires root')
+    if os.environ.get("AZUREFIN_NIX_DISPOSABLE_GUEST") != "yes" and not image_owned():
+        raise RuntimeError("Requires image-owned integration or an explicit disposable guest")
     if run("getenforce") != "Enforcing":
         raise RuntimeError("SELinux must remain enforcing")
     run("mountpoint", "-q", "/nix")
@@ -46,7 +58,7 @@ def preflight():
     if (info.st_uid, info.st_gid, stat.S_IMODE(info.st_mode)) != (0, 0, 0o755):
         raise RuntimeError("Unexpected /nix ownership or mode")
     if "ro" not in run("findmnt", "-n", "-o", "OPTIONS", "/").split(","):
-        raise RuntimeError("Test requires read-only root")
+        raise RuntimeError("Nix integration requires read-only root")
 
 
 def accounts_conflict():

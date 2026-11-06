@@ -1,7 +1,10 @@
 # Pinned bootstrap sources and rebuilds
 
-This describes the **local prototype**, not a published source release. The
-source collection accompanies the unchanged NixOS installer; Azurefin's Python,
+The reviewed collection is published in the
+[source-only prerelease](https://github.com/Xelef2000/azurefin/releases/tag/nix-sources-2.35.4-r1).
+The archive preserves the local-review snapshot, including the older version of
+this document. This does not publish a Nix-enabled OS image. The source
+collection accompanies the unchanged NixOS installer; Azurefin's Python,
 shell and systemd integration is separate and lives in this repository.
 
 ## What is pinned
@@ -158,6 +161,6 @@ policy into the host. The upstream `build.sh` also references an absent
 when rebuilding this Linux policy rather than expecting the entire script to
 finish successfully.
 
-Before publication, make generation repeatable, verify the final archive and
-its notice indexes, and publish sources/notices alongside the matching binary
-release. Do not describe this interim collection as complete legal clearance.
+For future versions, repeat generation, verify the final archive and its notice
+indexes, and publish the matching sources/notices before distributing the new
+binary. Do not describe the collection as complete legal clearance.

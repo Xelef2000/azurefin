@@ -26,6 +26,9 @@ preservation were verified on the signed v0.0.26-alpha image.
   experimental camera support.
 - Full-disk encryption through the graphical Anaconda installer.
 - Homebrew integration for development tools outside the immutable system.
+- Testing candidate: offline-initialized, multi-user Nix with a persistent store
+  and administrator-owned configuration. Not yet included in published OS releases;
+  see the [Nix guide](surface/nix/USER-GUIDE.md).
 - Surface firmware downloaded from Microsoft after installation, or extracted
   from an MSI you provide. Public images include Fedora's redistributable
   firmware but not Microsoft-extracted Surface firmware.
@@ -44,7 +47,7 @@ preservation were verified on the signed v0.0.26-alpha image.
   automatically download an app store.
   See [update status and instructions](surface/UBLUE-UPDATES.md).
 
-*Last updated: 2026-11-03*
+*Last updated: 2026-11-06*
 
 Installation and online post-install firmware setup have been tested on the
 13-inch model. Alpha 3 boots into a live GNOME desktop with a passwordless
