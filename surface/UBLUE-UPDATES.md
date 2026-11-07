@@ -245,3 +245,19 @@ offline MSI test, a new rollback boot test, or a suspend power measurement.
 Azurefin adds Surface firmware compatibility/space checks and delayed Flatpak
 setup for offline installations. Microsoft-extracted firmware, device identifiers
 and credentials are not included in public images.
+
+## Bazaar terminal-environment workaround (2026-11-07)
+
+`azurefin-bazaar-environment.service` applies a system override for the shipped
+Bazaar Flatpak before the display manager starts. It removes `TERM` and
+`GPG_TTY` from Bazaar's environment: an empty `TERM` otherwise makes GPGME
+invoke GnuPG with `--ttytype=`, aborting signature verification and app installs.
+The command merges existing overrides without changing signature checks or
+other applications. It runs at boot so both fresh installs and existing systems
+receive the fix after booting the updated image; no network is required.
+Per-user Flatpak overrides retain their normal precedence.
+
+On the Surface, the failing ChiPass signature-verification operation was
+reproduced with an empty `TERM` and passed with these variables removed.
+The user then confirmed installation through Bazaar. The distro command also
+passed isolated tests for preserving unrelated overrides and repeated execution.

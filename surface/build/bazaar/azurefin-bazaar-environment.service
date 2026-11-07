@@ -1,0 +1,15 @@
+[Unit]
+Description=Keep terminal settings out of Bazaar signature verification
+After=local-fs.target
+Before=display-manager.service azurefin-flatpak-preinstall.service
+ConditionPathExists=/usr/bin/flatpak
+
+[Service]
+Type=oneshot
+# Merge into mutable Flatpak state at boot, including after an OS update.
+# An empty TERM makes GPGME pass --ttytype=, which GnuPG rejects.
+ExecStart=/usr/bin/flatpak override --system --unset-env=TERM --unset-env=GPG_TTY io.github.kolunmi.Bazaar
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

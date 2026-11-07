@@ -34,6 +34,10 @@ system. It is built on [Fedora Silverblue](https://fedoraproject.org/atomic-desk
 - **Layered tooling** — Homebrew for development tools, Bazaar as the app store,
   and an opt-in multi-user Nix store (testing).
 
+Bazaar's environment excludes terminal-only variables so shell customizations
+cannot break its GPG signature verification. Applied to new and updated systems.
+*Last updated: 2026-11-07.*
+
 ## Quick start
 
 1. Download the latest [release ISO](https://github.com/Xelef2000/azurefin/releases)
