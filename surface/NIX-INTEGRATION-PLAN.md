@@ -30,8 +30,10 @@ The combined offline Anaconda installation and payload post-install checks
 passed. Its first boot exposed a duplicate GPT home mount against the `/home`
 symlink. Masking the invalid mount in a disposable overlay allowed offline Nix
 initialization, PATH discovery and two-user sandbox builds to pass with SELinux
-enforcing. A fresh installer with the narrowly scoped helper fix is rebuilding;
-this is not yet a clean combined installation/first-boot pass.
+enforcing. A fresh installer containing the helper fix then passed the full
+offline installation, post-install checks and first-boot two-user sandbox tests
+without manual mount changes. All 97 image layers passed the content audit.
+The remaining release gate is a signed candidate and Surface hardware test.
 Date: 2026-11-07.
 
 ## Outcome
@@ -219,7 +221,7 @@ Do not alter Azurefin's firmware provisioning, signing, or OTA channel policies.
 - [x] Nix profiles/packages survive reboot, image upgrade, and supported image rollback (disposable VM).
 - [x] Rollback to a pre-integration image preserves data and has documented recovery (disposable VM).
 - [ ] Supported shells find Nix without breaking Homebrew or duplicating PATH entries.
-- [x] Live environment does not initialize Nix; installed payload still does (new live root and diagnostic UEFI ISO plus separate fresh installed-payload VM; combined release installer still to validate).
+- [x] Live environment does not initialize Nix; installed payload still does (live UEFI ISO exclusion checks and combined offline Anaconda installation/first-boot tests passed).
 - [x] Initialization failure does not prevent desktop login (GDM greeter and automatic user sign-in, active GNOME session target and rendered desktop verified in disposable VM).
 - [ ] ShellCheck, unit validation, relevant lifecycle tests, and `bootc container lint` pass.
 

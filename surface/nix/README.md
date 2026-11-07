@@ -420,8 +420,12 @@ that mask only for the canonical home symlink, preserves custom units by
 refusing to replace them, and remains idempotent. First-boot Nix validation in
 that overlay passed: offline initialization, default PATH discovery and
 sandboxed builds by two ordinary users with SELinux enforcing. A fresh
-installer containing the helper fix is rebuilding, with its first-boot test
-queued automatically; this remains a release gate until that clean run passes.
+installer containing the helper fix subsequently passed the complete offline
+Anaconda installation, post-install assertions and first-boot two-user tests.
+The clean image passed the audit of all 97 OCI layers, including deleted
+content, and the combined ISO passed its media checksum. The first-boot test
+confirmed that the mask was created by the installer; it did not add a manual
+mount workaround. No physical disk or update channel was changed.
 
 `vm_anaconda_kickstart.py` derives the diagnostic kickstart from
 `surface/release-installer.ks`, retaining the public payload and post-install
@@ -434,11 +438,12 @@ generated kickstart erases that VM target automatically and must never be
 included on public installation media. The running test uses a frozen copy;
 repository edits do not alter it mid-installation.
 
-1. Complete first-boot validation and repeat the combined installer with the
-   home-mount fix included. The offline combined installation and post-install
-   checks passed; the original unmodified installed disk did not boot cleanly.
-2. Build a signed hardware candidate and request the Surface reboot test before
+1. Build a signed hardware candidate and request the Surface reboot test before
    publishing an OS release or changing the normal update channel.
+   Preserve the tested v0.0.29-alpha kernel baseline (7.4-rc1 WSA resume fix):
+   the integration branch inherits main's older 7.2 package pin, whereas the
+   local VM images were derived from the audited v0.0.29-alpha base. Do not
+   silently test Nix alongside a kernel downgrade.
 
 The default reference enables sandboxing with no fallback, trusts only root,
 and does not enable unfree software or custom caches. Existing administrator
