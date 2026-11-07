@@ -1,0 +1,156 @@
+# Installation guide
+
+This guide covers preparing media, installing Azurefin, and completing the
+one-time Surface firmware and Bluetooth setup on the **Surface Laptop 7 13-inch
+(Romulus13, Snapdragon X Elite)**.
+
+> The 13-inch model has been tested. The 15-inch model is not validated.
+> See [current limitations](limitations.md) before you start.
+
+## Before you install
+
+Only use ISO assets linked from a release. Creating a release tag alone does
+not mean the ISO has finished building. See the
+[build and release guide](../surface/RELEASING.md) if you want to build or
+contribute.
+
+You will need:
+
+- A backup of any data on the installation target.
+- The charger connected and Secure Boot disabled for the custom kernel.
+- Azurefin installation media and at least 30 GiB free on the installed system
+  for the one-time firmware setup. No separate workspace drive is needed.
+- Either a USB Ethernet connection or the supported Microsoft Surface Laptop 7
+  ARM64 driver MSI. Built-in Wi-Fi may work with Fedora's current firmware,
+  but should not be relied on before firmware preparation.
+
+## Downloading a release ISO
+
+Open the [GitHub release](https://github.com/Xelef2000/azurefin/releases)
+and follow its SourceForge link to download the complete `.iso`. Download
+the attached `ISO-SHA256SUM` from the same release and verify it in your
+download directory:
+
+```sh
+sha256sum -c ISO-SHA256SUM
+```
+
+No reassembly is needed. Write the complete ISO using your preferred image
+writer. Double-check the destination: writing the image erases that drive.
+
+### Getting the Surface driver MSI
+
+Download the ARM64 driver MSI from Microsoft's
+[Surface Laptop 7th Edition download page](https://www.microsoft.com/en-us/download/details.aspx?id=106120).
+Download the file only—do not run the Windows installer. The firmware policy
+supports both:
+
+- `SurfaceLaptop7_ARM_Win11_26100_26.091.9400.0.msi` (default for downloads).
+- `SurfaceLaptop7_ARM_Win11_26100_26.053.36539.0.msi` (existing offline copies;
+  Microsoft no longer serves this version).
+
+Both MSI checksums and all extracted firmware checksums are pinned in
+[the firmware policy](../surface/firmware-policy.json). Other versions are
+rejected. Use installation media built with the updated firmware tools and
+policy; older media only accepts the older MSI. Renaming a file does not bypass
+checks.
+
+For offline setup, keep the supported MSI on a USB drive. After installation,
+remove the installer drive and connect the MSI drive instead.
+
+## Installation
+
+1. Boot the prepared USB media through UEFI. If the internal OS starts instead,
+   check that USB storage precedes it in the boot order.
+2. From the live GNOME desktop, open **Install Azurefin**. Graphical Anaconda
+   opens without firmware download or a workspace prompt.
+3. Select the internal NVMe drive, checking its model and size. Do not select
+   the installer or the drive carrying the MSI. Reclaiming partitions erases
+   their contents. Enable encryption if desired and keep the passphrase safe.
+4. Complete installation, shut down, remove the installation media, and boot
+   the internal SSD. Unlock encryption and finish account setup.
+5. Install Surface firmware as described below, then reboot.
+
+Alpha 3 boots into a live GNOME desktop with a passwordless `liveuser` account,
+so you can try the desktop before opening **Install Azurefin**. Live-session
+changes are discarded at reboot; your installed system uses its own account and
+does not inherit the live user's passwordless access.
+
+The v0.0.13-alpha installer configures the signed `:testing` update channel
+while keeping the bundled offline OS payload. It does not download an OS update
+during installation. Firmware setup must be completed before the updater will
+run. Older v0.0.3-alpha media do not include this installer change.
+
+## Install Surface firmware
+
+Some hardware, including battery reporting, needs additional Surface firmware.
+Connect to the internet (use USB Ethernet if Wi-Fi is unavailable), then run:
+
+```sh
+sudo azurefin-setup-firmware --download
+```
+
+Or use your downloaded MSI without a network connection:
+
+```sh
+sudo azurefin-setup-firmware --msi /path/to/SurfaceLaptop7_ARM_Win11.msi
+```
+
+Use the actual path to a supported MSI. Both methods verify the MSI and
+extracted firmware against the packaged policy. If no Bluetooth address is
+already configured, setup attempts to read the factory address using the
+read-only kernel storage module. It verifies that the two provisioning copies
+agree. An existing address is preserved.
+
+On kernels without the module, firmware installation still succeeds and setup
+explains the manual fallback. Append `--bluetooth-address AA:BB:CC:DD:EE:FF`
+to supply your device's **Bluetooth public address from Windows**, not its
+Wi-Fi MAC. An explicit address overrides automatic detection. Use
+`--skip-bluetooth` to skip Bluetooth configuration entirely.
+
+The tool verifies and stores firmware on the separate `/boot` filesystem, then
+configures the early-boot loader. It does not rebuild or switch the OS image,
+write into immutable `/usr`, or reboot automatically. Reboot when it reports
+success. Offline setup does not need a registry download. Extraction workspaces
+are retained under `/var/lib/azurefin/firmware-extraction.*` for diagnostics;
+repeated attempts need additional space. Versioned firmware bundles remain on
+`/boot` across OS updates; older bundles are retained for rollback.
+
+This is the testing branch's setup workflow. Older released images may still
+use private-image provisioning; use the documentation matching your release.
+
+## Bluetooth configuration
+
+To detect and save the factory address without reinstalling firmware:
+
+```sh
+sudo azurefin-setup-bluetooth
+```
+
+Existing configuration is kept. To read the factory address without saving or
+applying it, use `sudo azurefin-setup-bluetooth --detect-only`.
+Detection requires the Azurefin read-only SCM storage kernel module. It reads
+provisioning storage but never writes to it; a module loaded by this command
+is unloaded afterward.
+
+The manual method remains available, including with older or custom kernels:
+
+```sh
+sudo azurefin-extract-firmware --bluetooth-address AA:BB:CC:DD:EE:FF
+```
+
+Replace the example with your device's actual Bluetooth public address from
+Windows, then reboot.
+
+## Updating
+
+Azurefin ships signed system updates. From `v0.0.12-alpha`, Universal Blue's
+updater runs on a six-hour schedule while connected to AC power; it stages
+updates but leaves rebooting to you. Update preflight rejects older OS versions
+offered by an outdated channel.
+
+The **System Update** launcher (`ujust update`) follows Bluefin's manual
+workflow: bootc for the OS, then Flatpak and Homebrew. Firmware and space
+checks run before OS staging; reboot separately when convenient.
+
+See [update status and instructions](../surface/UBLUE-UPDATES.md) for details.
