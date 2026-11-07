@@ -407,8 +407,18 @@ package logs and mutable package metadata; it is not the installed payload.
 The first combined installer test deployed the audited clean installed OCI
 payload successfully, but failed when Anaconda ran `chpasswd` for a locked
 account added only by the test harness. The corrected harness leaves account
-creation to first boot, matching the public installer. Installation completion
-and the resulting first boot remain unverified until the corrected run passes.
+creation to first boot, matching the public installer. The corrected run passed
+on 2026-11-07: Anaconda completed the public post-install scripts and all added
+payload checks with networking disabled.
+
+First boot exposed a separate installer issue with a dedicated GPT home
+partition: discovery generated `home.mount`, which failed because `/home` is a
+symlink, despite the corrected fstab successfully mounting `/var/home`.
+Masking only `home.mount` in a disposable overlay removed that boot failure and
+allowed Nix initialization to start. The installer fstab helper now applies
+that mask only for the canonical home symlink, preserves custom units by
+refusing to replace them, and remains idempotent. First-boot Nix validation is
+still running; a fresh installer containing the helper fix must also be tested.
 
 `vm_anaconda_kickstart.py` derives the diagnostic kickstart from
 `surface/release-installer.ks`, retaining the public payload and post-install
@@ -421,9 +431,9 @@ generated kickstart erases that VM target automatically and must never be
 included on public installation media. The running test uses a frozen copy;
 repository edits do not alter it mid-installation.
 
-1. Validate the combined release installer and its installed payload together.
-   Live-root/UEFI exclusion checks and a separate fresh installed-payload VM
-   passed, but the diagnostic ISO does not install an OS.
+1. Complete first-boot validation and repeat the combined installer with the
+   home-mount fix included. The offline combined installation and post-install
+   checks passed; the original unmodified installed disk did not boot cleanly.
 2. Build a signed hardware candidate and request the Surface reboot test before
    publishing an OS release or changing the normal update channel.
 

@@ -26,7 +26,11 @@ greeter; the login screen was also visually observed. Automatic user sign-in
 and GNOME Shell startup passed too; a delayed screenshot confirmed the rendered
 desktop after the GNOME session target became active.
 No Nix-enabled OS release or Surface deployment performed.
-Date: 2026-11-06.
+The combined offline Anaconda installation and payload post-install checks
+passed. Its first boot exposed a duplicate GPT home mount against the `/home`
+symlink; a narrowly scoped installer fix is under VM validation before a new
+installer run. This is not yet a combined installation/first-boot pass.
+Date: 2026-11-07.
 
 ## Outcome
 

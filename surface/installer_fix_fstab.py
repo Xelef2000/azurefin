@@ -61,16 +61,28 @@ def fix(root):
     path = root / "etc/fstab"
     original = path.read_text()
     updated = corrected_fstab(original, boot_options, canonical_home)
-    if updated == original:
-        print("Composefs fstab already correct")
-        return
+    # GPT discovery can independently generate home.mount for a dedicated home
+    # partition, even after fstab has been redirected to /var/home. Mounting on
+    # the immutable /home symlink fails and sends the system to emergency mode.
+    # Suppress only that invalid unit; the explicit var-home.mount stays enabled.
+    home_unit = root / "etc/systemd/system/home.mount"
+    if canonical_home and (home_unit.exists() or home_unit.is_symlink()):
+        if not (home_unit.is_symlink() and str(home_unit.readlink()) == "/dev/null"):
+            raise ValueError("Existing home.mount is not a mask; refusing to overwrite")
     backup = path.with_name("fstab.before-azurefin-composefs")
-    if backup.exists():
-        raise ValueError("Backup already exists; refusing to overwrite")
-    shutil.copy2(path, backup)
-    # Keep the existing inode, permissions and SELinux label during %post.
-    path.write_text(updated)
-    print("Corrected composefs fstab; original saved as", backup)
+    if updated != original:
+        if backup.exists():
+            raise ValueError("Backup already exists; refusing to overwrite")
+        shutil.copy2(path, backup)
+        # Keep the existing inode, permissions and SELinux label during %post.
+        path.write_text(updated)
+        print("Corrected composefs fstab; original saved as", backup)
+    else:
+        print("Composefs fstab already correct")
+    if canonical_home and not home_unit.is_symlink():
+        home_unit.parent.mkdir(parents=True, exist_ok=True)
+        home_unit.symlink_to("/dev/null")
+        print("Masked home.mount for canonical /home -> /var/home")
 
 
 if __name__ == "__main__":

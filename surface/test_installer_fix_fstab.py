@@ -65,6 +65,23 @@ class FstabTests(unittest.TestCase):
             self.assertEqual((root / "etc/fstab.before-azurefin-composefs").read_text(), FSTAB)
             self.assertEqual(fstab.stat().st_mode & 0o777, 0o640)
             self.assertEqual(crypttab.read_text(), "root UUID=luks-test none luks\n")
+            home_unit = root / "etc/systemd/system/home.mount"
+            self.assertEqual(str(home_unit.readlink()), "/dev/null")
+            # An existing custom unit must not be silently replaced or cause
+            # another fstab modification.
+            home_unit.unlink()
+            home_unit.write_text("[Mount]\nWhere=/home\n")
+            before = fstab.read_text()
+            with self.assertRaisesRegex(ValueError, "Existing home.mount"):
+                fix(root)
+            self.assertEqual(fstab.read_text(), before)
+            self.assertIn("Where=/home", home_unit.read_text())
+            # Real /home directories do not need (and must not get) this mask.
+            (root / "home").unlink()
+            (root / "home").mkdir()
+            home_unit.unlink()
+            fix(root)
+            self.assertFalse(home_unit.is_symlink())
             (root / "etc/ostree").mkdir()
             (root / "etc/ostree/prepare-root.conf").write_text("[composefs]\nenabled=no\n")
             with self.assertRaises(ValueError):
