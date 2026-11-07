@@ -7,6 +7,8 @@ Start here for anything beyond the [project overview](../README.md).
 - **[Installation guide](installation.md)** — prepare media, install, and
   complete Surface firmware and Bluetooth setup.
 - **[Current limitations](limitations.md)** — what works, what doesn't yet.
+- **[Known issues and remaining work](known-issues.md)** — open problems,
+  workarounds, validation gaps and recently verified fixes.
 - **[Updates](../surface/UBLUE-UPDATES.md)** — update channels, scheduling, and
   validation.
 
