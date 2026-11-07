@@ -1,225 +1,83 @@
 # Azurefin
 
-Azurefin is an experimental Fedora Silverblue / bootc system for the
-**Microsoft Surface Laptop 7 13-inch (Romulus13, Snapdragon X Elite)**.
-It combines a GNOME desktop with Surface-specific kernel and userspace support.
-It is an independent community project, not an official Fedora or Microsoft product.
+**A Fedora Atomic desktop for the Microsoft Surface Laptop 7 13-inch**
+(Romulus13, Snapdragon X Elite).
 
-## What Makes this Raptor Different?
+[![Build](https://github.com/Xelef2000/azurefin/actions/workflows/build.yml/badge.svg)](https://github.com/Xelef2000/azurefin/actions/workflows/build.yml)
+![Status](https://img.shields.io/badge/status-alpha-orange)
+![Platform](https://img.shields.io/badge/platform-ARM64%20Snapdragon%20X%20Elite-blue)
+[![License](https://img.shields.io/badge/license-Apache%202.0-green)](LICENSE)
 
-Azurefin includes an opt-in, read-only SCM storage module for
-factory Bluetooth address discovery on Surface Laptop 7 13-inch. Firmware setup
-loads the read-only module on demand; it does not probe during normal boot.
-The storage read was verified on a Romulus13 with the Linux 7.2 baseline.
-This Nix hardware candidate retains the tested v0.0.29-alpha Linux 7.4-rc1
-kernel with its speaker-resume fix and read-only Bluetooth module. Use the power
-button to wake from deep sleep; waking with ordinary keyboard keys remains
-unsupported. Automatic factory-address detection and existing-address
-preservation were verified on the signed v0.0.26-alpha image.
+Azurefin pairs a GNOME desktop with a Surface-tuned kernel and userspace so the
+Surface Laptop 7 boots, installs, and updates like an ordinary immutable Fedora
+system. It is built on [Fedora Silverblue](https://fedoraproject.org/atomic-desktops/silverblue/),
+[bootc](https://github.com/bootc-dev/bootc), and
+[Universal Blue / Bluefin](https://github.com/ublue-os/bluefin).
 
-- Surface keyboard, touchpad and touchscreen support, including input during
-  encrypted boot.
-- Linux 7.4-rc1 kernel with Azurefin's Surface fixes and the opt-in
-  read-only Bluetooth-address discovery module, reusing the existing tested RPM.
-- Wi-Fi, USB, Bluetooth configuration, conservative speaker profiles and
-  experimental camera support.
-- Full-disk encryption through the graphical Anaconda installer.
-- Homebrew integration for development tools outside the immutable system.
-- Next image: Fedora's Zsh package, available independently of Nix profiles.
-  Bash remains the default shell; switching to Zsh is optional.
-- Testing candidate: offline-initialized, multi-user Nix with a persistent store
-  and administrator-owned configuration. Not yet included in published OS releases;
-  see the [Nix guide](surface/nix/USER-GUIDE.md).
-- Surface firmware downloaded from Microsoft after installation, or extracted
-  from an MSI you provide. Public images include Fedora's redistributable
-  firmware but not Microsoft-extracted Surface firmware.
-- A verified firmware store on `/boot`, independent of the immutable OS image.
-- The next image includes kernel support for Fedora's workstation firewall,
-  including IPv6 reverse-path filtering and Samba-client connection tracking.
-- Signed system updates with persistent Surface firmware. From `v0.0.12-alpha`,
-  Universal Blue's updater runs on a six-hour schedule while connected to AC power;
-  it stages updates but leaves rebooting to you.
-- Update preflight rejects older OS versions offered by an outdated channel.
-- A **System Update** launcher (`ujust update`) follows Bluefin's manual workflow:
-  bootc for the OS, then Flatpak and Homebrew. Firmware and space checks run
-  before OS staging; reboot separately when convenient.
-- Bazaar replaces GNOME Software and is prepared after installation once internet access is
-  available. The live session does not run automatic OS updates or
-  automatically download an app store.
-  See [update status and instructions](surface/UBLUE-UPDATES.md).
+> ⚠️ **Experimental, alpha-stage, community project** — not affiliated with
+> Fedora or Microsoft. Only the 13-inch model is tested. Back up your data
+> before installing, and read the [current limitations](docs/limitations.md).
 
-*Last updated: 2026-11-07*
+## Highlights
 
-Installation and online post-install firmware setup have been tested on the
-13-inch model. Alpha 3 boots into a live GNOME desktop with a passwordless
-`liveuser` account. You can try the desktop before opening **Install Azurefin**.
-Live-session changes are discarded at reboot; your installed system uses its
-own account and does not inherit the live user's passwordless access.
+- **Surface hardware support** — keyboard, touchpad and touchscreen (including
+  during encrypted boot), Wi-Fi, USB, Bluetooth, conservative speaker profiles,
+  and experimental camera support.
+- **Surface-tuned kernel** — Linux 7.4-rc1 with Azurefin's fixes and an opt-in,
+  read-only module for factory Bluetooth-address discovery.
+- **Graphical install with full-disk encryption** via Anaconda, and a live
+  GNOME session you can try before installing.
+- **Verified Surface firmware** stored on `/boot`, independent of the immutable
+  OS image — downloaded from Microsoft or extracted from an MSI you provide.
+- **Signed, scheduled system updates** through Universal Blue's updater, with a
+  manual `ujust update` workflow that stages the OS, Flatpaks, and Homebrew.
+- **Layered tooling** — Homebrew for development tools, Bazaar as the app store,
+  and an opt-in multi-user Nix store (testing).
 
-## Before you install
+## Quick start
 
-The 13-inch model has been tested. The 15-inch model is not validated.
-Only use ISO assets linked from the release; creating a release tag alone does
-not mean the ISO has finished building. See the
-[build and release guide](surface/RELEASING.md) if you want to build or contribute.
+1. Download the latest [release ISO](https://github.com/Xelef2000/azurefin/releases)
+   and verify it with `sha256sum -c ISO-SHA256SUM`.
+2. Grab Microsoft's ARM64 Surface driver MSI (file only — don't run it).
+3. Disable Secure Boot, connect the charger, and boot the USB media.
+4. Run **Install Azurefin** from the live desktop, then reboot into the
+   installed system on the internal SSD.
+5. On the installed system (not the live session), complete firmware setup:
 
-You will need:
+   ```sh
+   sudo azurefin-setup-firmware --download   # or --msi /path/to/driver.msi
+   ```
 
-- A backup of any data on the installation target.
-- The charger connected and Secure Boot disabled for the custom kernel.
-- Azurefin installation media and at least 30 GiB free on the installed system
-  for the one-time firmware setup. No separate workspace drive is needed.
-- Either a USB Ethernet connection or the supported Microsoft Surface Laptop 7
-  ARM64 driver MSI. Built-in Wi-Fi may work with Fedora's current firmware,
-  but should not be relied on before firmware preparation.
+See the **[full installation guide](docs/installation.md)** for prerequisites,
+offline setup, Bluetooth configuration, and updates.
 
-### Downloading a release ISO
+## Documentation
 
-Open the [GitHub release](https://github.com/Xelef2000/azurefin/releases)
-and follow its SourceForge link to download the complete `.iso`. Download
-the attached `ISO-SHA256SUM` from the same release and verify it in your
-download directory:
+All guides live in **[`docs/`](docs/)**:
 
-```sh
-sha256sum -c ISO-SHA256SUM
-```
+- [Installation guide](docs/installation.md)
+- [Current limitations](docs/limitations.md)
+- [Updates](surface/UBLUE-UPDATES.md)
+- [Build & release guide](surface/RELEASING.md) · [Contributing](CONTRIBUTING.md)
 
-No reassembly is needed. Write the complete ISO using your preferred image
-writer. Double-check the destination: writing the image erases that drive.
+## Components
 
-Download the ARM64 driver MSI from Microsoft's
-[Surface Laptop 7th Edition download page](https://www.microsoft.com/en-us/download/details.aspx?id=106120).
-Download the file only—do not run the Windows installer. The updated firmware
-policy supports both:
+- [azurefin-linux](https://github.com/Xelef2000/azurefin-linux) — kernel RPM.
+- [azurefin-packages](https://github.com/Xelef2000/azurefin-packages) — touch
+  input, hardware integration, and firmware extraction tools.
 
-- `SurfaceLaptop7_ARM_Win11_26100_26.091.9400.0.msi` (default for downloads).
-- `SurfaceLaptop7_ARM_Win11_26100_26.053.36539.0.msi` (existing offline copies;
-  Microsoft no longer serves this version).
-
-Both MSI checksums and all extracted firmware checksums are pinned in
-[the firmware policy](surface/firmware-policy.json). Other versions are rejected.
-Use installation media built with the updated firmware tools and policy;
-older media only accepts the older MSI. Renaming a file does not bypass checks.
-
-For offline setup, keep the supported MSI on a USB drive. After installation,
-remove the installer drive and connect the MSI drive instead.
-
-## Installation
-
-1. Boot the prepared USB media through UEFI. If the internal OS starts instead,
-   check that USB storage precedes it in the boot order.
-2. From the live GNOME desktop, open **Install Azurefin**. Graphical Anaconda
-   opens without firmware download or a workspace prompt.
-3. Select the internal NVMe drive, checking its model and size. Do not select
-   the installer or the drive carrying the MSI. Reclaiming partitions erases
-   their contents. Enable encryption if desired and keep the passphrase safe.
-4. Complete installation, shut down, remove the installation media, and boot
-   the internal SSD. Unlock encryption and finish account setup.
-5. Install Surface firmware as described below, then reboot.
-
-The v0.0.13-alpha installer configures the signed `:testing` update channel while keeping
-the bundled offline OS payload. It does not download an OS update during
-installation. Firmware setup must be completed before the updater will run.
-Older v0.0.3-alpha media do not include this installer change.
-
-## Install Surface firmware
-
-Some hardware, including battery reporting, needs additional Surface firmware.
-Connect to the internet (use USB Ethernet if Wi-Fi is unavailable), then run:
-
-```sh
-sudo azurefin-setup-firmware --download
-```
-
-Or use your downloaded MSI without a network connection:
-
-```sh
-sudo azurefin-setup-firmware --msi /path/to/SurfaceLaptop7_ARM_Win11.msi
-```
-
-Use the actual path to a supported MSI. Both methods verify the MSI and extracted
-firmware against the packaged policy. If no Bluetooth address is already
-configured, setup attempts to read the factory address using the read-only
-kernel storage module. It verifies that the two provisioning copies agree.
-An existing address is preserved.
-
-On kernels without the module, firmware installation still succeeds and setup
-explains the manual fallback. Append `--bluetooth-address AA:BB:CC:DD:EE:FF`
-to supply your device's **Bluetooth public address from Windows**, not its
-Wi-Fi MAC. An explicit address overrides automatic detection. Use
-`--skip-bluetooth` to skip Bluetooth configuration entirely.
-
-The tool verifies and stores firmware on the separate `/boot` filesystem, then
-configures the early-boot loader. It does not rebuild or switch the OS image,
-write into immutable `/usr`, or reboot automatically. Reboot when it reports
-success. Offline setup does not need a registry download. Extraction workspaces
-are retained under `/var/lib/azurefin/firmware-extraction.*` for diagnostics;
-repeated attempts need additional space. Versioned firmware bundles remain on
-`/boot` across OS updates; older bundles are retained for rollback.
-
-This is the testing branch's setup workflow. Older released images may still
-use private-image provisioning; use the documentation matching your release.
-
-## Bluetooth configuration
-
-To detect and save the factory address without reinstalling firmware:
-
-```sh
-sudo azurefin-setup-bluetooth
-```
-
-Existing configuration is kept. To read the factory address without saving or
-applying it, use `sudo azurefin-setup-bluetooth --detect-only`.
-Detection requires the Azurefin read-only SCM storage kernel module. It reads
-provisioning storage but never writes to it; a module loaded by this command
-is unloaded afterward.
-
-The manual method remains available, including with older or custom kernels:
-
-```sh
-sudo azurefin-extract-firmware --bluetooth-address AA:BB:CC:DD:EE:FF
-```
-
-Replace the example with your device's actual Bluetooth public address from
-Windows, then reboot.
-
-## Current limitations
-
-- Scheduled updates are enabled in the `v0.0.12-alpha` testing image; older
-  release ISOs do not acquire the new defaults until updated. Do not switch to
-  an image that lacks the loader or requires an unprovisioned firmware bundle.
-  See [update requirements and validation](surface/UBLUE-UPDATES.md).
-- Firmware setup uses the currently installed image's firmware policy. It is
-  not an OS updater.
-- The new firmware-free first boot, especially encrypted-root unlock, still
-  needs hardware validation before release.
-- Suspend battery drain and intermittent device initialization still need work.
-- Camera capture works, but colour and flicker tuning remain incomplete.
-- Speaker output uses conservative gain limits; full thermal protection is not
-  validated. Keep the supplied audio profiles and kernel limits.
-- Secure Boot is not supported by the current unsigned kernel.
-
-## Components and contributing
-
-- [azurefin-linux](https://github.com/Xelef2000/azurefin-linux): kernel RPM.
-- [azurefin-packages](https://github.com/Xelef2000/azurefin-packages): touch input,
-  hardware integration and firmware extraction tools.
-- [Build and release guide](surface/RELEASING.md).
-- [Release content policy](surface/RELEASE-AUDIT.md).
-
-## Credits and upstream sources
-
-Azurefin builds on [Fedora Silverblue](https://fedoraproject.org/atomic-desktops/silverblue/),
-[bootc](https://github.com/bootc-dev/bootc),
-[bootc-image-builder](https://github.com/osbuild/bootc-image-builder),
-and [Universal Blue / Bluefin](https://github.com/ublue-os/bluefin).
+## Credits
 
 Hardware support draws on [nix1e](https://github.com/orvitpng/nix1e),
 [ELLX-Kernel](https://github.com/ProgrammerIn-wonderland/ELLX-Kernel),
 [linux-surface](https://github.com/linux-surface),
-[Alex Lentz's iptsd fork](https://github.com/alex-lentz/iptsd),
-and [Bryce Hoehn's Surface Laptop 7 work](https://github.com/bryce-hoehn/linux-surface-laptop-7).
+[Alex Lentz's iptsd fork](https://github.com/alex-lentz/iptsd), and
+[Bryce Hoehn's Surface Laptop 7 work](https://github.com/bryce-hoehn/linux-surface-laptop-7).
 Firmware tooling uses Qualcomm's
 [qca-swiss-army-knife](https://github.com/qca/qca-swiss-army-knife).
 Microsoft provides the Surface driver MSI. Azurefin-specific calibration,
-integration and fixes are maintained in these repositories.
+integration, and fixes are maintained in the repositories above.
+
+## License
+
+Apache 2.0 — see [LICENSE](LICENSE).
