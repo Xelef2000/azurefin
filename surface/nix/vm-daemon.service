@@ -1,0 +1,8 @@
+[Unit]
+Description=Disposable VM Nix daemon
+Requires=nix.mount
+After=nix.mount
+
+[Service]
+ExecStart=/nix/var/nix/profiles/default/bin/nix-daemon --daemon
+KillMode=process

@@ -1,0 +1,6 @@
+{
+  "/nix/store/ryhhwmar3fwzbgcq9slvgkbfia6gpg1h-source": ["LICENSE"],
+  "/nix/store/xc36b61rda47brzcb9jnq8n9dbdcghr4-source": ["COPYING", "src/libutil/widecharwidth/LICENSE"],
+  "/nix/store/jpm63hrn8hkga38vf5mp82y26inabri6-source": ["README.md", "README.QUICK", "doc/README.cords"],
+  "/nix/store/d289y7q72z1v377sphhrx94fzwy9pjnb-certdata.txt": ["."]
+}

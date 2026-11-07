@@ -1,0 +1,16 @@
+[Unit]
+Description=Disposable enforcing offline Nix bootstrap test
+Requires=nix.mount
+After=nix.mount
+
+[Service]
+Type=oneshot
+Environment=AZUREFIN_NIX_DISPOSABLE_GUEST=yes
+ExecStart=/usr/bin/bash /usr/share/azurefin/nix-prototype/vm-test.sh
+TimeoutStartSec=30min
+StandardOutput=journal+console
+StandardError=journal+console
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

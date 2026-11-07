@@ -1,0 +1,14 @@
+[Unit]
+Description=Persistent Nix store
+DefaultDependencies=no
+Requires=azurefin-nix-directory.service
+After=local-fs.target azurefin-nix-directory.service
+Before=umount.target
+Conflicts=umount.target
+ConditionKernelCommandLine=!rd.live.image
+
+[Mount]
+What=/var/lib/nix
+Where=/nix
+Type=none
+Options=bind

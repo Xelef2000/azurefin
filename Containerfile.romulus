@@ -3,6 +3,8 @@
 ARG BASE_IMAGE=quay.io/fedora/fedora-silverblue:44
 FROM scratch AS ctx
 COPY surface/build /build
+COPY surface/nix /nix
+COPY LICENSE /nix/LICENSE
 
 FROM ${BASE_IMAGE} AS packages
 COPY --from=ghcr.io/ublue-os/brew:latest@sha256:2aaf87e3757466bc28d056505a651c7ca5c56fd28f6ff709b34f3f5dbc860e89 /system_files /
@@ -10,6 +12,8 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     bash /ctx/build/10-packages.sh
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     bash /ctx/build/15-homebrew.sh
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    bash /ctx/build/15-nix.sh
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     bash /ctx/build/16-ota-tools.sh
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \

@@ -11,21 +11,25 @@ Azurefin includes an opt-in, read-only SCM storage module for
 factory Bluetooth address discovery on Surface Laptop 7 13-inch. Firmware setup
 loads the read-only module on demand; it does not probe during normal boot.
 The storage read was verified on a Romulus13 with the Linux 7.2 baseline.
-The system uses the tested Linux 7.2 Bluetooth-detection kernel without
-the experimental keyboard-wake patches or diagnostic logging. Use the power
+This Nix hardware candidate retains the tested v0.0.29-alpha Linux 7.4-rc1
+kernel with its speaker-resume fix and read-only Bluetooth module. Use the power
 button to wake from deep sleep; waking with ordinary keyboard keys remains
 unsupported. Automatic factory-address detection and existing-address
 preservation were verified on the signed v0.0.26-alpha image.
 
 - Surface keyboard, touchpad and touchscreen support, including input during
   encrypted boot.
-- Pre-ELLX Linux 7.2 kernel with Azurefin's Surface fixes and the opt-in
-  read-only Bluetooth-address discovery module. This restores the
-  earlier graphics and touchpad implementation after issues with the rebase.
+- Linux 7.4-rc1 kernel with Azurefin's Surface fixes and the opt-in
+  read-only Bluetooth-address discovery module, reusing the existing tested RPM.
 - Wi-Fi, USB, Bluetooth configuration, conservative speaker profiles and
   experimental camera support.
 - Full-disk encryption through the graphical Anaconda installer.
 - Homebrew integration for development tools outside the immutable system.
+- Next image: Fedora's Zsh package, available independently of Nix profiles.
+  Bash remains the default shell; switching to Zsh is optional.
+- Testing candidate: offline-initialized, multi-user Nix with a persistent store
+  and administrator-owned configuration. Not yet included in published OS releases;
+  see the [Nix guide](surface/nix/USER-GUIDE.md).
 - Surface firmware downloaded from Microsoft after installation, or extracted
   from an MSI you provide. Public images include Fedora's redistributable
   firmware but not Microsoft-extracted Surface firmware.
@@ -44,7 +48,7 @@ preservation were verified on the signed v0.0.26-alpha image.
   automatically download an app store.
   See [update status and instructions](surface/UBLUE-UPDATES.md).
 
-*Last updated: 2026-11-03*
+*Last updated: 2026-11-07*
 
 Installation and online post-install firmware setup have been tested on the
 13-inch model. Alpha 3 boots into a live GNOME desktop with a passwordless

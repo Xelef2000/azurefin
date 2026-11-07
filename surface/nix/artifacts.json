@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "installer_version": "2.35.4",
+  "source_revision": "b19d98670014a6e8d3e328d91388db3eae8ccce8",
+  "source_repository": "https://github.com/NixOS/nix-installer",
+  "license": "LGPL-2.1",
+  "payload": "Embedded Nix bootstrap closure and SELinux policy; no separate runtime download",
+  "source_release": {
+    "url": "https://github.com/Xelef2000/azurefin/releases/tag/nix-sources-2.35.4-r1",
+    "architecture": "aarch64-linux",
+    "installer_sha256": "4f02039533e0912cb5e6f819a2abcac87d78e19b76e377c2ee98e5ec10402341",
+    "sources": {
+      "url": "https://github.com/Xelef2000/azurefin/releases/download/nix-sources-2.35.4-r1/azurefin-nix-2.35.4-aarch64-sources-r1.tar.zst",
+      "sha256": "36cb1152944fc054d455a89c2aa304ca21cf668693e17184ea4d817cf66f5edc",
+      "bytes": 1063456940
+    },
+    "notices": {
+      "url": "https://github.com/Xelef2000/azurefin/releases/download/nix-sources-2.35.4-r1/azurefin-nix-2.35.4-aarch64-notices-r1.tar.zst",
+      "sha256": "2891c1558297ea279ce6e18583e38e21b0cc8a0943e8256d822f149bf9d65578",
+      "bytes": 803643
+    }
+  },
+  "artifacts": {
+    "aarch64-linux": {
+      "url": "https://github.com/NixOS/nix-installer/releases/download/2.35.4/nix-installer-aarch64-linux",
+      "sha256": "4f02039533e0912cb5e6f819a2abcac87d78e19b76e377c2ee98e5ec10402341",
+      "bytes": 32698235,
+      "elf_machine": 183
+    },
+    "x86_64-linux": {
+      "url": "https://github.com/NixOS/nix-installer/releases/download/2.35.4/nix-installer-x86_64-linux",
+      "sha256": "60f39200fc2690bcf4da7ba3f8b2e4dee0118f487bc9f41cd4e153d1a02dce77",
+      "bytes": 34381594,
+      "elf_machine": 62,
+      "purpose": "Development tests only; not an additional supported Azurefin architecture"
+    }
+  }
+}

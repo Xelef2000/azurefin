@@ -23,14 +23,17 @@ mapfile -t stock < <(rpm -qa --qf '%{NAME}\n' |
 if [[ ${#stock[@]} -gt 0 ]]; then
     dnf5 remove -y "${stock[@]}"
 fi
-# Reuse the hardware-tested read-only SCM kernel binary; keep its repo isolated.
-copr_install_isolated xelef2000/azurefin-kernel:custom:scm-readonly-linux72 "$KERNEL_PACKAGE"
+# Retain the tested v0.0.29-alpha kernel for the isolated Nix hardware candidate.
+copr_install_isolated xelef2000/azurefin-kernel:custom:linux74-rc1 "$KERNEL_PACKAGE"
 # Install IPTSD first so the integration package dependency resolves with its
 # repo disabled afterwards.
 copr_install_isolated xelef2000/azurefin-iptsd "$IPTSD_PACKAGE"
 copr_install_isolated xelef2000/azurefin-romulus "$ROMULUS_PACKAGE"
 copr_install_isolated xelef2000/azurefin-firmware-tools "$FIRMWARE_TOOLS_PACKAGE"
-dnf5 install -y linux-firmware dracut dracut-network cryptsetup plymouth bluez podman
+dnf5 install -y linux-firmware dracut dracut-network cryptsetup plymouth bluez podman zsh
+# Image-owned shell, independent of Nix profiles; leave user defaults unchanged.
+/usr/bin/zsh --version
+grep -Fxq /bin/zsh /etc/shells || grep -Fxq /usr/bin/zsh /etc/shells
 # Older Silverblue bases contain bootc 1.16.10, which incorrectly asks Podman
 # to look up OCI directory references and prints a spurious transport error.
 # Upstream fix: https://github.com/bootc-dev/bootc/pull/2410 (1.16.11).
