@@ -440,10 +440,10 @@ repository edits do not alter it mid-installation.
 
 1. Build a signed hardware candidate and request the Surface reboot test before
    publishing an OS release or changing the normal update channel.
-   Preserve the tested v0.0.29-alpha kernel baseline (7.4-rc1 WSA resume fix):
-   the integration branch inherits main's older 7.2 package pin, whereas the
-   local VM images were derived from the audited v0.0.29-alpha base. Do not
-   silently test Nix alongside a kernel downgrade.
+   This isolated hardware-candidate branch retains the v0.0.29-alpha kernel
+   baseline (7.4-rc1 WSA resume fix), matching the local VM validation rather
+   than inheriting main's older 7.2 package pin. The candidate uses existing
+   COPR binaries; it does not rebuild the kernel or promote an update channel.
 
 The default reference enables sandboxing with no fallback, trusts only root,
 and does not enable unfree software or custom caches. Existing administrator
