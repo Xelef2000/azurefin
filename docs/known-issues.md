@@ -13,7 +13,7 @@ Snapdragon X Elite devices.
 | Idle/light-use power | Open: matching Windows battery life remains a goal, not an achieved result. | Compare controlled measurements at the same brightness and refresh rate; no battery-life guarantee. |
 | Suspend power | Open: excessive sleep drain has been reported. Long-duration suspend still needs validation after kernel changes. | Shut down for long periods when preserving charge matters. |
 | Keyboard wake | Deferred: ordinary keys do not reliably wake deep sleep. | Use the power button. Lid wake has worked in tests but is not a universal guarantee. |
-| Clock / UEFI RTC | Deferred: an approximately two-hour offset and failure to retain the intended UEFI RTC correction across reboot were reported. | Network time can correct the running system; persistent RTC handling needs further work. |
+| Clock / UEFI RTC | Currently fails to write rtc clock offsets back to the uefi| Network time can correct the running system; persistent RTC handling needs further work. |
 | Camera quality | Capture works; green tint and flicker remain untuned. | Treat camera support as experimental. |
 | Speaker protection | Conservative gain limits are retained; complete thermal protection is not validated. | Keep the supplied profiles and kernel limits. Do not bypass protection or raise hardware gains for testing. |
 
