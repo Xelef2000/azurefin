@@ -23,8 +23,15 @@ mapfile -t stock < <(rpm -qa --qf '%{NAME}\n' |
 if [[ ${#stock[@]} -gt 0 ]]; then
     dnf5 remove -y "${stock[@]}"
 fi
-# Retain the tested v0.0.29-alpha kernel for the isolated Nix hardware candidate.
-copr_install_isolated xelef2000/azurefin-kernel:custom:linux74-rc1 "$KERNEL_PACKAGE"
+# Same Surface baseline, with loopback signed by this kernel's build key.
+copr_install_isolated xelef2000/azurefin-kernel:custom:camera-ondemand "$KERNEL_PACKAGE"
+# Runtime only: leave camera permissions and desktop routing unchanged until
+# the complete on-demand relay passes hardware and idle-power acceptance.
+copr_install_isolated xelef2000/azurefin-romulus:custom:camera-ondemand "$CAMERA_PACKAGE"
+if rpm -q azurefin-camera-integration; then
+    echo "Camera integration must remain absent from this test image." >&2
+    exit 1
+fi
 # Install IPTSD first so the integration package dependency resolves with its
 # repo disabled afterwards.
 copr_install_isolated xelef2000/azurefin-iptsd "$IPTSD_PACKAGE"
