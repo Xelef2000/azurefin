@@ -25,7 +25,7 @@ content. Foreign-store failure isolation passed with an active graphical GDM
 greeter; the login screen was also visually observed. Automatic user sign-in
 and GNOME Shell startup passed too; a delayed screenshot confirmed the rendered
 desktop after the GNOME session target became active.
-No Nix-enabled OS release or Surface deployment performed.
+No public Nix-enabled OS release or update-channel promotion performed.
 The combined offline Anaconda installation and payload post-install checks
 passed. Its first boot exposed a duplicate GPT home mount against the `/home`
 symlink. Masking the invalid mount in a disposable overlay allowed offline Nix
@@ -33,7 +33,14 @@ initialization, PATH discovery and two-user sandbox builds to pass with SELinux
 enforcing. A fresh installer containing the helper fix then passed the full
 offline installation, post-install checks and first-boot two-user sandbox tests
 without manual mount changes. All 97 image layers passed the content audit.
-The remaining release gate is a signed candidate and Surface hardware test.
+The isolated signed v0.0.30-alpha candidate was deployed to the Surface with
+the tested 7.4-rc1 kernel retained. Keyless base/installer signatures and the
+native base OTA signature were independently verified. First-boot initialization,
+default PATH, persistent store mounting and an offline non-root sandbox build
+passed with SELinux enforcing. Firmware checks passed; the user confirmed Wi-Fi
+and touch. Home Manager desktop discovery required genericLinux integration.
+Hardware repeat-boot persistence remains to be checked before release. The next
+candidate also needs to validate the newly requested image-owned Zsh package.
 Date: 2026-11-07.
 
 ## Outcome

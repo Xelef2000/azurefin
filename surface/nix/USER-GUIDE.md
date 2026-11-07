@@ -21,6 +21,28 @@ The daemon serves ordinary users without making them trusted administrators.
 Bash and POSIX login-shell PATH integration preserves existing system and
 Homebrew precedence. Other shells may need their own PATH configuration.
 
+## Packages and desktop applications
+
+No legacy Nixpkgs channel is configured automatically. For example, use
+`nix shell nixpkgs#ghex` to open a shell containing GHex. The traditional
+`nix-shell -p ghex` requires a user-configured Nixpkgs channel or another
+explicit source for `<nixpkgs>`.
+
+For Home Manager on Azurefin, enable its non-NixOS integration:
+
+```nix
+targets.genericLinux.enable = true;
+```
+
+Apply your Home Manager configuration, then log out completely and log back
+in. GNOME needs the profile's `share` directory in `XDG_DATA_DIRS` to discover
+desktop launchers; adding executables to `PATH` alone is not sufficient.
+
+The next image also includes Fedora's Zsh at `/usr/bin/zsh`. Prefer this
+image-owned executable over a mutable Nix-profile path for an account's login
+shell. Installing Zsh does not change your default shell or Home Manager
+configuration. Home Manager can still manage your Zsh configuration.
+
 ## Configuration
 
 Global settings live in `/etc/nix/nix.conf`, a regular administrator-editable

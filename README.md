@@ -26,6 +26,8 @@ preservation were verified on the signed v0.0.26-alpha image.
   experimental camera support.
 - Full-disk encryption through the graphical Anaconda installer.
 - Homebrew integration for development tools outside the immutable system.
+- Next image: Fedora's Zsh package, available independently of Nix profiles.
+  Bash remains the default shell; switching to Zsh is optional.
 - Testing candidate: offline-initialized, multi-user Nix with a persistent store
   and administrator-owned configuration. Not yet included in published OS releases;
   see the [Nix guide](surface/nix/USER-GUIDE.md).
@@ -47,7 +49,7 @@ preservation were verified on the signed v0.0.26-alpha image.
   automatically download an app store.
   See [update status and instructions](surface/UBLUE-UPDATES.md).
 
-*Last updated: 2026-11-06*
+*Last updated: 2026-11-07*
 
 Installation and online post-install firmware setup have been tested on the
 13-inch model. Alpha 3 boots into a live GNOME desktop with a passwordless
