@@ -22,7 +22,8 @@ it. No latest-version URL or runtime network fetch is used. Redistribution must
 retain the upstream LGPL license and provide corresponding source, including
 the payload's dependency licenses. The build stage verifies the pinned installer
 and paired notices and includes the published source link in `artifacts.json`.
-No Nix-enabled OS image has been published.
+Signed Nix-enabled test candidates have been published to GHCR, but no public
+OS release or normal update-channel promotion has been made.
 
 Upstream's OSTree planner creates `/etc` mount/service overrides and can run
 `chattr`. We instead use its supported editable-plan interface with the Linux
@@ -438,12 +439,14 @@ generated kickstart erases that VM target automatically and must never be
 included on public installation media. The running test uses a frozen copy;
 repository edits do not alter it mid-installation.
 
-1. Build a signed hardware candidate and request the Surface reboot test before
-   publishing an OS release or changing the normal update channel.
-   Preserve the tested v0.0.29-alpha kernel baseline (7.4-rc1 WSA resume fix):
-   the integration branch inherits main's older 7.2 package pin, whereas the
-   local VM images were derived from the audited v0.0.29-alpha base. Do not
-   silently test Nix alongside a kernel downgrade.
+Signed hardware testing passed on v0.0.30-alpha and v0.0.31-alpha: initialization,
+an ordinary-user offline sandbox build, repeat boot and OS-update persistence,
+firmware diagnostics and enforcing SELinux. Profile and configuration/state
+checksums remained unchanged. The user confirmed Wi-Fi and touch. Fedora Zsh
+is available independently of Nix and finds Nix in a clean login session.
+The integration branch retains the tested 7.4-rc1 WSA-resume kernel using its
+existing COPR binary. No kernel rebuild or update-channel promotion is implied.
+Review/merge and an explicitly selected public release remain separate steps.
 
 The default reference enables sandboxing with no fallback, trusts only root,
 and does not enable unfree software or custom caches. Existing administrator
