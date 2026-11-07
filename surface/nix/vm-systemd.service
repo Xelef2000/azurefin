@@ -1,0 +1,17 @@
+[Unit]
+Description=Disposable asynchronous Nix boot validation
+DefaultDependencies=no
+After=multi-user.target
+Before=shutdown.target
+Conflicts=shutdown.target
+
+[Service]
+Type=oneshot
+Environment=AZUREFIN_NIX_DISPOSABLE_GUEST=yes
+ExecStart=/usr/bin/bash /var/tmp/azurefin-nix-multiuser.sh
+TimeoutStartSec=15min
+StandardOutput=journal+console
+StandardError=journal+console
+
+[Install]
+WantedBy=multi-user.target

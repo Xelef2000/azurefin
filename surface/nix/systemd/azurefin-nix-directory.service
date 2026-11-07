@@ -1,0 +1,10 @@
+[Unit]
+Description=Prepare persistent Nix backing directory
+RequiresMountsFor=/var/lib/nix
+Before=nix.mount
+ConditionKernelCommandLine=!rd.live.image
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/share/azurefin/nix/directory.py
+RemainAfterExit=yes

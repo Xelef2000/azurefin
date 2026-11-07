@@ -1,0 +1,11 @@
+[Unit]
+Description=Validate the persistent Nix runtime
+Requires=nix-daemon.service
+After=nix-daemon.service
+ConditionKernelCommandLine=!rd.live.image
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/share/azurefin/nix/initialize.py finalize
+RemainAfterExit=yes
+TimeoutStartSec=2min

@@ -1,0 +1,15 @@
+[Unit]
+Description=Disposable VM two-user Nix sandbox test
+Requires=nix.mount
+After=nix.mount
+
+[Service]
+Type=oneshot
+Environment=AZUREFIN_NIX_DISPOSABLE_GUEST=yes
+ExecStart=/usr/bin/bash /var/tmp/azurefin-nix-multiuser.sh
+TimeoutStartSec=15min
+StandardOutput=journal+console
+StandardError=journal+console
+
+[Install]
+WantedBy=multi-user.target

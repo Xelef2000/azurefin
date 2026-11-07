@@ -1,0 +1,12 @@
+{
+  "/nix/store/02mrif30dj12y75rpjkl6wp6qsq1h5x3-nix-util-2.35.4": "/nix/store/xc36b61rda47brzcb9jnq8n9dbdcghr4-source",
+  "/nix/store/5rih9684gk9163i5443zl95xprxvjsf1-nix-expr-2.35.4": "/nix/store/xc36b61rda47brzcb9jnq8n9dbdcghr4-source",
+  "/nix/store/afrpl4m0kfrq6psxcxw8n7m9drx4h171-nix-nswrapper-2.35.4": "/nix/store/xc36b61rda47brzcb9jnq8n9dbdcghr4-source",
+  "/nix/store/amy4qyrr991rvsckjzcs18bs6yc7a3la-nix-store-2.35.4": "/nix/store/xc36b61rda47brzcb9jnq8n9dbdcghr4-source",
+  "/nix/store/cvrk975ld6xyawaswkwv9vkzlsnj9zx5-nix-flake-2.35.4": "/nix/store/xc36b61rda47brzcb9jnq8n9dbdcghr4-source",
+  "/nix/store/iizaiyiy29b5dq6g548ryrjqxr7zbjq9-nix-main-2.35.4": "/nix/store/xc36b61rda47brzcb9jnq8n9dbdcghr4-source",
+  "/nix/store/p1v95c8x856sjidi0p1xmxsxzdpvxvvj-nix-cmd-2.35.4": "/nix/store/xc36b61rda47brzcb9jnq8n9dbdcghr4-source",
+  "/nix/store/qniv6sbws6j9h28zv3qxb6rsm5y8c0vh-nix-fetchers-2.35.4": "/nix/store/xc36b61rda47brzcb9jnq8n9dbdcghr4-source",
+  "/nix/store/yv1zf3y6all4j99aad30cb8i55dw9zmp-nix-2.35.4": "/nix/store/xc36b61rda47brzcb9jnq8n9dbdcghr4-source",
+  "/nix/store/zfrjbq03bwr3wbab3z47w03l19d73rrf-nix-2.35.4": "/nix/store/xc36b61rda47brzcb9jnq8n9dbdcghr4-source"
+}

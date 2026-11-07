@@ -1,0 +1,9 @@
+[Unit]
+Description=Disposable Nix VM backing directory
+RequiresMountsFor=/var/lib
+Before=nix.mount
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/install -d -m0755 /var/lib/nix
+RemainAfterExit=yes
