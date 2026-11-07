@@ -25,6 +25,8 @@ preservation were verified on the signed v0.0.26-alpha image.
   experimental camera support.
 - Full-disk encryption through the graphical Anaconda installer.
 - Homebrew integration for development tools outside the immutable system.
+- Next image: Fedora's Zsh package, available independently of Nix profiles.
+  Bash remains the default shell; switching to Zsh is optional.
 - Testing candidate: offline-initialized, multi-user Nix with a persistent store
   and administrator-owned configuration. Not yet included in published OS releases;
   see the [Nix guide](surface/nix/USER-GUIDE.md).

@@ -30,7 +30,10 @@ copr_install_isolated xelef2000/azurefin-kernel:custom:linux74-rc1 "$KERNEL_PACK
 copr_install_isolated xelef2000/azurefin-iptsd "$IPTSD_PACKAGE"
 copr_install_isolated xelef2000/azurefin-romulus "$ROMULUS_PACKAGE"
 copr_install_isolated xelef2000/azurefin-firmware-tools "$FIRMWARE_TOOLS_PACKAGE"
-dnf5 install -y linux-firmware dracut dracut-network cryptsetup plymouth bluez podman
+dnf5 install -y linux-firmware dracut dracut-network cryptsetup plymouth bluez podman zsh
+# Image-owned shell, independent of Nix profiles; leave user defaults unchanged.
+/usr/bin/zsh --version
+grep -Fxq /bin/zsh /etc/shells || grep -Fxq /usr/bin/zsh /etc/shells
 # Older Silverblue bases contain bootc 1.16.10, which incorrectly asks Podman
 # to look up OCI directory references and prints a spurious transport error.
 # Upstream fix: https://github.com/bootc-dev/bootc/pull/2410 (1.16.11).
