@@ -3,6 +3,9 @@
 Azurefin is an experimental, alpha-stage project. Known limitations as of the
 current testing image:
 
+For version-specific status, workarounds and deferred work, see the
+[known-issues list](known-issues.md).
+
 - **Updates on older ISOs.** Scheduled updates are enabled in the
   `v0.0.12-alpha` testing image; older release ISOs do not acquire the new
   defaults until updated. Do not switch to an image that lacks the loader or

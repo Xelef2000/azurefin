@@ -57,6 +57,7 @@ All guides live in **[`docs/`](docs/)**:
 
 - [Installation guide](docs/installation.md)
 - [Current limitations](docs/limitations.md)
+- [Known issues and remaining work](docs/known-issues.md)
 - [Updates](surface/UBLUE-UPDATES.md)
 - [Build & release guide](surface/RELEASING.md) · [Contributing](CONTRIBUTING.md)
 
