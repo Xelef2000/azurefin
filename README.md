@@ -40,7 +40,9 @@ system. It is built on [Fedora Silverblue](https://fedoraproject.org/atomic-desk
    and verify it with `sha256sum -c ISO-SHA256SUM`.
 2. Grab Microsoft's ARM64 Surface driver MSI (file only — don't run it).
 3. Disable Secure Boot, connect the charger, and boot the USB media.
-4. Run **Install Azurefin** from the live desktop, then complete firmware setup:
+4. Run **Install Azurefin** from the live desktop, then reboot into the
+   installed system on the internal SSD.
+5. On the installed system (not the live session), complete firmware setup:
 
    ```sh
    sudo azurefin-setup-firmware --download   # or --msi /path/to/driver.msi
