@@ -16,7 +16,7 @@ system. It is built on [Fedora Silverblue](https://fedoraproject.org/atomic-desk
 
 > ⚠️ **Experimental, alpha-stage, community project** — not affiliated with
 > Fedora or Microsoft. Only the 13-inch model is tested. Back up your data
-> before installing, and read the [current limitations](docs/limitations.md).
+> before installing, and read the [current limitations](docs/known-issues.md).
 
 ## Highlights
 
