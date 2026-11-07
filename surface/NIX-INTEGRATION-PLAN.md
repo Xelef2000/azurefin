@@ -28,8 +28,10 @@ desktop after the GNOME session target became active.
 No Nix-enabled OS release or Surface deployment performed.
 The combined offline Anaconda installation and payload post-install checks
 passed. Its first boot exposed a duplicate GPT home mount against the `/home`
-symlink; a narrowly scoped installer fix is under VM validation before a new
-installer run. This is not yet a combined installation/first-boot pass.
+symlink. Masking the invalid mount in a disposable overlay allowed offline Nix
+initialization, PATH discovery and two-user sandbox builds to pass with SELinux
+enforcing. A fresh installer with the narrowly scoped helper fix is rebuilding;
+this is not yet a clean combined installation/first-boot pass.
 Date: 2026-11-07.
 
 ## Outcome

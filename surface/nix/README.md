@@ -417,8 +417,11 @@ symlink, despite the corrected fstab successfully mounting `/var/home`.
 Masking only `home.mount` in a disposable overlay removed that boot failure and
 allowed Nix initialization to start. The installer fstab helper now applies
 that mask only for the canonical home symlink, preserves custom units by
-refusing to replace them, and remains idempotent. First-boot Nix validation is
-still running; a fresh installer containing the helper fix must also be tested.
+refusing to replace them, and remains idempotent. First-boot Nix validation in
+that overlay passed: offline initialization, default PATH discovery and
+sandboxed builds by two ordinary users with SELinux enforcing. A fresh
+installer containing the helper fix is rebuilding, with its first-boot test
+queued automatically; this remains a release gate until that clean run passes.
 
 `vm_anaconda_kickstart.py` derives the diagnostic kickstart from
 `surface/release-installer.ks`, retaining the public payload and post-install
