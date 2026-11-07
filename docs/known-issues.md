@@ -15,7 +15,6 @@ Snapdragon X Elite devices.
 | Keyboard wake | Deferred: ordinary keys do not reliably wake deep sleep. | Use the power button. Lid wake has worked in tests but is not a universal guarantee. |
 | Clock / UEFI RTC | Deferred: an approximately two-hour offset and failure to retain the intended UEFI RTC correction across reboot were reported. | Network time can correct the running system; persistent RTC handling needs further work. |
 | Camera quality | Capture works; green tint and flicker remain untuned. | Treat camera support as experimental. |
-| USB Ethernet after reboot | Intermittent: one adapter failed to reconnect until unplugged and reinserted. Root cause not investigated. | Replug the adapter if needed; this is not established as affecting every adapter. |
 | Speaker protection | Conservative gain limits are retained; complete thermal protection is not validated. | Keep the supplied profiles and kernel limits. Do not bypass protection or raise hardware gains for testing. |
 
 ## Support and validation gaps
