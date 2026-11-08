@@ -42,8 +42,11 @@ and touch. Home Manager desktop discovery required genericLinux integration.
 Hardware repeat-boot persistence passed: the user profile target, configuration
 checksum and initialization-state checksum were unchanged; the sandbox build
 output remained available, initialization validated rather than reinstalling,
-and the daemon and firmware checks passed with no failed services. The next
-candidate still needs to validate the newly requested image-owned Zsh package.
+and the daemon and firmware checks passed with no failed services. The signed
+v0.0.31-alpha update also passed these persistence checks. Fedora Zsh 5.9 is
+registered in /etc/shells and finds Nix in a clean login session; the user's
+default shell remains Bash. Public release and update-channel promotion remain
+separate actions, not performed by these candidate tests.
 Date: 2026-11-07.
 
 ## Outcome

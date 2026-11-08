@@ -19,3 +19,9 @@ install -Dm644 /ctx/build/bazaar/azurefin-flatpak-preinstall.service \
 install -Dm644 /ctx/build/bazaar/azurefin-flatpak-preinstall.timer \
     /usr/lib/systemd/system/azurefin-flatpak-preinstall.timer
 systemctl enable azurefin-flatpak-preinstall.timer
+
+# Flatpak overrides live in /var, so apply them at boot rather than baking
+# mutable state into an image that would not update existing installations.
+install -Dm644 /ctx/build/bazaar/azurefin-bazaar-environment.service \
+    /usr/lib/systemd/system/azurefin-bazaar-environment.service
+systemctl enable azurefin-bazaar-environment.service

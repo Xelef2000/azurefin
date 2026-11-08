@@ -25,13 +25,9 @@ if [[ ${#stock[@]} -gt 0 ]]; then
 fi
 # Same Surface baseline, with loopback signed by this kernel's build key.
 copr_install_isolated xelef2000/azurefin-kernel:custom:camera-ondemand "$KERNEL_PACKAGE"
-# Runtime only: leave camera permissions and desktop routing unchanged until
-# the complete on-demand relay passes hardware and idle-power acceptance.
-copr_install_isolated xelef2000/azurefin-romulus:custom:camera-ondemand "$CAMERA_PACKAGE"
-if rpm -q azurefin-camera-integration; then
-    echo "Camera integration must remain absent from this test image." >&2
-    exit 1
-fi
+# Published runtime and integration from package release v0.0.3-alpha.
+copr_install_isolated xelef2000/azurefin-romulus "$CAMERA_PACKAGE" "$CAMERA_INTEGRATION_PACKAGE"
+systemctl enable azurefin-camera.service
 # Install IPTSD first so the integration package dependency resolves with its
 # repo disabled afterwards.
 copr_install_isolated xelef2000/azurefin-iptsd "$IPTSD_PACKAGE"

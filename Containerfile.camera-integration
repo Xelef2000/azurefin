@@ -1,0 +1,19 @@
+# Local-only candidate, based on the currently tested firmware-free OS image.
+ARG RELEASE_BASE=ghcr.io/xelef2000/azurefin@sha256:9cfe17bd3c3a31df7a4eac29364b12e79fc4035dff17e5dac97fe441602c862f
+FROM scratch AS ctx
+COPY surface/camera /camera
+COPY --from=camera-rpms /azurefin-camera-0.1-2.fc44.aarch64.rpm /rpms/
+COPY --from=camera-rpms /azurefin-camera-integration-0.1-2.fc44.aarch64.rpm /rpms/
+
+FROM scratch AS cleanup
+COPY surface/build/29-clean-build-state.sh /29-clean-build-state.sh
+
+FROM ${RELEASE_BASE}
+RUN --mount=type=bind,from=ctx,source=/camera,target=/ctx/camera \
+    --mount=type=bind,from=ctx,source=/rpms,target=/camera-rpms \
+    bash /ctx/camera/10-install.sh
+RUN --mount=type=bind,from=cleanup,source=/,target=/ctx/cleanup \
+    bash /ctx/cleanup/29-clean-build-state.sh && \
+    rm -f /run/systemd/systemd-units-load && \
+    rmdir --ignore-fail-on-non-empty /run/systemd /var/roothome/.cache && \
+    bootc container lint
