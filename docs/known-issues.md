@@ -1,6 +1,7 @@
 # Known issues and remaining work
 
-Last reviewed: **2026-11-07**, against the hardware-tested **v0.0.31-alpha**
+Camera status updated: **2026-11-08**, against signed **v0.0.34-alpha**.
+Other entries retain their **2026-11-07** review against **v0.0.31-alpha**
 testing-channel image on a Surface Laptop 7 **13-inch, 16 GB**. An older ISO
 may contain different fixes. This list distinguishes reported problems from
 features that have not been validated; it is not a promise of support on all
@@ -14,8 +15,11 @@ Snapdragon X Elite devices.
 | Suspend power | Open: excessive sleep drain has been reported. Long-duration suspend still needs validation after kernel changes. | Shut down for long periods when preserving charge matters. |
 | Keyboard wake | Deferred: ordinary keys do not reliably wake deep sleep. | Use the power button. Lid wake has worked in tests but is not a universal guarantee. |
 | Clock / UEFI RTC | Currently fails to write rtc clock offsets back to the uefi| Network time can correct the running system; persistent RTC handling needs further work. |
-| Camera quality | Capture works; green tint and flicker remain untuned. | Treat camera support as experimental. |
+| Camera quality | Signed v0.0.34-alpha passed boot/startup, GNOME Camera preview, capture/pause recovery and hardware idle release. Earlier images passed Firefox/Brave preview and reopen. About 18.8 fps, loopback buffer warnings and limited broader lighting/long-term coverage remain. | Treat camera support as experimental; see [camera validation](../surface/CAMERA-TESTING.md). |
 | Speaker protection | Conservative gain limits are retained; complete thermal protection is not validated. | Keep the supplied profiles and kernel limits. Do not bypass protection or raise hardware gains for testing. |
+
+The separate system suspend/wake issue is not caused by the camera project and
+is not a camera-release blocker.
 
 ## Support and validation gaps
 

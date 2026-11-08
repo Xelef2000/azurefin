@@ -23,6 +23,9 @@ system. It is built on [Fedora Silverblue](https://fedoraproject.org/atomic-desk
 - **Surface hardware support** — keyboard, touchpad and touchscreen (including
   during encrypted boot), Wi-Fi, USB, Bluetooth, conservative speaker profiles,
   and experimental camera support.
+- **Experimental camera integration** — processed Surface Camera feed shared by
+  desktop apps, with capture hardware released when idle. See the
+  [validation status](surface/CAMERA-TESTING.md) for remaining limitations.
 - **Surface-tuned kernel** — Linux 7.4-rc1 with Azurefin's fixes and an opt-in,
   read-only module for factory Bluetooth-address discovery.
 - **Graphical install with full-disk encryption** via Anaconda, and a live
@@ -36,7 +39,7 @@ system. It is built on [Fedora Silverblue](https://fedoraproject.org/atomic-desk
 
 Bazaar's environment excludes terminal-only variables so shell customizations
 cannot break its GPG signature verification. Applied to new and updated systems.
-*Last updated: 2026-11-07.*
+*Last updated: 2026-11-08.*
 
 ## Quick start
 
