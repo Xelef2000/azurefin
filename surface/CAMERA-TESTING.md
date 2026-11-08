@@ -3,7 +3,70 @@
 Promotions and creation of new releases require explicit user permission.
 Approval to commit and push these testing branches does not authorize either.
 
-## Published-package candidate (2026-11-08)
+## Current signed-image status (2026-11-08)
+
+The signed `v0.0.34-alpha` image is published to the testing channel and has
+booted successfully on the Surface. GitHub release publication and source
+integration into `main` remain separate manual release tasks; the user will
+initiate them. No new installer ISO has been validated.
+
+### Changes
+
+- Install the published private libcamera softISP runtime and integration RPMs
+  at `0.1-100.0.0.3.0.fc44.aarch64` and enable `azurefin-camera.service`.
+- Expose the processed **Surface Camera** through the desktop camera path,
+  reserving the physical camera for the service. Applications need no private
+  libcamera patch of their own.
+- Capture on demand and release sensor/CAMSS/CCI when the final client exits.
+- Preserve the virtual output during input-only pause, supplying black frames
+  while physical capture is paused and restoring live input afterward.
+- Include the OS changes through v0.0.33-alpha, including the Bazaar environment
+  fix. Retain the tested signed camera kernel and other package pins.
+
+### Release and hardware evidence
+
+[Image build](https://github.com/Xelef2000/azurefin/actions/runs/42487349025)
+and [testing promotion](https://github.com/Xelef2000/azurefin/actions/runs/42488147288)
+passed. Audits covered all 95 base layers and 107 installer-container layers.
+Keyless image signatures and the base native OTA signature passed verification.
+
+Base digest: `sha256:388bccc0dec3dfaa39ba87bfb273588365dd58a536e993d8b1dda802ede7fa21`.
+Installer-container digest: `sha256:121688e77db5d5d8462be0003e84bbe88d4b6bb027e2176868e475d6f07739e5`.
+
+The Surface booted the exact base digest from the registry `testing` origin
+with `containerPolicy` signature enforcement. Camera startup was automatic,
+with PID 1600 and zero restarts. Package verification reported timestamp-only
+differences; verification excluding timestamps passed. No system units failed.
+Firmware and signed-channel update preflight passed.
+
+The input-only pause harness passed capture, black-frame output during pause,
+client reopen while paused, same-client live recovery, and resume without a
+client. The final idle check measured zero CPU ticks over five seconds and
+confirmed hardware runtime suspend. This harness does not suspend the system.
+The user confirmed a reasonable live GNOME Camera preview on the signed image.
+After closing Camera, all three hardware components returned to runtime suspend
+with the same service PID and zero restarts.
+
+Earlier local-image tests covered Firefox and Brave preview/reopen; the
+published-package local image also passed GNOME Camera and Brave checks. These
+browser results should not be described as fresh tests on the signed image.
+Evidence is retained in the package worktree under
+`work/image-integration/signed-v34-*`, `release-v0.0.34-alpha/` and
+`promotion-v0.0.34-alpha/`.
+
+### Camera limitations
+
+- Measured throughput is about 18.8 fps, also observed with raw Bayer capture.
+- Loopback buffer warnings remain unresolved.
+- Two direct V4L2 consumers may encounter EBUSY; shared PipeWire consumers passed.
+- Broader lighting coverage and long-term camera testing remain limited.
+
+The separately reported system suspend/wake issue is unrelated to this camera
+project. It is not a camera regression or a camera-release blocker. Earlier
+successful GNOME Camera and Brave sleep-cycle tests remain recorded below;
+they do not claim to resolve that separate system issue.
+
+## Historical published-package local candidate (2026-11-08)
 
 Package release `azurefin-packages v0.0.3-alpha` is published; all four COPR
 builds succeeded. Camera build [11287468](https://copr.fedorainfracloud.org/coprs/build/11287468)
@@ -58,10 +121,9 @@ The temporary browser server was stopped and numerical telemetry saved under
 `work/image-integration/published-*` in the package worktree. These checks pass
 published-package boot/startup, GNOME Camera preview, Brave preview/reopen and
 hardware release; Firefox's visual/reopen pass was on the earlier local-package
-image. System suspend and long-term reliability remain unproven. The Surface
-still uses the local development image, so the signed-channel updater remains
-blocked until an approved signed image is deployed. The OS image has not been published
-or promoted.
+image. At this stage the Surface still used the local development image and
+the signed-channel updater was blocked. The signed deployment and update
+preflight recorded above supersede that temporary state.
 
 ## Historical local integration candidate (2026-11-08)
 
@@ -182,8 +244,9 @@ image; restoring the signed registry source remains a separate follow-up.
   untested, and an earlier blank-preview report remains unexplained.
 - A subsequent lid suspend, after camera trial cleanup, required a reboot.
   The screen stayed black and power-button wake did not respond. Logs stop at
-  deep-suspend entry; no crash dump was saved. Cause is unresolved. Per user
-  direction, investigation of that system issue is deferred.
+  deep-suspend entry; no crash dump was saved. The user identifies this as a
+  separate system issue unrelated to the camera project; investigation is out
+  of scope and this is not a camera-release blocker.
 - About 18.8 fps and loopback buffer warnings remain unresolved. Shared PipeWire
   clients worked; two direct V4L2 clients may fail with EBUSY.
 
