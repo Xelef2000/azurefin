@@ -23,8 +23,8 @@ mapfile -t stock < <(rpm -qa --qf '%{NAME}\n' |
 if [[ ${#stock[@]} -gt 0 ]]; then
     dnf5 remove -y "${stock[@]}"
 fi
-# Same Surface baseline, with loopback signed by this kernel's build key.
-copr_install_isolated xelef2000/azurefin-kernel:custom:camera-ondemand "$KERNEL_PACKAGE"
+# QCE power-management candidate; crypto algorithm registration stays disabled.
+copr_install_isolated xelef2000/azurefin-kernel:custom:sleep-qce-sync "$KERNEL_PACKAGE"
 # Published runtime and integration from package release v0.0.3-alpha.
 copr_install_isolated xelef2000/azurefin-romulus "$CAMERA_PACKAGE" "$CAMERA_INTEGRATION_PACKAGE"
 systemctl enable azurefin-camera.service
