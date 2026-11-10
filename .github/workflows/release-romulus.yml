@@ -60,7 +60,7 @@ jobs:
             --label "org.opencontainers.image.revision=$GITHUB_SHA" \
             --label "org.opencontainers.image.version=$RELEASE_TAG" \
             --label "org.azurefin.firmware=post-install-provisioning" \
-            -f Containerfile.romulus -t "$IMAGE" .
+            -f Containerfile.sleep-qce -t "$IMAGE" .
           podman run --rm --entrypoint rpm "$IMAGE" -qa | sort > release-metadata/packages.txt
       - name: Audit every base layer before building the installer
         shell: bash

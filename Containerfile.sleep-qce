@@ -1,0 +1,12 @@
+# Controlled sleep experiment: retain the exact v35 userspace/package inventory.
+FROM scratch AS ctx
+COPY surface/build /build
+COPY surface/sleep /sleep
+
+FROM ghcr.io/xelef2000/azurefin@sha256:8babbf80c9ad8a7d8459c8b653dac5134ce21190489989b9931449a3fef85f62 AS base-image
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    bash /ctx/sleep/10-kernel-only.sh && \
+    bash /ctx/build/21-installer-firmware-free.sh installed && \
+    bash /ctx/build/27-installed-boot.sh && \
+    bash /ctx/build/29-clean-build-state.sh && \
+    bootc container lint
