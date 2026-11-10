@@ -39,7 +39,10 @@ system. It is built on [Fedora Silverblue](https://fedoraproject.org/atomic-desk
 
 Bazaar's environment excludes terminal-only variables so shell customizations
 cannot break its GPG signature verification. Applied to new and updated systems.
-*Last updated: 2026-11-08.*
+This test branch adds QCE power management to release retained interconnect
+initialization requests. Sleep-residency and battery-drain validation is pending;
+see the [kernel test checklist](https://github.com/Xelef2000/azurefin-linux/blob/testing/sleep-qce-sync/SLEEP-QCE-TESTING.md).
+*Last updated: 2026-11-10.*
 
 ## Quick start
 
